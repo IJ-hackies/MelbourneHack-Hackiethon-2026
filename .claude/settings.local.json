@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets -name *.png -o -name *.jpg -o -name *.jpeg)",
+      "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets -ipath *palette* -o -ipath *Palette*)",
+      "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Library -name *.log)"
+    ]
+  }
+}
