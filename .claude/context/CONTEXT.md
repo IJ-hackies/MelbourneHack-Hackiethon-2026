@@ -1,57 +1,261 @@
-## THIS IS A PROJECT FOR A HACKATHON WITH THE 
-THEME : "INTEGRATE LLM INTO A GAME
+## HACKATHON PROJECT — THEME: "INTEGRATE LLM INTO A GAME"
 
-## The Concept: "The Echoing Grimoire"
-The dungeon isn't just a place; it’s a living record of your previous failures and successes. The LLM acts as the **Chronicle**, interpreting your gameplay data to weave the next layer of the tower.
+## The Concept: "Everchanging Grimoire"
 
-### 1. The "Observed Data" Layer (The Input)
-At the end of a floor, the game sends a "Session Log" to the LLM. This includes:
-* **Combat Style:** Did you play aggressively or defensively?
-* **Affinity:** Which elements did you use most?
-* **Trauma:** What enemy type or trap dealt the most damage to you?
-* **The "Last Word":** A single word you chose at the end of the round to "seal" the floor.
+A 2D top-down roguelite dungeon crawler where the dungeon is a **living record** of your playthroughs. The LLM (Gemini API) acts as the **Chronicle** — at the end of each floor it reads your session data and generates the next floor's theme, enemies, and a new spell tailored to (and against) how you've been playing.
 
-### 2. The Spell Synthesis (LLM as Architect)
-Instead of picking from a list of pre-set spells, the LLM generates a **Spell Manifest**. It doesn't just give you a name; it gives you a **logic string** the game engine can parse.
-
-> **Example Output from LLM:**
-> * **Name:** *The Crying Cinder*
-> * **Base Logic:** `PROJECTILE` + `ORBITAL` + `LIFESTEAL`
-> * **Flavor:** "A flame that misses its home, circling the caster until it finds warmth in an enemy's heart."
-> * **Visual Tags:** `Blue_Flame`, `Slow_Rotation`, `Heart_Particles`
-
-**The Complexity:** You could implement a "Spell Decay" system. Every time you use an LLM-generated spell to clear a room, the LLM "corrupts" its description for the next round, slowly turning your best weapons against you (e.g., adding `SELF_DAMAGE` tags).
-
-### 3. Procedural "Semantic" Environments
-Instead of randomizing rooms, the LLM generates a **Floor Narrative** that dictates the procedural generation rules.
-
-* **Round 1:** You killed mostly "Slime" enemies.
-* **LLM Interpretation:** The dungeon "evolves" to counter you.
-* **Round 2 Theme:** "The Calcified Veins." The LLM dictates that all fluids are now hardened. Slimes are replaced by "Crystal Golems." The floor layout becomes narrow and jagged.
-* **PixelLab Integration:** You would have a library of "Material Shaders" (Ice, Stone, Flesh, Tech) in your pixel art. The LLM’s theme tells the engine which tileset palette and animation set to swap in.
+The game runs indefinitely, scaling in difficulty. There are no boss stages — just continuous escalation.
 
 ---
 
-## The Technical Architecture
+## LLM Integration: Gemini API + Function Calling
 
-To make this work in a hackathon timeframe, use a **JSON Schema** for the LLM output:
+The game uses **Gemini's function calling** (structured tool use) to enforce a strict JSON schema response. This makes parsing reliable — Gemini must return valid structured data or the call fails cleanly.
+
+### The Input: Session Log
+
+At the end of each floor, the game assembles a Session Log and sends it to Gemini:
+
+```json
+{
+  "stage_number": 7,
+  "combat_style": "aggressive",
+  "primary_element": "fire",
+  "most_damage_taken_from": "ranged_enemies",
+  "last_word": "ember",
+  "spells_used": ["Crying Cinder", "Void Shard"]
+}
+```
+
+- **Combat Style:** Derived from how much the player moved, how close they got to enemies
+- **Affinity:** Which element/damage type was used most
+- **Trauma:** The enemy type or trap that dealt the most damage this floor
+- **The "Last Word":** A single word the player chooses at the end of a floor to "seal" it — flavour + context for the LLM
+- **Stage Number:** Tells Gemini how hard to make the next floor
+
+### The Output: Floor Manifest (via function calling)
+
+Gemini returns a single structured `generate_floor` response:
 
 ```json
 {
   "floor_name": "The Shattered Clockwork",
-  "environmental_modifier": "Time_Dilation_Field",
-  "enemy_evolution": "Rust_Blight_Soldiers",
+  "layout_type": "corridor",
+  "tileset_id": "clockwork_ruins",
+  "palette_override": ["#8B4513", "#C0A080", "#2F2F2F"],
+  "environmental_modifier": "time_dilation_field",
+  "enemy_spawns": [
+    { "enemy_id": "ranged_sentinel", "count": 4, "modifiers": ["armored"] },
+    { "enemy_id": "fast_skitter", "count": 6, "modifiers": [] }
+  ],
   "new_spell": {
     "name": "Chronos Bolt",
-    "physics": "stutter_motion",
-    "damage_type": "temporal",
-    "pixel_effect_id": 402
-  }
+    "flavor": "A bolt that stutters through time, hitting twice.",
+    "tags": ["PROJECTILE", "STUTTER_MOTION", "DOUBLE_HIT"],
+    "damage": 35,
+    "speed": 6.0,
+    "cooldown": 1.2
+  },
+  "corrupted_spells": [
+    {
+      "spell_name": "Crying Cinder",
+      "added_tags": ["SELF_DAMAGE"],
+      "removed_tags": ["LIFESTEAL"],
+      "new_flavor": "The cinder no longer distinguishes friend from foe."
+    }
+  ]
 }
 ```
 
-### Visual Strategy with PixelLab
-Since you are using PixelLab, you can maximize your "infinite" content by focusing on **Modular Animations**:
-1.  **Core Sprites:** Create "Blank" enemy bases (Humanoid, Quadruped, Floating Eye).
-2.  **Overlay Sheets:** Use the LLM to choose "Overlays" (Armor, Glowing Eyes, Tentacles).
-3.  **Color Swapping:** The LLM provides Hex codes for the palette of the current floor, which you apply to your pixel art via code to change the "vibe" instantly.
+The `layout_type` field is an **enum** — Gemini picks from `["corridor", "arena", "crossroads", "maze"]`. Layouts are premade Unity tilemaps, not generated from scratch.
+
+---
+
+## Enemy System
+
+### Design Approach: Preset Archetypes + LLM Composition
+
+Enemies are **not generated** — they are a fixed library of archetypes with coded behavior. The LLM decides *which* enemies appear, *how many*, and *what modifiers* apply.
+
+### Enemy Archetype Library (8–12 types)
+
+| ID | Description |
+|----|-------------|
+| `melee_charger` | Rushes directly at player |
+| `ranged_sentinel` | Stays at distance, fires projectiles |
+| `tank_brute` | High HP, slow, deals knockback |
+| `fast_skitter` | Low HP, erratic movement, swarm |
+| `exploder` | Chases then detonates on proximity |
+| `shield_bearer` | Blocks frontal damage |
+| `healer_drone` | Buffs nearby enemies |
+| `mimic_shade` | Copies the player's last used spell behavior |
+
+More can be added. Each archetype has defined base stats (HP, damage, speed, behavior state machine).
+
+### Enemy Modifiers (predefined flags)
+
+The LLM applies these to any archetype to make enemies feel "evolved" without new code:
+
+- `armored` — 50% damage reduction
+- `berserk` — doubled speed and damage, half HP
+- `elemental_immune: fire` — immune to the player's dominant element
+- `spectral` — phases through walls briefly
+- `regenerating` — slowly heals HP
+
+The engine handles all modifier logic. The LLM just picks which flags to attach based on the player's session log (e.g., if the player uses fire, Gemini will start spawning `elemental_immune: fire` enemies).
+
+---
+
+## Level Generation
+
+### Layout
+Floors use **premade Unity tilemap templates** selected by the LLM via the `layout_type` enum. No procedural tile-by-tile generation — instead, 4–6 handcrafted room templates per type, randomly selected within the chosen category.
+
+### Tileset Integration (PixelLab Assets)
+All 32×32 tilesets created in PixelLab are registered in a `tileset_registry.json`:
+
+```json
+{
+  "crystal_caves": "Assets/Tilemaps/crystal_caves",
+  "clockwork_ruins": "Assets/Tilemaps/clockwork_ruins",
+  "flesh_dungeon": "Assets/Tilemaps/flesh_dungeon",
+  "frozen_wastes": "Assets/Tilemaps/frozen_wastes"
+}
+```
+
+This registry is included in the Gemini **system prompt** so the model knows exactly what's available. The `tileset_id` in the Floor Manifest must be a valid key from this registry. The optional `palette_override` (array of hex codes) is applied to tilemap materials at runtime via Unity's shader/material color properties to shift the floor's colour vibe without needing new art.
+
+### Difficulty Scaling
+Stage number is always passed in the session log. Difficulty scales via:
+- Enemy stat multiplier: `base_stat * (1 + stage * 0.08)` — tunable curve
+- Gemini is prompted to increase enemy density and modifier count as stage increases
+- Spell corruption rate increases with stage (more tags mutated per floor)
+
+---
+
+## Spell System
+
+### Core Concept: Tag Composition
+
+Spells are **pure data** — no runtime code generation. The engine contains handlers for every possible behavior tag. The LLM creates novel spells by composing new *combinations* of tags, producing emergent behaviors without any new code.
+
+### Behavior Tag Vocabulary (~25–30 tags)
+
+**Movement:**
+`PROJECTILE`, `ORBITAL`, `BEAM`, `HOMING`, `WALL_BOUNCE`, `SPIRAL`, `STUTTER_MOTION`, `SPLIT_ON_IMPACT`
+
+**Effect:**
+`LIFESTEAL`, `AOE_BURST`, `PIERCE`, `CHAIN`, `SLOW`, `DOUBLE_HIT`, `PULL`, `PUSH`
+
+**Corruption (added by LLM as decay):**
+`SELF_DAMAGE`, `ENEMY_HOMING`, `FRIENDLY_FIRE`, `REVERSED_CONTROLS`
+
+### Spell Data Structure
+
+```json
+{
+  "name": "Crying Cinder",
+  "flavor": "A flame that circles the caster, seeking warmth in an enemy's heart.",
+  "tags": ["PROJECTILE", "ORBITAL", "LIFESTEAL"],
+  "damage": 28,
+  "speed": 4.5,
+  "cooldown": 0.8,
+  "element": "fire",
+  "is_merged": false,
+  "merged_from": []
+}
+```
+
+### Spell Generation
+Each floor, Gemini generates **one new spell** added to the player's Grimoire. No choice is offered — what the Chronicle gives, you receive. The spell is informed by the player's session log and stage number.
+
+### Spell Corruption (Decay System)
+The `corrupted_spells` array in the Floor Manifest can mutate existing spells:
+- Adds degrading tags (`SELF_DAMAGE`, `ENEMY_HOMING`)
+- Removes beneficial tags (`LIFESTEAL`, `HOMING`)
+- Updates the flavor text to reflect the corruption narratively
+- This is how the dungeon "fights back" against the player's best weapons
+
+---
+
+## Grimoire: Spell Collection & Loadout
+
+### The Grimoire (Spell Inventory)
+The player accumulates spells across floors. The Grimoire holds all owned spells — there is no hard cap enforced in the design, but the UI should cap display at ~8 slots for clarity.
+
+### Active Spell: One at a Time
+During a run, the player has **one active spell** at a time as their primary fire. They can open the **Spell Menu** (accessible mid-floor) to switch which spell is currently equipped. This is like weapon-switching in a shooter — tactical, not overwhelming.
+
+There is no secondary fire for now.
+
+### Spell Merging
+At **milestone stages** (every 5 floors: stage 5, 10, 15...) the player is offered a **Merge Ritual**:
+
+- Select **2 or 3 spells** from the Grimoire to fuse
+- The merged spell fires all component spells **simultaneously** when cast
+- All behavior tags from all components are inherited
+- The LLM is called to generate a new name and flavor text for the merged spell
+- The source spells are **consumed** (removed from Grimoire)
+- Merged spells **cannot be merged further** — this prevents runaway power stacking
+
+```json
+{
+  "name": "The Widow's Eclipse",
+  "flavor": "Two lost fires, finally reunited in annihilation.",
+  "tags": ["PROJECTILE", "ORBITAL", "LIFESTEAL", "HOMING", "AOE_BURST"],
+  "damage": 55,
+  "speed": 4.0,
+  "cooldown": 1.5,
+  "element": "fire",
+  "is_merged": true,
+  "merged_from": ["Crying Cinder", "Seeking Mote"]
+}
+```
+
+The merge is a **power trade-off**: you gain a single more powerful spell but lose two individual options (less flexibility, more raw output).
+
+---
+
+## Visual Strategy (PixelLab + Unity)
+
+### Modular Sprite System
+- **Enemy bases:** Blank archetype sprites (Humanoid, Quadruped, Eye). Fixed art per archetype.
+- **Palette swapping:** Runtime material color replacement driven by `palette_override` from the Floor Manifest. Changes the floor "vibe" without new art assets.
+- **Tileset swapping:** Unity loads the tileset assets for the LLM-chosen `tileset_id` at floor start.
+
+### Spell Visuals
+Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital rotation animator, `BEAM` switches to a beam prefab, etc. Art is modular per tag, composed at runtime.
+
+---
+
+## Architecture Summary
+
+```
+[End of Floor]
+      │
+      ▼
+[Build Session Log JSON]
+      │
+      ▼
+[Gemini API — function calling with generate_floor schema]
+      │
+      ▼
+[Floor Manifest JSON]
+      │
+   ┌──┴──────────────────────────────────┐
+   │                                     │
+[Apply floor theme]              [Add new spell to Grimoire]
+[Load tileset + palette]         [Corrupt existing spells]
+[Spawn enemies per spawn list]
+[Select layout template]
+   │
+   ▼
+[Player runs floor]
+[Can switch active spell mid-floor via Spell Menu]
+   │
+   ▼
+[Stage 5/10/15... → Merge Ritual offered]
+   │
+   ▼
+[Repeat]
+```
