@@ -106,7 +106,95 @@ The engine handles all modifier logic. The LLM just picks which flags to attach 
 
 ---
 
+## Camera & Map Bounds
+
+### Camera Follow
+The Main Camera uses `CameraFollow.cs` (on the camera object itself). It follows the player with smooth lerp and clamps so the camera never shows outside the map edge.
+
+- **Standard map size:** `40 × 22` world units (40 × 22 tiles, 1 world unit per tile, 16:9)
+- Camera orthographic size = `5` → camera viewport = 17.8 × 10 tiles. Map is ~2.2× wider and ~2.3× taller than the viewport.
+- This constant is defined in `CameraFollow.StandardMapSize` and referenced by `MapBoundsMarker`
+
+### MapBoundsMarker
+Every scene must have a single **`MapBounds`** empty GameObject with a `MapBoundsMarker` component attached. `CameraFollow` finds it automatically via `FindObjectOfType` at `Start()`.
+
+- Position it at the **centre** of the playable area
+- Set its `size` field to match the layout (default: `1280 × 736`)
+- It draws a **cyan wire box gizmo** in the Scene view at all times so you can see the boundary while painting tiles
+- Falls back to the camera's inspector fields if no marker is present in the scene
+
+### Map Creation Workflow
+
+Scene hierarchy for every floor:
+
+```
+Grid  (Unity Grid component, Cell Size = 0.32 × 0.32 for 32 px tiles)
+├── Ground    (Tilemap — base floor tiles, rendered below everything)
+├── Walls     (Tilemap + TilemapCollider2D + CompositeCollider2D — solid blockers)
+├── Details   (Tilemap — decorative overlays, no collider)
+└── MapBounds (Empty GameObject + MapBoundsMarker — defines camera clamp region)
+```
+
+**Steps to build a new floor:**
+
+1. Create a **Grid** GameObject (`2D Object → Tilemap → Rectangular`) — leave Cell Size at `(1, 1, 0)`
+2. Add child Tilemaps: rename to `Ground`, `Walls`, `Details`
+   - On `Walls`: add `TilemapCollider2D` → enable **Used By Composite** → add `CompositeCollider2D` (sets Rigidbody2D to Static automatically)
+3. Add an empty child GameObject named **`MapBounds`** → attach `MapBoundsMarker`
+   - Place it at the centre of the painted area
+   - Leave `size` at `(40, 23)` for standard arena layouts; adjust per layout type (see table below)
+4. Paint tiles using the **Tile Palette** window
+5. Keep all tile painting within the cyan gizmo boundary
+
+**Layout-specific sizes** (defined in Gemini's `layout_type` enum):
+
+All sizes are in **world units** (1 unit = 1 tile, Grid Cell Size = 1).
+
+| layout_type  | Suggested map size  | Notes                          |
+|--------------|---------------------|--------------------------------|
+| `arena`      | 40 × 22             | Standard, open room (16:9)     |
+| `corridor`   | 50 × 16             | Wide and narrow                |
+| `crossroads` | 40 × 40             | Symmetric, square              |
+| `maze`       | 50 × 32             | Large for complexity           |
+
+---
+
 ## Level Generation
+
+### Stage 1 — Fixed Handcrafted Floor
+
+**Stage 1 is always the same hardcoded floor.** It is not Gemini-generated. Its purpose is to:
+- Give the player a consistent, tuned introduction
+- Serve as the concrete template we build all game systems against (enemies, spells, tilemap loading, session log assembly)
+- Guarantee the first Gemini call has real, meaningful session data to react to
+
+**Stage 1 manifest (hardcoded, not from Gemini):**
+```json
+{
+  "floor_name": "The Hollow Entry",
+  "layout_type": "arena",
+  "tileset_id": "crystal_caves",
+  "palette_override": [],
+  "environmental_modifier": null,
+  "enemy_spawns": [
+    { "enemy_id": "melee_charger", "count": 3, "modifiers": [] },
+    { "enemy_id": "ranged_sentinel", "count": 2, "modifiers": [] }
+  ],
+  "new_spell": {
+    "name": "Void Shard",
+    "flavor": "A raw sliver of nothing, flung outward with intent.",
+    "tags": ["PROJECTILE"],
+    "damage": 20,
+    "speed": 8.0,
+    "cooldown": 0.4
+  },
+  "corrupted_spells": []
+}
+```
+
+At the end of Stage 1, the session log is assembled and **the first Gemini call is made** to generate Stage 2. Every stage from 2 onwards is Gemini-generated.
+
+### Stages 2+ — Gemini Generated
 
 ### Layout
 Floors use **premade Unity tilemap templates** selected by the LLM via the `layout_type` enum. No procedural tile-by-tile generation — instead, 4–6 handcrafted room templates per type, randomly selected within the chosen category.
@@ -231,13 +319,22 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
 ## Architecture Summary
 
 ```
+[Start Game]
+      │
+      ▼
+[Stage 1 — Hardcoded Floor Manifest]   ← no Gemini call
+      │
+      ▼
+[Player runs Stage 1]
+      │
+      ▼
 [End of Floor]
       │
       ▼
 [Build Session Log JSON]
       │
       ▼
-[Gemini API — function calling with generate_floor schema]
+[Gemini API — function calling with generate_floor schema]   ← first call here
       │
       ▼
 [Floor Manifest JSON]
