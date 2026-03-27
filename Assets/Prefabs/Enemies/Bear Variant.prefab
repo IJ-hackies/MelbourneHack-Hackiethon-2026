@@ -18,11 +18,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.02
+      value: -1.42
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.08
+      value: 5.38
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -34,15 +34,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -62,11 +62,15 @@ PrefabInstance:
       objectReference: {fileID: 6636361135747025162, guid: d1a5e3809580e4261b0328f6fe4110fa, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -8
+      value: -876
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
       value: Bear Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8975153678174004608, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Controller
@@ -77,6 +81,9 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      insertIndex: 3
+      addedObject: {fileID: 3511773667678649851}
+    - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7226185336339821150}
   m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
@@ -85,6 +92,43 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
   m_PrefabInstance: {fileID: 5816066269599640417}
   m_PrefabAsset: {fileID: 0}
+--- !u!70 &3511773667678649851
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3930452005457392472}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0.00000001816079, y: 0.000000013038516}
+  m_Size: {x: 0.2, y: 0.36}
+  m_Direction: 0
 --- !u!114 &7226185336339821150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,5 +151,16 @@ MonoBehaviour:
   damageHitFrame: 0.35
   hitEffectDelay: 0.25
   directionChangeThreshold: 22.5
+  floatAmplitude: 0.015
+  floatFrequency: 1.5
   hitColorA: {r: 0.5377358, g: 0.31221676, b: 0.19023673, a: 1}
   hitColorB: {r: 0.7924528, g: 0.41455817, b: 0.078497685, a: 1}
+  rotationSprites:
+  - {fileID: 4814271557941635497, guid: 5be895568bf3442bb8c79a77107b1e13, type: 3}
+  - {fileID: -206670225839568205, guid: 71b1c59d4860a44c593d2eaf5e2b252a, type: 3}
+  - {fileID: -2097619832946416524, guid: cf6df39b2a1a1455783df29259a5b972, type: 3}
+  - {fileID: -8959435104959665722, guid: 9a9c7bbdbe5944ed784f723f513f9321, type: 3}
+  - {fileID: 2324236343598682440, guid: 818a986a4265f402a80d1ca00a32f219, type: 3}
+  - {fileID: -1505471383403432660, guid: d9864d2888694417590061b33d8954e9, type: 3}
+  - {fileID: 3373983171478037719, guid: ad84787e9837044ceb1d9d4f1b4abffb, type: 3}
+  - {fileID: 539946027851580950, guid: 0772a49bc7d654c539254ca358f82bdf, type: 3}

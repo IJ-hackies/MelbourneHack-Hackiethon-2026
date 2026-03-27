@@ -17,10 +17,16 @@ public class MeleeChaseAI : EnemyBase
 
     [Header("Animation")]
     [SerializeField] private float directionChangeThreshold = 22.5f;
+    [SerializeField] private float floatAmplitude  = 0.015f; // world units
+    [SerializeField] private float floatFrequency  = 1.5f;  // cycles per second
 
     [Header("Hit Effect Colours")]
     [SerializeField] private Color hitColorA = new Color(0.85f, 0.85f, 0.88f, 1f);
     [SerializeField] private Color hitColorB = new Color(0.45f, 0.45f, 0.50f, 1f);
+
+    // Auto-loaded from Assets/Art/Sprites/Enemies/{GameObjectName}/rotations/ at Start.
+    // Right-click the component → "Bake Rotation Sprites" before building to serialize them.
+    [SerializeField] private Sprite[] rotationSprites = new Sprite[8];
 
     // Public properties — expose all tunable values for runtime scaling
     public string WalkPrefix   { get => walkPrefix;   set => walkPrefix   = value; }
@@ -35,13 +41,23 @@ public class MeleeChaseAI : EnemyBase
     private enum State { Walk, Attack }
     private State state = State.Walk;
 
+    // Direction order matching rotationSprites array slots
+    private static readonly string[] DirOrder =
+        { "north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west" };
+
+    private SpriteRenderer sr;
     private string currentClip = "";
     private bool damageDealt;
+    private bool isIdling;
+    private Vector2 idleBasePos;
     private PlayerHitEffect playerHitEffect;
 
     protected override void Start()
     {
         base.Start();
+        sr = GetComponent<SpriteRenderer>();
+        LoadRotationSprites();
+        attackTimer = AttackCooldown; // first attack fires immediately when in range
         if (player != null)
         {
             playerHitEffect = player.GetComponent<PlayerHitEffect>();
@@ -66,6 +82,16 @@ public class MeleeChaseAI : EnemyBase
     {
         if (state != State.Walk || player == null || health.IsDead) return;
 
+        if (DistanceToPlayer() <= AttackRange)
+        {
+            if (isIdling)
+            {
+                float floatY = Mathf.Sin(Time.time * floatFrequency * Mathf.PI * 2f) * floatAmplitude;
+                rb.MovePosition(new Vector2(idleBasePos.x, idleBasePos.y + floatY));
+            }
+            return;
+        }
+
         Vector2 toPlayer = DirectionToPlayer();
         rb.MovePosition(rb.position + toPlayer * MoveSpeed * Time.fixedDeltaTime);
 
@@ -78,12 +104,41 @@ public class MeleeChaseAI : EnemyBase
 
     private void UpdateWalk()
     {
-        if (DistanceToPlayer() <= AttackRange && attackTimer >= AttackCooldown)
+        bool inRange = DistanceToPlayer() <= AttackRange;
+
+        if (inRange && !isIdling)
+        {
+            isIdling = true;
+            idleBasePos = rb.position;
+            animator.enabled = false; // hand control of sprite to us
+        }
+        else if (!inRange && isIdling)
+        {
+            isIdling = false;
+            rb.MovePosition(idleBasePos); // snap back to ground level before walking
+            animator.enabled = true;
+            PlayWalk();
+        }
+
+        if (isIdling)
+            UpdateIdleSprite();
+
+        if (inRange && attackTimer >= AttackCooldown)
             EnterAttack();
+    }
+
+    private void UpdateIdleSprite()
+    {
+        if (sr == null || rotationSprites == null || rotationSprites.Length < 8) return;
+        int idx = System.Array.IndexOf(DirOrder, GetDirectionKey(DirectionToPlayer()));
+        if (idx >= 0 && rotationSprites[idx] != null)
+            sr.sprite = rotationSprites[idx];
     }
 
     private void EnterAttack()
     {
+        isIdling = false;
+        animator.enabled = true;
         state = State.Attack;
         attackTimer = 0f;
         damageDealt = false;
@@ -102,7 +157,7 @@ public class MeleeChaseAI : EnemyBase
         if (attackTimer >= attackAnimDuration)
         {
             state = State.Walk;
-            attackTimer = AttackCooldown;
+            attackTimer = 0f; // reset so next attack waits the full cooldown
             PlayWalk();
         }
     }
@@ -132,4 +187,42 @@ public class MeleeChaseAI : EnemyBase
         currentClip = clip;
         animator.Play(clip);
     }
+
+    private static readonly string[] RotationDirFiles =
+        { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
+
+    private void LoadRotationSprites()
+    {
+        // Already baked (e.g. in a build) — skip
+        if (rotationSprites != null && rotationSprites.Length == 8 && rotationSprites[0] != null) return;
+
+#if UNITY_EDITOR
+        string enemyName = gameObject.name.Replace("(Clone)", "").Replace(" Variant", "").Trim();
+        rotationSprites = new Sprite[8];
+        for (int i = 0; i < 8; i++)
+        {
+            string path = $"Assets/Art/Sprites/Enemies/{enemyName}/rotations/{RotationDirFiles[i]}.png";
+            rotationSprites[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (rotationSprites[i] == null)
+                Debug.LogWarning($"{name}: rotation sprite not found at {path}");
+        }
+#endif
+    }
+
+#if UNITY_EDITOR
+    [ContextMenu("Bake Rotation Sprites")]
+    private void BakeRotationSprites()
+    {
+        string enemyName = gameObject.name.Replace("(Clone)", "").Replace(" Variant", "").Trim();
+        rotationSprites = new Sprite[8];
+        for (int i = 0; i < 8; i++)
+        {
+            string path = $"Assets/Art/Sprites/Enemies/{enemyName}/rotations/{RotationDirFiles[i]}.png";
+            rotationSprites[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+        UnityEditor.EditorUtility.SetDirty(this);
+        int loaded = System.Array.FindAll(rotationSprites, s => s != null).Length;
+        Debug.Log($"Baked {loaded}/8 rotation sprites for {enemyName}");
+    }
+#endif
 }
