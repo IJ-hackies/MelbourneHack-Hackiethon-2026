@@ -1,0 +1,165 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3989243768068446904
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.45
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 5.23
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -1808982527863717971, guid: 0b90b2b0e692a49528aceefddf9a958c, type: 3}
+    - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_SortingOrder
+      value: -861
+      objectReference: {fileID: 0}
+    - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_Name
+      value: IceWizard Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 8975153678174004608, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8047782da569c1fd6789ec73ac02d9b8, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      insertIndex: 3
+      addedObject: {fileID: 582216158770402153}
+    - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9113048154474210237}
+  m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+--- !u!1 &5864161847400546945 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
+  m_PrefabInstance: {fileID: 3989243768068446904}
+  m_PrefabAsset: {fileID: 0}
+--- !u!70 &582216158770402153
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5864161847400546945}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 0.21, y: 0.49}
+  m_Direction: 0
+--- !u!114 &9113048154474210237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5864161847400546945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc0e5ed7c7edd40049feb05679e46781, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WizardAI
+  moveSpeed: 2.5
+  attackRange: 5
+  attackDamage: 10
+  attackCooldown: 1.5
+  walkPrefix: iw_walk
+  attackPrefix: iw_iceball
+  attackAnimDuration: 0.6
+  damageHitFrame: 0.3
+  hitEffectDelay: 0.25
+  directionChangeThreshold: 22.5
+  floatAmplitude: 0.015
+  floatFrequency: 1.5
+  hitColorA: {r: 0.10791205, g: 0.32342142, b: 0.9150943, a: 1}
+  hitColorB: {r: 0.07413671, g: 0.8121284, b: 0.9245283, a: 1}
+  rotationSprites:
+  - {fileID: 4814271557941635497, guid: 46bf9e670215c46d2bbb3ae21377c35f, type: 3}
+  - {fileID: -206670225839568205, guid: 61ae509b0d7b44933b2e96b71e3f9151, type: 3}
+  - {fileID: -2097619832946416524, guid: 20dc3030927cb411ab60b5dbfd494072, type: 3}
+  - {fileID: -8959435104959665722, guid: fb8dca7dc826c4100b3e8b9415f93281, type: 3}
+  - {fileID: 2324236343598682440, guid: 40a211a6bcdee47238c4e552c473a176, type: 3}
+  - {fileID: -1505471383403432660, guid: 3ee67645a6c604cca89b1b3386feec45, type: 3}
+  - {fileID: 3373983171478037719, guid: 8a405b358e5e1417eb7d74390b45b0c2, type: 3}
+  - {fileID: 539946027851580950, guid: 8f4656e392ed64a0b8913a1c3996de66, type: 3}
+  projectileColorA: {r: 0, g: 0.96346426, b: 1, a: 1}
+  projectileColorB: {r: 0.10196078, g: 0.5224983, b: 1, a: 1}
+  projectileSpeed: 5

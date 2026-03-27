@@ -58,6 +58,55 @@ public static class HitEffectSpawner
         Object.Destroy(go, 1f);
     }
 
+    // Fireball projectile — cosmetic only. A GameObject moves from `from` to `to`
+    // and the particle system rides it, leaving a fire trail in world space.
+    // Damage is dealt by the calling AI independently.
+    public static void SpawnFireball(Vector3 from, Vector3 to, Color colorA, Color colorB)
+    {
+        float distance    = Vector3.Distance(from, to);
+        float speed       = 7f;
+        float travelTime  = Mathf.Max(distance / speed, 0.05f);
+
+        var go = new GameObject("FX_Fireball");
+        go.transform.position = from;
+        go.AddComponent<FireballMover>().Init(to, speed);
+
+        ParticleSystem ps = go.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        go.GetComponent<ParticleSystemRenderer>().material = GetParticleMaterial();
+
+        // Particles emitted in world space so they stay behind as the GO moves — natural trail
+        var main = ps.main;
+        main.loop            = true;
+        main.startLifetime   = 0.15f;
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0f, 1f); // slight jitter only
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.2f, 0.35f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(colorA, colorB);
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.gravityModifier = 0f;
+
+        var emission = ps.emission;
+        emission.rateOverTime = 50f;
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius    = 0.08f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(colorA, 0f), new GradientColorKey(colorB, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        ps.Play();
+        Object.Destroy(go, travelTime + 0.3f);
+    }
+
     // Subtle blood — plays on the player when hit
     public static void SpawnBlood(Vector3 position)
     {
@@ -101,5 +150,24 @@ public static class HitEffectSpawner
 
         ps.Play();
         Object.Destroy(go, 1f);
+    }
+}
+
+// Moves a fireball particle GameObject toward a target at fixed speed.
+// Internal helper — only used by HitEffectSpawner.SpawnFireball.
+public class FireballMover : MonoBehaviour
+{
+    private Vector3 target;
+    private float   speed;
+
+    public void Init(Vector3 target, float speed)
+    {
+        this.target = target;
+        this.speed  = speed;
+    }
+
+    private void Update()
+    {
+        transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
     }
 }
