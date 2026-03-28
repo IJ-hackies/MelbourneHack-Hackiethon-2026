@@ -6,6 +6,7 @@ public enum SpellTag
     BEAM,
     HOMING,
     WALL_BOUNCE,
+    PIERCE_WALLS,
     SPIRAL,
     STUTTER_MOTION,
     SPLIT_ON_IMPACT,
@@ -29,6 +30,5 @@ public enum SpellTag
     // --- Corruption ---
     SELF_DAMAGE,
     ENEMY_HOMING,
-    FRIENDLY_FIRE,
     REVERSED_CONTROLS,
 }

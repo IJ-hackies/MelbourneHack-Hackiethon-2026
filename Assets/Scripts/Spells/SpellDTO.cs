@@ -49,6 +49,13 @@ public class SpellDTO
             data.tags = parsed.ToArray();
         }
 
+        // A spell must have exactly one movement type to fire
+        bool hasMovement = data.HasTag(SpellTag.PROJECTILE)
+                        || data.HasTag(SpellTag.ORBITAL)
+                        || data.HasTag(SpellTag.BEAM);
+        if (!hasMovement)
+            Debug.LogWarning($"SpellDTO: spell '{name}' has no movement tag (PROJECTILE/ORBITAL/BEAM) — it will do nothing when cast.");
+
         return data;
     }
 }
