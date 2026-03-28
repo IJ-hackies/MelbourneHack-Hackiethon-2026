@@ -153,7 +153,7 @@ PrefabInstance:
       addedObject: {fileID: 2701328239228426054}
     - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8490492207403428616}
+      addedObject: {fileID: 6532061402065731062}
   m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
 --- !u!1 &1984350240023851878 stripped
 GameObject:
@@ -176,12 +176,15 @@ MonoBehaviour:
   attackRange: 10
   attackDamage: 10
   attackCooldown: 1.5
+  separationRadius: 1.2
+  separationWeight: 0.8
   walkPrefix: alien_walk
   attackPrefix: alien_attack
   minWanderTime: 1
   maxWanderTime: 3
   minIdleTime: 1
   maxIdleTime: 3
+  wanderRadius: 6
   attackAnimDuration: 0.6
   damageHitFrame: 0.3
   projectileSpeed: 7
@@ -198,8 +201,8 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: 566cb4b9bf4f84ae492057445a0e1625, type: 3}
   - {fileID: 3373983171478037719, guid: 98e8f229968a441c380a95ebf529f015, type: 3}
   - {fileID: 539946027851580950, guid: ccde88499577c4c7ba95f0a34f9b9de1, type: 3}
---- !u!61 &8490492207403428616
-BoxCollider2D:
+--- !u!70 &6532061402065731062
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -232,18 +235,9 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0023841262, y: -0.14900842}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.3, y: 0.41}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 0.2046346, y: 0.0547638}
-  m_EdgeRadius: 0
+  m_Offset: {x: -0.013657919, y: -0.10685452}
+  m_Size: {x: 0.18343838, y: 0.05810519}
+  m_Direction: 1
 --- !u!4 &5740621028232615829 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}

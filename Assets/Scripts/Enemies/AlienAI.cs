@@ -1,3 +1,4 @@
+using Pathfinding;
 using UnityEngine;
 
 // Alien AI — wanders randomly, stands still between wanders, attacks with a
@@ -13,6 +14,7 @@ public class AlienAI : EnemyBase
     [SerializeField] private float maxWanderTime = 3.0f;
     [SerializeField] private float minIdleTime   = 1.0f;
     [SerializeField] private float maxIdleTime   = 3.0f;
+    [SerializeField] private float wanderRadius  = 6f;
 
     [Header("Animation Timing")]
     [SerializeField] private float attackAnimDuration = 0.6f;
@@ -44,7 +46,6 @@ public class AlienAI : EnemyBase
 
     private enum State { Wander, Idle, Attack }
     private State   state = State.Wander;
-    private Vector2 wanderDir;
     private float   stateTimer;
     private bool    damageDealt;
     private string  currentClip = "";
@@ -89,10 +90,19 @@ public class AlienAI : EnemyBase
     private void FixedUpdate()
     {
         if (health.IsDead || state != State.Wander) return;
-        rb.MovePosition(rb.position + wanderDir * MoveSpeed * Time.fixedDeltaTime);
 
-        if (isIdling) // leaving idle — restore position base
-            isIdling = false;
+        Vector2 moveDir  = GetNextPathDirection();
+        if (moveDir == Vector2.zero) return; // path complete — UpdateWander handles transition
+
+        Vector2 finalDir = (moveDir + GetSeparationForce()).normalized;
+
+        rb.MovePosition(rb.position + finalDir * MoveSpeed * Time.fixedDeltaTime);
+
+        if (Vector2.Angle(currentDir, finalDir) > 22.5f)
+        {
+            currentDir = finalDir;
+            PlayClip($"{walkPrefix}_{GetDirectionKey(currentDir)}");
+        }
     }
 
     // ── Wander ──────────────────────────────────────────────────────────────
@@ -100,24 +110,22 @@ public class AlienAI : EnemyBase
     private void EnterWander()
     {
         state      = State.Wander;
-        wanderDir  = Random.insideUnitCircle.normalized;
         stateTimer = Random.Range(minWanderTime, maxWanderTime);
-        currentDir = wanderDir;
 
-        if (isIdling)
-        {
-            isIdling         = false;
-            animator.enabled = true;
-        }
+        Vector2 dest    = PickRandomWalkablePoint();
+        StartPathTo(dest);
+        Vector2 initDir = (dest - rb.position).sqrMagnitude > 0.01f ? (dest - rb.position).normalized : Vector2.down;
+        currentDir = initDir;
 
-        PlayClip($"{walkPrefix}_{GetDirectionKey(wanderDir)}");
+        if (isIdling) { isIdling = false; animator.enabled = true; }
+        PlayClip($"{walkPrefix}_{GetDirectionKey(currentDir)}");
     }
 
     private void UpdateWander()
     {
         TryAttack();
         if (state == State.Attack) return;
-        if (stateTimer <= 0f) EnterIdle();
+        if (stateTimer <= 0f || PathComplete) EnterIdle();
     }
 
     // ── Idle ─────────────────────────────────────────────────────────────────
@@ -208,6 +216,22 @@ public class AlienAI : EnemyBase
         FireballProjectile.Spawn(spawnPos, dir, AttackDamage,
                                  projectileColorA, projectileColorB,
                                  playerHealth, playerHitEffect, projectileSpeed);
+    }
+
+    // ── Pathfinding ──────────────────────────────────────────────────────────
+
+    private Vector2 PickRandomWalkablePoint()
+    {
+        if (AstarPath.active == null) return rb.position;
+
+        for (int i = 0; i < 10; i++)
+        {
+            Vector2   candidate = rb.position + Random.insideUnitCircle * wanderRadius;
+            GraphNode node      = AstarPath.active.GetNearest(candidate, NNConstraint.Default).node;
+            if (node != null && node.Walkable)
+                return (Vector3)node.position;
+        }
+        return rb.position;
     }
 
     // ── Rotation sprite loading ───────────────────────────────────────────────

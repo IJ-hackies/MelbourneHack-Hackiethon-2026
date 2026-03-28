@@ -157,7 +157,7 @@ PrefabInstance:
       addedObject: {fileID: 7226185336339821150}
     - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2632861503705239801}
+      addedObject: {fileID: 1015575519846739180}
   m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
 --- !u!1 &3930452005457392472 stripped
 GameObject:
@@ -180,6 +180,8 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 10
   attackCooldown: 1.5
+  separationRadius: 1.2
+  separationWeight: 0.8
   walkPrefix: bear_walk
   attackPrefix: bear_attack
   attackAnimDuration: 0.7
@@ -190,6 +192,7 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.5377358, g: 0.31221676, b: 0.19023673, a: 1}
   hitColorB: {r: 0.7924528, g: 0.41455817, b: 0.078497685, a: 1}
+  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 5be895568bf3442bb8c79a77107b1e13, type: 3}
   - {fileID: -206670225839568205, guid: 71b1c59d4860a44c593d2eaf5e2b252a, type: 3}
@@ -199,8 +202,8 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: d9864d2888694417590061b33d8954e9, type: 3}
   - {fileID: 3373983171478037719, guid: ad84787e9837044ceb1d9d4f1b4abffb, type: 3}
   - {fileID: 539946027851580950, guid: 0772a49bc7d654c539254ca358f82bdf, type: 3}
---- !u!61 &2632861503705239801
-BoxCollider2D:
+--- !u!70 &1015575519846739180
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -233,18 +236,9 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.011303294, y: -0.12935986}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.2, y: 0.36}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 0.16734612, y: 0.05606711}
-  m_EdgeRadius: 0
+  m_Offset: {x: 0.0026185003, y: -0.08118148}
+  m_Size: {x: 0.1627219, y: 0.04749573}
+  m_Direction: 1
 --- !u!4 &7109170782716434347 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}

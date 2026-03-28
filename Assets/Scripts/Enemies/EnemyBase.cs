@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Pathfinding;
 using UnityEngine;
 
 // Base class for all enemies. Handles movement, direction, and shared state.
@@ -5,6 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(Health))]
+[RequireComponent(typeof(Seeker))]
 public abstract class EnemyBase : MonoBehaviour
 {
     [Header("Movement")]
@@ -28,6 +31,7 @@ public abstract class EnemyBase : MonoBehaviour
     protected Health      health;
     protected Transform   player;
     protected Health      playerHealth;
+    protected Seeker      seeker;
 
     protected float   attackTimer;
     protected Vector2 currentDir = Vector2.down;
@@ -41,6 +45,7 @@ public abstract class EnemyBase : MonoBehaviour
         rb       = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         health   = GetComponent<Health>();
+        seeker   = GetComponent<Seeker>();
     }
 
     protected virtual void Start()
@@ -105,5 +110,74 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void OnDeath()
     {
         Destroy(gameObject, 0.1f);
+    }
+
+    // ── Separation ───────────────────────────────────────────────────────────
+
+    [Header("Separation")]
+    [SerializeField] private float separationRadius = 1.2f;
+    [SerializeField] [Range(0f, 2f)] private float separationWeight = 0.8f;
+
+    private static readonly Collider2D[] SeparationBuffer = new Collider2D[16];
+
+    protected Vector2 GetSeparationForce()
+    {
+        Vector2 force = Vector2.zero;
+        int count = Physics2D.OverlapCircleNonAlloc(rb.position, separationRadius, SeparationBuffer);
+        for (int i = 0; i < count; i++)
+        {
+            if (SeparationBuffer[i].gameObject == gameObject) continue;
+            if (SeparationBuffer[i].GetComponent<EnemyBase>() == null) continue;
+            Vector2 away = rb.position - (Vector2)SeparationBuffer[i].transform.position;
+            float dist = away.magnitude;
+            if (dist > 0.01f)
+                force += away.normalized * (1f - dist / separationRadius);
+        }
+        return force * separationWeight;
+    }
+
+    // ── Pathfinding ───────────────────────────────────────────────────────────
+
+    private List<Vector3> _pathWaypoints;
+    private int           _waypointIndex;
+    private bool          _pathReady;
+    private Vector2       _lastPathDir;
+
+    private const float WaypointReachedDist = 0.2f;
+
+    protected bool PathComplete => _pathReady && _waypointIndex >= (_pathWaypoints?.Count ?? 0);
+    protected bool HasPath      => _pathReady && _pathWaypoints != null && _pathWaypoints.Count > 0;
+    protected Vector2 LastPathDir => _lastPathDir;
+
+    protected void StartPathTo(Vector2 target)
+    {
+        if (seeker == null || AstarPath.active == null) return;
+        seeker.StartPath(rb.position, target, p =>
+        {
+            if (p.error)
+            {
+                Debug.LogWarning($"{name}: Path failed — {p.errorLog}");
+                return;
+            }
+            _pathWaypoints = p.vectorPath;
+            _waypointIndex = 0;
+            _pathReady     = true;
+        });
+    }
+
+    protected Vector2 GetNextPathDirection()
+    {
+        if (!HasPath) return Vector2.zero;
+
+        while (_waypointIndex < _pathWaypoints.Count &&
+               Vector2.Distance(rb.position, _pathWaypoints[_waypointIndex]) < WaypointReachedDist)
+        {
+            _waypointIndex++;
+        }
+
+        if (_waypointIndex >= _pathWaypoints.Count) return Vector2.zero;
+
+        _lastPathDir = ((Vector2)_pathWaypoints[_waypointIndex] - rb.position).normalized;
+        return _lastPathDir;
     }
 }

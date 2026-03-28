@@ -161,7 +161,7 @@ PrefabInstance:
       addedObject: {fileID: 3910424806426338039}
     - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8731082797971866974}
+      addedObject: {fileID: 3986787610008624346}
   m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
 --- !u!4 &2530954646257909529 stripped
 Transform:
@@ -189,6 +189,8 @@ MonoBehaviour:
   attackRange: 1.2
   attackDamage: 10
   attackCooldown: 1.5
+  separationRadius: 1.2
+  separationWeight: 0.8
   walkPrefix: ep_walk
   attackPrefix: ep_punch
   attackAnimDuration: 0.6
@@ -199,6 +201,7 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.85, g: 0.85, b: 0.88, a: 1}
   hitColorB: {r: 0.45, g: 0.45, b: 0.5, a: 1}
+  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 860e13be0b24d4c4898da3e081c09baf, type: 3}
   - {fileID: -206670225839568205, guid: 48b327956c151474fa6239c90f355b6a, type: 3}
@@ -208,8 +211,8 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: b637a3dce074b40b4bbd105cb257d39b, type: 3}
   - {fileID: 3373983171478037719, guid: e538f212765164baa9313d6575ab056f, type: 3}
   - {fileID: 539946027851580950, guid: c1db4769f915a4760b879c9b8e716763, type: 3}
---- !u!61 &8731082797971866974
-BoxCollider2D:
+--- !u!70 &3986787610008624346
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -242,15 +245,6 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.011303272, y: -0.1406631}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.25, y: 0.41}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 0.18218032, y: 0.063366055}
-  m_EdgeRadius: 0
+  m_Offset: {x: -0.00457487, y: -0.08844492}
+  m_Size: {x: 0.1467003, y: 0.052155204}
+  m_Direction: 1

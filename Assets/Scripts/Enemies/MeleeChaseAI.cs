@@ -24,6 +24,9 @@ public class MeleeChaseAI : EnemyBase
     [SerializeField] private Color hitColorA = new Color(0.85f, 0.85f, 0.88f, 1f);
     [SerializeField] private Color hitColorB = new Color(0.45f, 0.45f, 0.50f, 1f);
 
+    [Header("Pathfinding")]
+    [SerializeField] private float pathRefreshInterval = 0.3f;
+
     // Auto-loaded from Assets/Art/Sprites/Enemies/{GameObjectName}/rotations/ at Start.
     // Right-click the component → "Bake Rotation Sprites" before building to serialize them.
     [SerializeField] private Sprite[] rotationSprites = new Sprite[8];
@@ -51,6 +54,7 @@ public class MeleeChaseAI : EnemyBase
     private bool isIdling;
     private Vector2 idleBasePos;
     private PlayerHitEffect playerHitEffect;
+    private float pathTimer;
 
     protected override void Start()
     {
@@ -70,6 +74,13 @@ public class MeleeChaseAI : EnemyBase
     {
         if (player == null || health.IsDead) return;
         attackTimer += Time.deltaTime;
+
+        pathTimer += Time.deltaTime;
+        if ((pathTimer >= pathRefreshInterval || PathComplete) && state == State.Walk)
+        {
+            pathTimer = 0f;
+            StartPathTo(player.position);
+        }
 
         switch (state)
         {
@@ -92,12 +103,17 @@ public class MeleeChaseAI : EnemyBase
             return;
         }
 
-        Vector2 toPlayer = DirectionToPlayer();
-        rb.MovePosition(rb.position + toPlayer * MoveSpeed * Time.fixedDeltaTime);
+        Vector2 moveDir = GetNextPathDirection();
+        if (moveDir == Vector2.zero) moveDir = LastPathDir;
+        if (moveDir == Vector2.zero) moveDir = DirectionToPlayer();
 
-        if (Vector2.Angle(currentDir, toPlayer) > directionChangeThreshold)
+        Vector2 finalDir = (moveDir + GetSeparationForce()).normalized;
+
+        rb.MovePosition(rb.position + finalDir * MoveSpeed * Time.fixedDeltaTime);
+
+        if (Vector2.Angle(currentDir, finalDir) > directionChangeThreshold)
         {
-            currentDir = toPlayer;
+            currentDir = finalDir;
             PlayWalk();
         }
     }

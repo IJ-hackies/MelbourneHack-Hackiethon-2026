@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 8015149718092315317}
   - component: {fileID: 1219128580608914759}
   - component: {fileID: 1539073658769773145}
-  - component: {fileID: 8563166461918855484}
+  - component: {fileID: 1819055938402997570}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -221,8 +221,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YSorter
   precision: 100
   sortingOriginY: -0.3
---- !u!61 &8563166461918855484
-BoxCollider2D:
+--- !u!70 &1819055938402997570
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -255,18 +255,9 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0024827868, y: -0.20730966}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.36, y: 0.63}
-    newSize: {x: 0.36, y: 0.63}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 0.22096306, y: 0.08627777}
-  m_EdgeRadius: 0
+  m_Offset: {x: 0.0025448196, y: -0.16270502}
+  m_Size: {x: 0.18459767, y: 0.09907886}
+  m_Direction: 1
 --- !u!1 &8593515427785355930
 GameObject:
   m_ObjectHideFlags: 0

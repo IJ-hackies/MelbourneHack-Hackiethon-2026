@@ -153,7 +153,7 @@ PrefabInstance:
       addedObject: {fileID: 9113048154474210237}
     - targetCorrespondingSourceObject: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6761648649972364416}
+      addedObject: {fileID: 8105322257211668476}
   m_SourcePrefab: {fileID: 100100000, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
 --- !u!4 &379054769875002994 stripped
 Transform:
@@ -181,6 +181,8 @@ MonoBehaviour:
   attackRange: 5
   attackDamage: 10
   attackCooldown: 1.5
+  separationRadius: 1.2
+  separationWeight: 0.8
   walkPrefix: iw_walk
   attackPrefix: iw_iceball
   attackAnimDuration: 0.6
@@ -191,6 +193,7 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.10791205, g: 0.32342142, b: 0.9150943, a: 1}
   hitColorB: {r: 0.07413671, g: 0.8121284, b: 0.9245283, a: 1}
+  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 46bf9e670215c46d2bbb3ae21377c35f, type: 3}
   - {fileID: -206670225839568205, guid: 61ae509b0d7b44933b2e96b71e3f9151, type: 3}
@@ -203,8 +206,8 @@ MonoBehaviour:
   projectileColorA: {r: 0, g: 0.96346426, b: 1, a: 1}
   projectileColorB: {r: 0.10196078, g: 0.5224983, b: 1, a: 1}
   projectileSpeed: 5
---- !u!61 &6761648649972364416
-BoxCollider2D:
+--- !u!70 &8105322257211668476
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -237,15 +240,6 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.002511844, y: -0.1770848}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.21, y: 0.49}
-    newSize: {x: 1, y: 2}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 0.15473956, y: 0.065498844}
-  m_EdgeRadius: 0
+  m_Offset: {x: -0.0028198848, y: -0.15451609}
+  m_Size: {x: 0.14826168, y: 0.0523933}
+  m_Direction: 1
