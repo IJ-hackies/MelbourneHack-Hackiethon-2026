@@ -119,43 +119,26 @@ The Main Camera uses `CameraFollow.cs` (on the camera object itself). It follows
 Every scene must have a single **`MapBounds`** empty GameObject with a `MapBoundsMarker` component attached. `CameraFollow` finds it automatically via `FindObjectOfType` at `Start()`.
 
 - Position it at the **centre** of the playable area
-- Set its `size` field to match the layout (default: `1280 × 736`)
-- It draws a **cyan wire box gizmo** in the Scene view at all times so you can see the boundary while painting tiles
+- Set its `size` field to match the full assembled map (`80 × 40` for the standard 4×2 chamber grid)
+- It draws a **cyan wire box gizmo** in the Scene view
 - Falls back to the camera's inspector fields if no marker is present in the scene
+- **`MapBoundsMarker` is camera-only** — it does NOT block player/enemy movement. Physical wall boundaries are the responsibility of each chamber prefab's `Walls` tilemap.
 
 ### Map Creation Workflow
 
-Scene hierarchy for every floor:
+Scene hierarchy for every floor (assembled at runtime by `FloorAssembler`):
 
 ```
-Grid  (Unity Grid component, Cell Size = 0.32 × 0.32 for 32 px tiles)
-├── Ground    (Tilemap — base floor tiles, rendered below everything)
-├── Walls     (Tilemap + TilemapCollider2D + CompositeCollider2D — solid blockers)
-├── Details   (Tilemap — decorative overlays, no collider)
-└── MapBounds (Empty GameObject + MapBoundsMarker — defines camera clamp region)
+Grid  (Unity Grid component, Cell Size = 1 × 1)
+├── [Chamber prefabs instantiated at grid offsets by FloorAssembler]
+│     Each chamber prefab contains:
+│     ├── Ground    (Tilemap — base floor tiles)
+│     ├── Walls     (Tilemap + TilemapCollider2D + CompositeCollider2D)
+│     └── Details   (Tilemap — decorative overlays)
+└── MapBounds (Empty GameObject + MapBoundsMarker — camera clamp only, size = 80 × 40)
 ```
 
-**Steps to build a new floor:**
-
-1. Create a **Grid** GameObject (`2D Object → Tilemap → Rectangular`) — leave Cell Size at `(1, 1, 0)`
-2. Add child Tilemaps: rename to `Ground`, `Walls`, `Details`
-   - On `Walls`: add `TilemapCollider2D` → enable **Used By Composite** → add `CompositeCollider2D` (sets Rigidbody2D to Static automatically)
-3. Add an empty child GameObject named **`MapBounds`** → attach `MapBoundsMarker`
-   - Place it at the centre of the painted area
-   - Leave `size` at `(40, 23)` for standard arena layouts; adjust per layout type (see table below)
-4. Paint tiles using the **Tile Palette** window
-5. Keep all tile painting within the cyan gizmo boundary
-
-**Layout-specific sizes** (defined in Gemini's `layout_type` enum):
-
-All sizes are in **world units** (1 unit = 1 tile, Grid Cell Size = 1).
-
-| layout_type  | Suggested map size  | Notes                          |
-|--------------|---------------------|--------------------------------|
-| `arena`      | 40 × 22             | Standard, open room (16:9)     |
-| `corridor`   | 50 × 16             | Wide and narrow                |
-| `crossroads` | 40 × 40             | Symmetric, square              |
-| `maze`       | 50 × 32             | Large for complexity           |
+**Standard assembled map size:** `80 × 40` world units (4×2 grid of 20×20 chambers).
 
 ---
 
@@ -172,10 +155,13 @@ All sizes are in **world units** (1 unit = 1 tile, Grid Cell Size = 1).
 ```json
 {
   "floor_name": "The Hollow Entry",
-  "layout_type": "arena",
   "tileset_id": "crystal_caves",
   "palette_override": [],
   "environmental_modifier": null,
+  "chamber_grid": [
+    ["crystal_caves_open_01", "crystal_caves_pillar_02", "crystal_caves_open_01", "crystal_caves_alcove_03"],
+    ["crystal_caves_alcove_03", "crystal_caves_open_01", "crystal_caves_pillar_02", "crystal_caves_open_01"]
+  ],
   "enemy_spawns": [
     { "enemy_id": "melee_charger", "count": 3, "modifiers": [] },
     { "enemy_id": "ranged_sentinel", "count": 2, "modifiers": [] }
@@ -196,22 +182,98 @@ At the end of Stage 1, the session log is assembled and **the first Gemini call 
 
 ### Stages 2+ — Gemini Generated
 
-### Layout
-Floors use **premade Unity tilemap templates** selected by the LLM via the `layout_type` enum. No procedural tile-by-tile generation — instead, 4–6 handcrafted room templates per type, randomly selected within the chosen category.
+### Layout: Chamber Grid System
+Floors are assembled from **preset chamber prefabs** arranged in a **4×2 grid** (8 chambers of 20×20 tiles each → 80×40 total map).
+
+**No procedural tile-by-tile generation.** Each tileset has **8 handcrafted chamber prefabs**. The LLM is given descriptions of all 8 and returns a 4×2 grid assignment — it can reuse chambers freely (e.g. pick 5 distinct chambers and repeat some).
+
+#### Chamber Prefab Spec
+Every chamber is a **20×20 world-unit prefab** with:
+- `Ground` Tilemap — floor tiles
+- `Walls` Tilemap + `TilemapCollider2D` + `CompositeCollider2D` — solid blockers
+- `Details` Tilemap — decorative overlays, no collider
+- **Standardized 2-tile-wide openings** centered on all 4 sides (tiles 9–10 of each 20-tile edge, 0-indexed)
+- **Edge-facing walls closed except at the opening** — chambers that sit on the map boundary are already walled; the opening becomes the enemy spawn point
+- `EnemySpawnPoint` markers placed at each of the 4 edge openings
+
+Because all chambers open on all 4 sides, any two adjacent chambers automatically connect — no stitching logic needed.
+
+```
+Each 20×20 chamber (walls shown as █, openings as ░░):
+
+████████░░████████████
+█                    █
+█                    █
+░                    ░  ← openings at tile 9–10 on left/right edges
+░                    ░
+█                    █
+█                    █
+████████░░████████████
+```
+
+#### Chamber Registry
+Each tileset registers its 8 chambers in a `ChamberRegistry` ScriptableObject:
+
+```
+Assets/Chambers/
+├── crystal_caves/
+│   ├── ChamberRegistry_CrystalCaves.asset   (ScriptableObject listing all 8)
+│   ├── crystal_caves_open_01.prefab
+│   ├── crystal_caves_pillar_02.prefab
+│   ├── crystal_caves_alcove_03.prefab
+│   └── ...
+├── clockwork_ruins/
+│   └── ...
+```
+
+Each `ChamberDefinition` ScriptableObject stores:
+- `id` — string key used by Gemini (e.g. `"crystal_caves_pillar_02"`)
+- `prefab` — the 20×20 chamber prefab
+- `description` — text sent to Gemini (e.g. `"A chamber dense with crystal pillars, tight sightlines, favours melee ambushes"`)
+- `tags` — string array (e.g. `["cover_heavy", "melee_favored", "low_visibility"]`)
+
+#### What Gemini Receives (in addition to session log)
+```json
+{
+  "grid_size": "4x2",
+  "available_chambers": [
+    { "id": "crystal_caves_open_01", "description": "Wide open chamber, good visibility, sparse cover", "tags": ["open", "ranged_favored"] },
+    { "id": "crystal_caves_pillar_02", "description": "Dense crystal pillars, tight sightlines, ambush-friendly", "tags": ["cover_heavy", "melee_favored"] },
+    { "id": "crystal_caves_alcove_03", "description": "Chamber with recessed alcoves along the walls, flanking opportunities", "tags": ["flanking", "mixed"] },
+    ...8 total
+  ]
+}
+```
+
+#### What Gemini Returns
+```json
+{
+  "chamber_grid": [
+    ["crystal_caves_open_01", "crystal_caves_pillar_02", "crystal_caves_alcove_03", "crystal_caves_open_01"],
+    ["crystal_caves_alcove_03", "crystal_caves_open_01", "crystal_caves_pillar_02", "crystal_caves_pillar_02"]
+  ]
+}
+```
+
+#### FloorAssembler
+`FloorAssembler.cs` reads `chamber_grid` from the Floor Manifest and:
+1. Looks up each chamber id in the active tileset's `ChamberRegistry`
+2. Instantiates each chamber prefab at grid offset `(col * 20, row * 20)` world units
+3. Places the `MapBounds` GameObject at map center `(40, 20)` with size `(80, 40)`
 
 ### Tileset Integration (PixelLab Assets)
 All 32×32 tilesets created in PixelLab are registered in a `tileset_registry.json`:
 
 ```json
 {
-  "crystal_caves": "Assets/Tilemaps/crystal_caves",
-  "clockwork_ruins": "Assets/Tilemaps/clockwork_ruins",
-  "flesh_dungeon": "Assets/Tilemaps/flesh_dungeon",
-  "frozen_wastes": "Assets/Tilemaps/frozen_wastes"
+  "crystal_caves": "Assets/Chambers/crystal_caves",
+  "clockwork_ruins": "Assets/Chambers/clockwork_ruins",
+  "flesh_dungeon": "Assets/Chambers/flesh_dungeon",
+  "frozen_wastes": "Assets/Chambers/frozen_wastes"
 }
 ```
 
-This registry is included in the Gemini **system prompt** so the model knows exactly what's available. The `tileset_id` in the Floor Manifest must be a valid key from this registry. The optional `palette_override` (array of hex codes) is applied to tilemap materials at runtime via Unity's shader/material color properties to shift the floor's colour vibe without needing new art.
+This registry is included in the Gemini **system prompt** so the model knows exactly what tilesets and chamber IDs are available. The `tileset_id` in the Floor Manifest must be a valid key from this registry — it tells `FloorAssembler` which `ChamberRegistry` to load chamber prefabs from. The optional `palette_override` (array of hex codes) is applied to tilemap materials at runtime via Unity's shader/material color properties to shift the floor's colour vibe without needing new art.
 
 ### Difficulty Scaling
 Stage number is always passed in the session log. Difficulty scales via:
@@ -325,6 +387,11 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
 [Stage 1 — Hardcoded Floor Manifest]   ← no Gemini call
       │
       ▼
+[FloorAssembler reads chamber_grid]
+[Instantiates 8 chamber prefabs at grid offsets (col*20, row*20)]
+[Places MapBoundsMarker at (40,20) size (80,40)]
+      │
+      ▼
 [Player runs Stage 1]
       │
       ▼
@@ -335,16 +402,18 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
       │
       ▼
 [Gemini API — function calling with generate_floor schema]   ← first call here
+[Input includes: session log + available_chambers list for chosen tileset]
       │
       ▼
 [Floor Manifest JSON]
       │
-   ┌──┴──────────────────────────────────┐
-   │                                     │
-[Apply floor theme]              [Add new spell to Grimoire]
-[Load tileset + palette]         [Corrupt existing spells]
-[Spawn enemies per spawn list]
-[Select layout template]
+   ┌──┴──────────────────────────────────────────┐
+   │                                             │
+[FloorAssembler]                       [Add new spell to Grimoire]
+[Load ChamberRegistry for tileset_id]  [Corrupt existing spells]
+[Instantiate chambers per grid]
+[Apply palette_override to materials]
+[Spawn enemies at EnemySpawnPoints]
    │
    ▼
 [Player runs floor]

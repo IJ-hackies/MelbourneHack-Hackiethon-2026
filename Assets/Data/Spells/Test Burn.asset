@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31e6c40e88399984b9cfeebe8d4fdc19, type: 3}
-  m_Name: VoidShard
+  m_Name: Test Burn
   m_EditorClassIdentifier: Assembly-CSharp::SpellData
-  spellName: 
+  spellName: Test Burn
   flavor: 
   element: 
-  tags: 
+  tags: 0000000010000000
   damage: 20
   speed: 8
   cooldown: 0.4

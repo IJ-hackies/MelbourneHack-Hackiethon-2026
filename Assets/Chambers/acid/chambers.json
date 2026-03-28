@@ -1,0 +1,259 @@
+{
+  "chambers": [
+    {
+      "description": "An open chamber with scattered decorative pillars. Offers long sightlines with minor cover, suited for mixed combat.",
+      "id": "acid_pillars_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "open",
+        "scattered_pillars",
+        "ranged_favored"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A cross-shaped room formed by massive corner structures. Pinches movement towards the center, forcing tight encounters.",
+      "id": "acid_cross_02"
+    },
+    {
+      "description": "A tight, symmetric maze that severely restricts sightlines and maneuverability. Great for stealth or ambush scenarios.",
+      "id": "acid_maze_03",
+      "tags": [
+        "low_visibility",
+        "melee_favored",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFWWWWWFFWWWWWFWFW",
+        "WFWFWFFFFFFFFFFWFWFW",
+        "WFWFWFWWWFFWWWFWFWFW",
+        "WFWFWFWFFFFFFWFWFWFW",
+        "WFWFWFWWFFFFWWFWFWFW",
+        "FFWFWFFFFFFFFFFWFWFF",
+        "FFWFWFFFFFFFFFFWFWFF",
+        "WFWFWFWWFFFFWWFWFWFW",
+        "WFWFWFWFFFFFFWFWFWFW",
+        "WFWFWFWWWFFWWWFWFWFW",
+        "WFWFWFFFFFFFFFFWFWFW",
+        "WFWFWWWWWFFWWWWWFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWWWWWWWWWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFWWWWWWWWFFWFFW",
+        "WFFWFFWFFFFFFWFFWFFW",
+        "WFFWFFWFFFFFFWFFWFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFWFFWFFFFFFWFFWFFW",
+        "WFFWFFWFFFFFFWFFWFFW",
+        "WFFWFFWWWWWWWWFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWWWWWWWWWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "flanking",
+        "cover_heavy"
+      ],
+      "id": "acid_donut_04",
+      "description": "A room split into two halves by massive C-shaped structures. Players must navigate around the core to find enemies."
+    },
+    {
+      "description": "A scattered layout featuring small blocks of cover. Provides excellent dynamics for ranged duels.",
+      "id": "acid_scattered_05",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFWWWFFWFFFFWFFWWWFW",
+        "WFFWFFFWWFFWWFFFWFFW",
+        "WFFFFFFWFFFFWFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFWFFFFWFFFFFFW",
+        "WFFWFFFWWFFWWFFFWFFW",
+        "WFWWWFFWFFFFWFFWWWFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "ranged_favored",
+        "scattered_pillars"
+      ]
+    },
+    {
+      "id": "acid_diagonal_06",
+      "description": "An X-shaped diagonal structure dissecting the room. Forces players to engage through narrow slanted corridors.",
+      "tags": [
+        "symmetric",
+        "chokepoint"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WWFWFFFFFFFFFFFFWFWW",
+        "WFWWFWFFFFFFFFWFWWFW",
+        "WFFWWWFFFFFFFFWWWFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFFWWWFFFFWWWFFFFW",
+        "WFFFFFWWWFFWWWFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFWWWFFWWWFFFFFW",
+        "WFFFFWWWFFFFWWWFFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFWWWFFFFFFFFWWWFFW",
+        "WFWWFWFFFFFFFFWFWWFW",
+        "WWFWFFFFFFFFFFFFWFWW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "Four enclosed ring-like quadrant rooms surrounding the central intersection. Promotes intense flanking maneuvers.",
+      "id": "acid_quadrants_07",
+      "tags": [
+        "flanking",
+        "symmetric",
+        "cover_heavy"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWFFFFFFFFFFFFWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "acid_pools_08",
+      "description": "Hazardous acid pools border the path, restricting safe zones and demanding precise positioning.",
+      "tags": [
+        "chokepoint",
+        "ranged_favored"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WFFOOOOOFFFFOOOOOFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tile_classification": {
+    "alt_floor": 6,
+    "primary_wall": 9,
+    "primary_floor": 5,
+    "detail_tiles": [
+      10,
+      11,
+      14
+    ]
+  },
+  "tileset_id": "acid"
+}

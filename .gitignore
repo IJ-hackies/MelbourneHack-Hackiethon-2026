@@ -63,3 +63,6 @@ crashlytics-build.properties
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# environment variables
+.env

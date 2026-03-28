@@ -1,0 +1,263 @@
+{
+  "chambers": [
+    {
+      "description": "A wide open frozen chamber with minimal obstacles. Excellent for ranged combat and kiting enemies across the ice.",
+      "tags": [
+        "open",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "id": "frozen_open_arena_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFDFFFFFFFFDFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFDFFFFFFFFDFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "tags": [
+        "flanking",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFDFFFFFFFFFFFFDFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "FFFFFFFWWWWWWFFFFFFF",
+        "FFFFFFFWWWWWWFFFFFFF",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFDFFFFFFFFFFFFDFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "frozen_central_block_01",
+      "description": "A large central ice block breaks line of sight, forcing combat into a circular flow. Good for flanking and close-quarters ambushes."
+    },
+    {
+      "tags": [
+        "scattered_pillars",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFDFFDFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFDFFDFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "frozen_quad_pillars_01",
+      "description": "Four large pillars provide significant cover while leaving wide intersecting firing lanes. Balanced for both ranged and melee engagements."
+    },
+    {
+      "description": "Thick angled walls create a diamond-shaped central arena with tight entry chokepoints. Favors area-of-effect attacks and melee defense.",
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "symmetric"
+      ],
+      "id": "frozen_diamond_choke_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFFFFFFFDFFDFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFDFFDFFFFFFFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "A dense grid of small ice pillars creates a maze-like environment. Limits visibility and heavily favors melee or tight flanking maneuvers.",
+      "tags": [
+        "scattered_pillars",
+        "low_visibility",
+        "melee_favored"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "frozen_pillar_grid_01"
+    },
+    {
+      "description": "A massive cross-shaped wall blocks direct crossing, splitting the room into four outer quadrants. Forces long flanking maneuvers to reach the opposite side.",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "frozen_cross_block_01"
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "ranged_favored",
+        "open"
+      ],
+      "id": "frozen_void_bridges_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOFFOOOFFOOOFFOOFW",
+        "WFOOFFOOOFFOOOFFOOFW",
+        "WFOOFFOFFFFFFOFFOOFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFOOFFOFFFFFFOFFOOFW",
+        "WFOOFFOOOFFOOOFFOOFW",
+        "WFOOFFOOOFFOOOFFOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Deep chasms dominate the room, connected by a network of narrow ice bridges. Extremely dangerous for melee; ranged attackers excel here."
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWFFFFFFFFFFFFFW",
+        "WWWWWFFFFFFFFFFFFFFW",
+        "WWWFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFWWWWFFFFW",
+        "WFFFFFFFFFFWWWWFFFFW",
+        "WFFFFFFFFFFWWWWFFFFW",
+        "WFFFFFFFFFFWWWWFFFFW",
+        "FFFFFFFFFFFFWWWWFFFF",
+        "FFFFFFFFFFFFWWWWFFFF",
+        "WFFFFFFFFFFWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFWWW",
+        "WFFFFFFFFFFFFFFWWWWW",
+        "WFFFFFFFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFFWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "frozen_asymmetric_cave_01",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "melee_favored"
+      ],
+      "description": "A massive collapsed ice wall dominates the corners and right side of the room. The irregular shape breaks symmetry and forces unpredictable combat angles."
+    }
+  ],
+  "tile_classification": {
+    "alt_floor": 6,
+    "detail_tiles": [
+      7,
+      9,
+      11
+    ],
+    "primary_floor": 5,
+    "primary_wall": 10
+  },
+  "tileset_id": "frozen"
+}

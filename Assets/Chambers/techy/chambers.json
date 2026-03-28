@@ -1,0 +1,261 @@
+{
+  "tileset_id": "techy",
+  "chambers": [
+    {
+      "id": "techy_open_01",
+      "description": "A wide-open chamber offering maximum visibility. Ideal for chaotic skirmishes and swarm encounters where positioning is key.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "open",
+        "ranged_favored"
+      ]
+    },
+    {
+      "tags": [
+        "scattered_pillars",
+        "cover_heavy",
+        "flanking"
+      ],
+      "id": "techy_pillars_02",
+      "description": "A classic setup with symmetrical pillars breaking up sightlines. Great for dodging projectiles and tactical melee flanking.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFWWFFFFW",
+        "WFFWWFFFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFWWFFFFFFW",
+        "WFFFFWWFFFFWWFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFWWFFFFWWFFFFW",
+        "WFFFFFFWWFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFFFWWFFW",
+        "WFFFFWWFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "techy_cross_03",
+      "description": "Long distinct hallways form a cross, leading into wide blind-corner side rooms. Perfect for ambushes and trapping enemies.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "low_visibility"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "techy_donut_04",
+      "description": "A large central mass creates a donut-like path around the room. It severely limits long-range engagements and encourages cat-and-mouse chases.",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "melee_favored"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "symmetric",
+        "cover_heavy"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "techy_quadrants_05",
+      "description": "Thick choke points divide the room into four clear quadrants. Teams can hold down corners, making area-of-effect abilities highly effective."
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "techy_grid_06",
+      "description": "A dense grid of heavy pillars provides constant cover, turning combat into a grid-based maze. The central axes remain clear for sudden ranged volleys.",
+      "tags": [
+        "scattered_pillars",
+        "low_visibility",
+        "cover_heavy"
+      ]
+    },
+    {
+      "id": "techy_diamond_07",
+      "description": "A solid diamond structure dominates the center, forcing all movement into the corners. Engagements will naturally funnel into the narrowing side corridors.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFWWWWWWWWWWWWWWFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFWWWWWWWWWWWWWWFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "flanking",
+        "symmetric",
+        "melee_favored"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "ranged_favored",
+        "open"
+      ],
+      "id": "techy_void_08",
+      "description": "Dangerous pits surround narrow walkways and a floating central island. Precision is vital, as one wrong step or knockback means falling into the void.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOFFOOOOOOOOFFOOFW",
+        "WFOOFFOOOOOOOOFFOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOFFOOOOOOOOFFOOFW",
+        "WFOOFFOOOOOOOOFFOOFW",
+        "WFOOFFFFFFFFFFFFOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFOOOOOOOFFOOOOOOOFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tile_classification": {
+    "primary_floor": 5,
+    "primary_wall": 12,
+    "detail_tiles": [
+      9,
+      10
+    ],
+    "alt_floor": 6
+  }
+}

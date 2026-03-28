@@ -1,0 +1,262 @@
+{
+  "tileset_id": "flames",
+  "tile_classification": {
+    "detail_tiles": [
+      1,
+      2,
+      3
+    ],
+    "primary_floor": 5,
+    "alt_floor": 12,
+    "primary_wall": 0
+  },
+  "chambers": [
+    {
+      "description": "A large open arena with unobstructed sightlines. Excellent for kiting and ranged combat, but exposes the player to swarms.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "flames_open_arena_01",
+      "tags": [
+        "open",
+        "ranged_favored"
+      ]
+    },
+    {
+      "id": "flames_central_pillar_01",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "symmetric"
+      ],
+      "description": "A massive central pillar dominates the room, creating a ring-like layout. Good for breaking line of sight and flanking enemies.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "FFFFFWFFFFFFFFWFFFFF",
+        "FFFFFWFFFFFFFFWFFFFF",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "A convoluted maze of walls that forces close-quarters engagements. Sightlines are broken and movement is highly constrained.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "flames_maze_01",
+      "tags": [
+        "melee_favored",
+        "low_visibility",
+        "chokepoint"
+      ]
+    },
+    {
+      "id": "flames_scattered_pillars_01",
+      "tags": [
+        "scattered_pillars",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "description": "A room filled with numerous small pillars providing ample cover. Ideal for tactical positioning and mixed ranged/melee combat.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "symmetric",
+        "melee_favored"
+      ],
+      "id": "flames_x_shape_01",
+      "description": "The walls form a large X shape, funnelling combatants towards the center. The narrow diagonal paths reward piercing attacks.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFFFWWWWWFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFWWWWWFFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "The corners of the room are filled with solid walls, creating a diamond-shaped combat area. Naturally focuses action towards the middle.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "flames_diamond_01",
+      "tags": [
+        "open",
+        "symmetric",
+        "flanking"
+      ]
+    },
+    {
+      "id": "flames_four_quadrants_01",
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "low_visibility"
+      ],
+      "description": "Divided into four smaller sub-rooms connected by narrow doorways. Perfect for bottlenecking enemy hordes.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "flames_flanking_corridors_01",
+      "tags": [
+        "flanking",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "description": "Features an inner central arena surrounded by narrow 1-tile wide flanking corridors. Allows stealthy repositioning or trapping enemies.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWWWWFFFFWWWWWWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWWWWWWFFFFWWWWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ]
+}

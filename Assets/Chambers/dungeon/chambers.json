@@ -1,0 +1,261 @@
+{
+  "tileset_id": "dungeon",
+  "tile_classification": {
+    "detail_tiles": [
+      9,
+      10
+    ],
+    "alt_floor": 6,
+    "primary_floor": 5,
+    "primary_wall": 0
+  },
+  "chambers": [
+    {
+      "id": "dungeon_open_arena_01",
+      "description": "A large open arena with minimal obstacles. Perfect for ranged combat and kiting.",
+      "tags": [
+        "open",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "A hall filled with scattered pillars breaking up sightlines. Good for dodging ranged attacks and closing the gap.",
+      "id": "dungeon_pillar_hall_02",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFDDFFFFFFFFDDFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "scattered_pillars",
+        "melee_favored",
+        "symmetric"
+      ]
+    },
+    {
+      "id": "dungeon_central_block_03",
+      "description": "A massive central pillar dominates the room, forcing encounters into the surrounding circular corridor. Fights here naturally devolve into tense flanking maneuvers.",
+      "tags": [
+        "flanking",
+        "chokepoint",
+        "cover_heavy"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFDDFFFFFFFFFFFFDDW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFDDFFFFFFFFFFFFDDW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "dungeon_scattered_cover_04",
+      "description": "Asymmetric walls provide scattered cover throughout the chamber. The uneven terrain favors tactical positioning.",
+      "tags": [
+        "cover_heavy",
+        "low_visibility"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFFFWWW",
+        "WFFWWFFFFFFFFFFFFWWW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WWWFFFFFFFFFFFFWWFFW",
+        "WWWFFFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "dungeon_diamond_paths_05",
+      "description": "Diamond-shaped pathways create diagonal sightlines. The intersecting corridors result in unpredictable engagements.",
+      "tags": [
+        "symmetric",
+        "chokepoint",
+        "flanking"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFWWWWFFFFFFFW",
+        "WFFFFFWWDDDDWWFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFWWFFFFFWWFFFFFWWFW",
+        "WWWWFFFFWWWWFFFFWWWW",
+        "WWWFFFFFWWWWFFFFFWWW",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "WWWFFFFFWWWWFFFFFWWW",
+        "WWWWFFFFWWWWFFFFWWWW",
+        "WFWWFFFFFWWFFFFFWWFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFWWFFFFFFFFWWFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFWWDDDDWWFFFFFW",
+        "WFFFFFFFWWWWFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "Tight, labyrinthine corridors restrict movement and heavily favor close-quarters combat. Navigating this maze forces rapid, point-blank encounters.",
+      "id": "dungeon_tight_maze_06",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWFFWWWWWWWWFFWWFW",
+        "WFWWFFWWWWWWWWFFWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWFFWWWWWWWWFFWWFW",
+        "WFWWFFWWWWWWWWFFWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFWWWWWWWFFWWWWWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "melee_favored",
+        "chokepoint",
+        "low_visibility"
+      ]
+    },
+    {
+      "id": "dungeon_void_pits_07",
+      "description": "Perilous voids surround the pathways, threatening to punish poor positioning. Ranged attackers can shoot over the pits to zone out melee threats.",
+      "tags": [
+        "open",
+        "ranged_favored",
+        "chokepoint"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "WFFOOFFFFFFFFFFOOFFW",
+        "WFFOOFFWWWWWWFFOOFFW",
+        "WFFOOFFWWWWWWFFOOFFW",
+        "WFFOOFFFFFFFFFFOOFFW",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "WFFOOFFFFFFFFFFOOFFW",
+        "WFFOOFFWWWWWWFFOOFFW",
+        "WFFOOFFWWWWWWFFOOFFW",
+        "WFFOOFFFFFFFFFFOOFFW",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "WFFOOOOOOFFOOOOOOFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "dungeon_flanking_routes_08",
+      "description": "A robust central fortification is flanked by narrow alleyways. Attackers must choose between the exposed main floor and tight side routes.",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWWWWFFFFFFWWWWWW",
+        "WFWWWWWWFFFFFFWWWWWW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWFWWWWWWWWWWWWFWFW",
+        "WFWFWWWWWWWWWWWWFWFW",
+        "WFWFWFFFFFFFFFFWFWFW",
+        "WFWFWFWWWWWWWWFWFWFW",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "WFWFWFWWWWWWWWFWFWFW",
+        "WFWFWFFFFFFFFFFWFWFW",
+        "WFWFWWWWWWWWWWWWFWFW",
+        "WFWFWWWWWWWWWWWWFWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWWWWWWFFFFFFWWWWWW",
+        "WFWWWWWWFFFFFFWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ]
+}
