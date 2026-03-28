@@ -87,7 +87,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.71
+      value: -0.7099998
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -178,13 +178,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeChaseAI
   moveSpeed: 1
-  attackRange: 1.5
+  attackRange: 1.3
   attackDamage: 30
   attackCooldown: 2
-  detectionRange: 5
+  detectionRange: 40
   canSeeThoughWalls: 0
-  spottedDuration: 1
-  lostDuration: 2
+  spottedDuration: 0.5
+  lostDuration: 1
   minWanderTime: 1.5
   maxWanderTime: 4
   minPauseTime: 0.5
@@ -203,7 +203,7 @@ MonoBehaviour:
   - {fileID: 539946027851580950, guid: 6f276e6a954794c7c8c4603f46c083a8, type: 3}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
-  iconHeightOffset: 1.2
+  iconHeightOffset: 1.7
   separationRadius: 1.2
   separationWeight: 0.8
   attackAnimDuration: 0.7

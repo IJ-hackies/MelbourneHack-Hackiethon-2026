@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.42
+      value: -8.602409
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.33
+      value: 6.31406
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: 2324236343598682440, guid: f3f2d5fa881f14ae08ff9e3f674b7a26, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -63
+      value: -561
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -214,18 +214,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VampireAI
   moveSpeed: 2.5
-  attackRange: 11
+  attackRange: 35
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 5
-  canSeeThoughWalls: 0
-  spottedDuration: 1
-  lostDuration: 2
+  detectionRange: 35
+  canSeeThoughWalls: 1
+  spottedDuration: 0.5
+  lostDuration: 1
   minWanderTime: 1
   maxWanderTime: 3
   minPauseTime: 0.5
   maxPauseTime: 2
-  wanderRadius: 6
+  wanderRadius: 3
   walkPrefix: vampire_walk
   attackPrefix: vampire_fireball
   rotationSprites:
@@ -239,7 +239,7 @@ MonoBehaviour:
   - {fileID: 539946027851580950, guid: 5d9a3942e60d94dc79768868e678a14e, type: 3}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
-  iconHeightOffset: 1.2
+  iconHeightOffset: 1.8
   separationRadius: 1.2
   separationWeight: 0.8
   attackAnimDuration: 1.2

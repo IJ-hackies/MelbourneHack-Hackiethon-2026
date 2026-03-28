@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.7375898
+      value: 2.7375891
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.64406
+      value: 1.6440597
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -173,13 +173,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AlienAI
   moveSpeed: 2.5
-  attackRange: 10
+  attackRange: 25
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 10
+  detectionRange: 25
   canSeeThoughWalls: 0
-  spottedDuration: 1
-  lostDuration: 2
+  spottedDuration: 0.5
+  lostDuration: 1
   minWanderTime: 1
   maxWanderTime: 3
   minPauseTime: 0.5

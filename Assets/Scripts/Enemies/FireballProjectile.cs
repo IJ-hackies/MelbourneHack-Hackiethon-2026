@@ -145,8 +145,8 @@ public class FireballProjectile : MonoBehaviour
         HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
         playerHitEffect?.PlayHitEffect();
 
-        var statusEffects = other.GetComponent<PlayerStatusEffects>()
-                         ?? other.gameObject.AddComponent<PlayerStatusEffects>();
+        var statusEffects = other.GetComponentInParent<PlayerStatusEffects>();
+        if (statusEffects == null) return;
 
         if (slowMultiplier > 0f)
             statusEffects.ApplyTimedSlow(slowMultiplier, slowDuration);

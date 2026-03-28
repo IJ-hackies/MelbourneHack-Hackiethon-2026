@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 1819055938402997570}
   - component: {fileID: 3219586476747754627}
   - component: {fileID: 3896163043988006939}
+  - component: {fileID: 8057779570072822142}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -90,7 +91,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 285542781
   m_SortingLayer: 2
-  m_SortingOrder: 600
+  m_SortingOrder: 843
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1808982527863717971, guid: cd054dfaeb4604f088d7c43cba00b191, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -188,7 +189,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0a27661e5d474d84b4d80e8fc8fb2d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 100
+  maxHealth: 10000
+  DamageReduction: 0
   OnDamaged:
     m_PersistentCalls:
       m_Calls: []
@@ -292,6 +294,22 @@ MonoBehaviour:
   bleedIconPrefab: {fileID: 7012058873730672359, guid: 1831ba10ca06a4dbeb009b24dff8ec0c, type: 3}
   slowIconPrefab: {fileID: 4206263808547117881, guid: aa94b60dde7a84446aef07bbb9a4c876, type: 3}
   alagardFont: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
+--- !u!114 &8057779570072822142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844718356868029949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5495d7f97f590b47b8ad9a5ba1d933f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteShadow
+  offsetX: 0.12
+  offsetY: -0.2
+  alpha: 1
+  shadowScale: {x: 0.85, y: 0.5}
 --- !u!1 &8593515427785355930
 GameObject:
   m_ObjectHideFlags: 0

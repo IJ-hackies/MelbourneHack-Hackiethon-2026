@@ -228,6 +228,7 @@ public class FloorAssembler : MonoBehaviour
             ChamberSize * 2 / 2f,
             0f);
         marker.size = new Vector2(ChamberSize * 4, ChamberSize * 2);
+        marker.SyncConfiner();
     }
 
 #if UNITY_EDITOR

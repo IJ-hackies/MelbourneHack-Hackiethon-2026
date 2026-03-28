@@ -12,7 +12,7 @@ public class BloodBeamProjectile : MonoBehaviour
     public const float LockOnDuration = 0.30f;
     public const float FireDuration   = RampTime + PeakHoldTime + FadeTime;
 
-    private const float BeamLength   = 28f;
+    private const float BeamLength   = 90f;
     private const float RampTime     = 0.12f;
     private const float PeakHoldTime = 0.25f;
     private const float FadeTime     = 0.30f;
