@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.09
+      value: 2.10759
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.18
+      value: 2.99406
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: -1808982527863717971, guid: 0b90b2b0e692a49528aceefddf9a958c, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -848
+      value: -229
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -181,19 +181,17 @@ MonoBehaviour:
   attackRange: 5
   attackDamage: 10
   attackCooldown: 1.5
-  separationRadius: 1.2
-  separationWeight: 0.8
+  detectionRange: 5
+  canSeeThoughWalls: 0
+  spottedDuration: 1
+  lostDuration: 2
+  minWanderTime: 1.9
+  maxWanderTime: 4
+  minPauseTime: 0.5
+  maxPauseTime: 2
+  wanderRadius: 6
   walkPrefix: iw_walk
   attackPrefix: iw_iceball
-  attackAnimDuration: 0.6
-  damageHitFrame: 0.3
-  hitEffectDelay: 0.25
-  directionChangeThreshold: 22.5
-  floatAmplitude: 0.015
-  floatFrequency: 1.5
-  hitColorA: {r: 0.10791205, g: 0.32342142, b: 0.9150943, a: 1}
-  hitColorB: {r: 0.07413671, g: 0.8121284, b: 0.9245283, a: 1}
-  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 46bf9e670215c46d2bbb3ae21377c35f, type: 3}
   - {fileID: -206670225839568205, guid: 61ae509b0d7b44933b2e96b71e3f9151, type: 3}
@@ -203,9 +201,32 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: 3ee67645a6c604cca89b1b3386feec45, type: 3}
   - {fileID: 3373983171478037719, guid: 8a405b358e5e1417eb7d74390b45b0c2, type: 3}
   - {fileID: 539946027851580950, guid: 8f4656e392ed64a0b8913a1c3996de66, type: 3}
+  exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
+  questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
+  iconHeightOffset: 1.5
+  separationRadius: 1.2
+  separationWeight: 0.8
+  attackAnimDuration: 0.6
+  damageHitFrame: 0.3
+  hitEffectDelay: 0.25
+  directionChangeThreshold: 22.5
+  floatAmplitude: 0.015
+  floatFrequency: 1.5
+  hitColorA: {r: 0.10791205, g: 0.32342142, b: 0.9150943, a: 1}
+  hitColorB: {r: 0.07413671, g: 0.8121284, b: 0.9245283, a: 1}
+  applyBleed: 0
+  bleedDuration: 2
+  bleedDamageMultiplier: 0.1
+  pathRefreshInterval: 0.3
   projectileColorA: {r: 0, g: 0.96346426, b: 1, a: 1}
   projectileColorB: {r: 0.10196078, g: 0.5224983, b: 1, a: 1}
   projectileSpeed: 5
+  slowMultiplier: 0.65
+  slowDuration: 2
+  homingStrength: 2.5
+  stopHomingRadius: 2.5
+  burnDamagePercent: 0
+  burnDuration: 0
 --- !u!70 &8105322257211668476
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

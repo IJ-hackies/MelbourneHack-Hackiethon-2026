@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 8.58
+      value: -0.71
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 8.9
+      value: 5.92
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: -1974267942269126528, guid: 4d071a63fd4ce44798a11cf8e1610730, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -820
+      value: -522
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -181,19 +181,17 @@ MonoBehaviour:
   attackRange: 1.5
   attackDamage: 30
   attackCooldown: 2
-  separationRadius: 1.2
-  separationWeight: 0.8
+  detectionRange: 5
+  canSeeThoughWalls: 0
+  spottedDuration: 1
+  lostDuration: 2
+  minWanderTime: 1.5
+  maxWanderTime: 4
+  minPauseTime: 0.5
+  maxPauseTime: 2
+  wanderRadius: 6
   walkPrefix: zombie_walk
   attackPrefix: zombie_attack
-  attackAnimDuration: 0.7
-  damageHitFrame: 0.3
-  hitEffectDelay: 0.25
-  directionChangeThreshold: 22.5
-  floatAmplitude: 0.015
-  floatFrequency: 1.5
-  hitColorA: {r: 0.102483094, g: 0.4433962, b: 0.15942487, a: 1}
-  hitColorB: {r: 0.750269, g: 0.754717, b: 0.15307939, a: 1}
-  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: e018a6387db2e462db0d66ccc71813db, type: 3}
   - {fileID: -206670225839568205, guid: 90dc70c77a0394f6d99c1b48d0ce5ad4, type: 3}
@@ -203,6 +201,23 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: 1463dc06dc4904ff788f8d7b2578a7de, type: 3}
   - {fileID: 3373983171478037719, guid: e1aab389f9b6849a28a6a21cb2c5ef65, type: 3}
   - {fileID: 539946027851580950, guid: 6f276e6a954794c7c8c4603f46c083a8, type: 3}
+  exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
+  questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
+  iconHeightOffset: 1.2
+  separationRadius: 1.2
+  separationWeight: 0.8
+  attackAnimDuration: 0.7
+  damageHitFrame: 0.3
+  hitEffectDelay: 0.25
+  directionChangeThreshold: 22.5
+  floatAmplitude: 0.015
+  floatFrequency: 1.5
+  hitColorA: {r: 0.102483094, g: 0.4433962, b: 0.15942487, a: 1}
+  hitColorB: {r: 0.750269, g: 0.754717, b: 0.15307939, a: 1}
+  applyBleed: 0
+  bleedDuration: 2
+  bleedDamageMultiplier: 0.1
+  pathRefreshInterval: 0.3
 --- !u!70 &6228897766267363395
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

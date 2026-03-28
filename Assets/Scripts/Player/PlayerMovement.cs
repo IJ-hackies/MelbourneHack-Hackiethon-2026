@@ -12,6 +12,10 @@ public class PlayerMovement : MonoBehaviour
     // Last non-zero direction for idle facing
     private Vector2 lastDirection = Vector2.down;
 
+    // Multiplied into movement speed — status effects (slow, etc.) set this below 1.
+    private float speedMultiplier = 1f;
+    public float SpeedMultiplier { get => speedMultiplier; set => speedMultiplier = Mathf.Max(0f, value); }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -29,7 +33,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.MovePosition(rb.position + moveInput * moveSpeed * Time.fixedDeltaTime);
+        rb.MovePosition(rb.position + moveInput * moveSpeed * speedMultiplier * Time.fixedDeltaTime);
     }
 
     // Called by PlayerAnimator once animations are set up

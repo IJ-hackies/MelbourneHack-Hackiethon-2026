@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.33
+      value: 5.38759
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.17
+      value: -0.47593993
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: 6636361135747025162, guid: d1a5e3809580e4261b0328f6fe4110fa, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -847
+      value: 118
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -180,19 +180,17 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 10
   attackCooldown: 1.5
-  separationRadius: 1.2
-  separationWeight: 0.8
+  detectionRange: 5
+  canSeeThoughWalls: 0
+  spottedDuration: 1
+  lostDuration: 2
+  minWanderTime: 1.5
+  maxWanderTime: 4
+  minPauseTime: 0.5
+  maxPauseTime: 2
+  wanderRadius: 6
   walkPrefix: bear_walk
   attackPrefix: bear_attack
-  attackAnimDuration: 0.7
-  damageHitFrame: 0.35
-  hitEffectDelay: 0.25
-  directionChangeThreshold: 22.5
-  floatAmplitude: 0.015
-  floatFrequency: 1.5
-  hitColorA: {r: 0.5377358, g: 0.31221676, b: 0.19023673, a: 1}
-  hitColorB: {r: 0.7924528, g: 0.41455817, b: 0.078497685, a: 1}
-  pathRefreshInterval: 0.3
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 5be895568bf3442bb8c79a77107b1e13, type: 3}
   - {fileID: -206670225839568205, guid: 71b1c59d4860a44c593d2eaf5e2b252a, type: 3}
@@ -202,6 +200,23 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: d9864d2888694417590061b33d8954e9, type: 3}
   - {fileID: 3373983171478037719, guid: ad84787e9837044ceb1d9d4f1b4abffb, type: 3}
   - {fileID: 539946027851580950, guid: 0772a49bc7d654c539254ca358f82bdf, type: 3}
+  exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
+  questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
+  iconHeightOffset: 1.2
+  separationRadius: 1.2
+  separationWeight: 0.8
+  attackAnimDuration: 0.7
+  damageHitFrame: 0.35
+  hitEffectDelay: 0.25
+  directionChangeThreshold: 22.5
+  floatAmplitude: 0.015
+  floatFrequency: 1.5
+  hitColorA: {r: 0.5377358, g: 0.31221676, b: 0.19023673, a: 1}
+  hitColorB: {r: 0.7924528, g: 0.41455817, b: 0.078497685, a: 1}
+  applyBleed: 1
+  bleedDuration: 2
+  bleedDamageMultiplier: 0.1
+  pathRefreshInterval: 0.3
 --- !u!70 &1015575519846739180
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
