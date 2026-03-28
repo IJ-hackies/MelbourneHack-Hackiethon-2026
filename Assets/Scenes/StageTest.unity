@@ -165,6 +165,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &476025043 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+  m_PrefabInstance: {fileID: 2063898647}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1457820985
 GameObject:
   m_ObjectHideFlags: 0
@@ -198,18 +203,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageLoader
   floorAssembler: {fileID: 1457820987}
   manifestJson: "{\r\n  \"floor_name\": \"The Hollow Entry\",\r\n  \"tileset_id\":
-    \"dungeon\",\r\n  \"palette_override\": [],\r\n  \"environmental_modifier\":
-    \"\",\r\n  \"stage_message\": \"Every dungeon has a beginning. This is yours.\",\r\n 
-    \"chamber_grid\": [\r\n    \"dungeon_open_arena_01\",\r\n    \"dungeon_pillar_hall_02\",\r\n   
-    \"dungeon_open_arena_01\",\r\n    \"dungeon_scattered_cover_04\",\r\n    \"dungeon_scattered_cover_04\",\r\n   
-    \"dungeon_open_arena_01\",\r\n    \"dungeon_pillar_hall_02\",\r\n    \"dungeon_open_arena_01\"\r\n 
-    ],\r\n  \"enemy_spawns\": [\r\n    { \"enemy_id\": \"melee_charger\", \"count\":
-    3, \"modifiers\": [] },\r\n    { \"enemy_id\": \"ranged_sentinel\", \"count\":
-    2, \"modifiers\": [] }\r\n  ],\r\n  \"new_spell\": {\r\n    \"name\": \"Void
-    Shard\",\r\n    \"flavor\": \"A raw sliver of nothing, flung outward with intent.\",\r\n   
-    \"tags\": [\"PROJECTILE\"],\r\n    \"damage\": 20.0,\r\n    \"speed\": 8.0,\r\n   
-    \"cooldown\": 0.4,\r\n    \"element\": \"\",\r\n    \"is_merged\": false,\r\n   
-    \"merged_from\": []\r\n  },\r\n  \"corrupted_spells\": []\r\n}"
+    \"flames\",\r\n  \"palette_override\": [],\r\n  \"environmental_modifier\": \"\",\r\n 
+    \"stage_message\": \"Every dungeon has a beginning. This is yours.\",\r\n  \"chamber_grid\":
+    [\r\n    \"flames_central_pillar_01\",\r\n    \"flames_diamond_01\",\r\n    \"flames_flanking_corridors_01\",\r\n   
+    \"flames_four_quadrants_01\",\r\n    \"flames_maze_01\",\r\n    \"flames_open_arena_01\",\r\n   
+    \"flames_scattered_pillars_01\",\r\n    \"flames_x_shape_01\"\r\n  ],\r\n  \"enemy_spawns\":
+    [\r\n    { \"enemy_id\": \"melee_charger\", \"count\": 3, \"modifiers\": [] },\r\n   
+    { \"enemy_id\": \"ranged_sentinel\", \"count\": 2, \"modifiers\": [] }\r\n  ],\r\n 
+    \"new_spell\": {\r\n    \"name\": \"Void Shard\",\r\n    \"flavor\": \"A raw
+    sliver of nothing, flung outward with intent.\",\r\n    \"tags\": [\"PROJECTILE\"],\r\n   
+    \"damage\": 20.0,\r\n    \"speed\": 8.0,\r\n    \"cooldown\": 0.4,\r\n    \"element\":
+    \"\",\r\n    \"is_merged\": false,\r\n    \"merged_from\": []\r\n  },\r\n  \"corrupted_spells\":
+    []\r\n}"
 --- !u!114 &1457820987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -451,21 +456,33 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3575338020003203361, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3575338020003203361, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3575338020003203361, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6293905925407888747, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_Follow
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 476025043}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 45.3
+      value: 44.93
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 36.4
+      value: 51.38
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10.01
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalRotation.w
@@ -519,6 +536,14 @@ PrefabInstance:
     - target: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.5
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalPosition.x

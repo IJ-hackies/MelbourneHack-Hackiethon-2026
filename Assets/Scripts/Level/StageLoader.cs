@@ -69,16 +69,6 @@ public class StageLoader : MonoBehaviour
   ""palette_override"": [],
   ""environmental_modifier"": """",
   ""stage_message"": ""Every dungeon has a beginning. This is yours."",
-  ""chamber_grid"": [
-    ""dungeon_open_arena_01"",
-    ""dungeon_pillar_hall_02"",
-    ""dungeon_open_arena_01"",
-    ""dungeon_scattered_cover_04"",
-    ""dungeon_scattered_cover_04"",
-    ""dungeon_open_arena_01"",
-    ""dungeon_pillar_hall_02"",
-    ""dungeon_open_arena_01""
-  ],
   ""enemy_spawns"": [
     { ""enemy_id"": ""melee_charger"", ""count"": 3, ""modifiers"": [] },
     { ""enemy_id"": ""ranged_sentinel"", ""count"": 2, ""modifiers"": [] }
