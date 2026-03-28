@@ -156,7 +156,7 @@ public class EnemySpawner : MonoBehaviour
                         enemyBase.MoveSpeed    *= 2f;
                         enemyBase.AttackDamage *= 2f;
                     }
-                    if (health != null) health.SetMaxHealth(health.MaxHealth * 0.5f);
+                    if (health != null) health.SetMaxHealth(health.Max * 0.5f);
                     break;
 
                 case "regenerating":
