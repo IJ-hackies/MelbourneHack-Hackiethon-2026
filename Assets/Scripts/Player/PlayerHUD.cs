@@ -26,11 +26,12 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] private TMP_FontAsset alagardFont;
 
     // ── Layout (at 1920×1080 reference resolution) ────────────────────────────
-    private const float BoardSize   = 160f;
-    private const float FrameInset  = 15f;
-    private const float HeartSize   = 72f;
-    private const float IconSize    = 26f;
-    private const float IconSpacing = 31f; // icon width + gap
+    private const float BoardWidth  = 300f;
+    private const float BoardHeight = 218f;
+    private const float FrameInset  = 18f;
+    private const float HeartSize   = 110f;
+    private const float IconSize    = 58f;
+    private const float IconSpacing = 61f; // icon width + gap
 
     // ── Runtime references ────────────────────────────────────────────────────
     private Health              health;
@@ -109,7 +110,7 @@ public class PlayerHUD : MonoBehaviour
         // Board background
         var boardRT = MakeRT("Board", canvasGO.transform,
             anchorMin: Vector2.up, anchorMax: Vector2.up, pivot: Vector2.up,
-            pos: new Vector2(10f, -10f), size: new Vector2(BoardSize, BoardSize));
+            pos: new Vector2(10f, -10f), size: new Vector2(BoardWidth, BoardHeight));
 
         var boardImg    = boardRT.gameObject.AddComponent<Image>();
         boardImg.sprite = ExtractSprite(boardPrefab);
@@ -135,9 +136,11 @@ public class PlayerHUD : MonoBehaviour
 
         healthText              = healthTextRT.gameObject.AddComponent<TextMeshProUGUI>();
         healthText.font         = alagardFont;
-        healthText.fontSize     = 20f;
+        healthText.fontSize     = 28f;
         healthText.fontStyle    = FontStyles.Bold;
         healthText.alignment    = TextAlignmentOptions.Center;
+        healthText.enableWordWrapping = false;
+        healthText.overflowMode = TextOverflowModes.Overflow;
         healthText.color        = Color.white;
         healthText.outlineWidth = 0.3f;
         healthText.outlineColor = new Color32(0, 0, 0, 210);
@@ -147,7 +150,7 @@ public class PlayerHUD : MonoBehaviour
             anchorMin: Vector2.zero, anchorMax: Vector2.zero,
             pivot: Vector2.zero,
             pos: new Vector2(FrameInset, FrameInset + 4f),
-            size: new Vector2(BoardSize - FrameInset * 2f, IconSize));
+            size: new Vector2(BoardWidth - FrameInset * 2f, IconSize));
 
         // Cache effect sprites
         spriteBurn   = ExtractSprite(burnIconPrefab);
@@ -279,16 +282,17 @@ public class PlayerHUD : MonoBehaviour
         img.preserveAspect = true;
 
         var timerRT = MakeRT("Timer", rt,
-            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+            anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
             pivot: new Vector2(0.5f, 0.5f),
-            pos: Vector2.zero, size: Vector2.zero);
-        timerRT.offsetMin = timerRT.offsetMax = Vector2.zero;
+            pos: new Vector2(TextOffsetXFor(type), 0f), size: new Vector2(IconSize, IconSize));
 
         var tmp          = timerRT.gameObject.AddComponent<TextMeshProUGUI>();
         tmp.font         = alagardFont;
-        tmp.fontSize     = 11f;
+        tmp.fontSize     = 26f;
         tmp.fontStyle    = FontStyles.Bold;
         tmp.alignment    = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+        tmp.overflowMode = TextOverflowModes.Overflow;
         tmp.color        = Color.white;
         tmp.outlineWidth = 0.35f;
         tmp.outlineColor = new Color32(0, 0, 0, 220);
@@ -323,12 +327,21 @@ public class PlayerHUD : MonoBehaviour
     {
         foreach (var slot in slots)
         {
-            slot.currentX = Mathf.Lerp(slot.currentX, slot.targetX, Time.deltaTime * 14f);
+            slot.currentX = slot.targetX;
             slot.rt.anchoredPosition = new Vector2(slot.currentX, 0f);
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // Horizontal nudge (negative = left) to visually centre the number on each sprite.
+    private static float TextOffsetXFor(EffectType type) => type switch
+    {
+        EffectType.Bleed  => -9f,
+        EffectType.Poison => -9f,
+        EffectType.Burn   => -5f,
+        _                 => 0f,
+    };
 
     private Sprite SpriteFor(EffectType type) => type switch
     {
