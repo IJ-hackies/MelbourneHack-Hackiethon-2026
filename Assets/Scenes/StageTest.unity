@@ -148,7 +148,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f6f94f53c19e8c4492b81e5a6139d61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
-  enemyLibrary: []
+  enemyLibrary:
+  - id: alien
+    prefab: {fileID: 1984350240023851878, guid: bc62273cf87b941db99d86c6a46ea933, type: 3}
+  - id: bear
+    prefab: {fileID: 3930452005457392472, guid: 2671de130d13f4bfb92b9f9c0c601870, type: 3}
+  - id: dragon_newt
+    prefab: {fileID: 4505565609732181469, guid: 4f09e503c4e96444ebae5c5b17d09ae4, type: 3}
+  - id: evil_paladin
+    prefab: {fileID: 8591985972528798698, guid: 476cb4b5434b14c67b710df05351f3e8, type: 3}
+  - id: fire_wizard
+    prefab: {fileID: 6238256342171337801, guid: 67f18fc3a524843fc979b5379694ffe6, type: 3}
+  - id: ghost
+    prefab: {fileID: 7346157024849052705, guid: 22852a25a72d34df2b83f86a85934f4e, type: 3}
+  - id: ice_wizard
+    prefab: {fileID: 5864161847400546945, guid: 9b95cfcb28636437fad33746797968b3, type: 3}
+  - id: skeleton
+    prefab: {fileID: 4921805561487054506, guid: 6afc3c8ce34104e579c6a23a4ae288ea, type: 3}
+  - id: vampire
+    prefab: {fileID: 1380110371096685504, guid: 011075b4a484b4b16abb68ba30a78903, type: 3}
+  - id: zombie
+    prefab: {fileID: 4794943599620144045, guid: ac055e32317864c89a646ed9235428d3, type: 3}
+  - id: melee_charger
+    prefab: {fileID: 4921805561487054506, guid: 6afc3c8ce34104e579c6a23a4ae288ea, type: 3}
+  - id: ranged_sentinel
+    prefab: {fileID: 6238256342171337801, guid: 67f18fc3a524843fc979b5379694ffe6, type: 3}
+  - id: fast_skitter
+    prefab: {fileID: 4794943599620144045, guid: ac055e32317864c89a646ed9235428d3, type: 3}
+  - id: tank_brute
+    prefab: {fileID: 3930452005457392472, guid: 2671de130d13f4bfb92b9f9c0c601870, type: 3}
   spawnInterval: 0.5
 --- !u!4 &69802698
 Transform:
@@ -191,6 +219,20 @@ MonoBehaviour:
   offsetY: -0.2
   alpha: 1
   shadowScale: {x: 0.85, y: 0.5}
+--- !u!114 &1299251222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299251200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5e6c776182cfb74b800475863c43d22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpellExecutor
+  projectilePrefab: {fileID: 7665902609262389764, guid: 2d4fee1863d7f0e448cab913d8e581a8, type: 3}
+  orbitalPrefab: {fileID: 0}
 --- !u!1 &1457820985
 GameObject:
   m_ObjectHideFlags: 0
@@ -223,19 +265,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageLoader
   floorAssembler: {fileID: 1457820987}
-  manifestJson: "{\r\n  \"floor_name\": \"The Hollow Entry\",\r\n  \"tileset_id\":
-    \"flames\",\r\n  \"palette_override\": [],\r\n  \"environmental_modifier\": \"\",\r\n 
-    \"stage_message\": \"Every dungeon has a beginning. This is yours.\",\r\n  \"chamber_grid\":
-    [\r\n    \"flames_central_pillar_01\",\r\n    \"flames_diamond_01\",\r\n    \"flames_flanking_corridors_01\",\r\n   
-    \"flames_four_quadrants_01\",\r\n    \"flames_maze_01\",\r\n    \"flames_open_arena_01\",\r\n   
-    \"flames_scattered_pillars_01\",\r\n    \"flames_x_shape_01\"\r\n  ],\r\n  \"enemy_spawns\":
-    [\r\n    { \"enemy_id\": \"melee_charger\", \"count\": 3, \"modifiers\": [] },\r\n   
-    { \"enemy_id\": \"ranged_sentinel\", \"count\": 2, \"modifiers\": [] }\r\n  ],\r\n 
-    \"new_spell\": {\r\n    \"name\": \"Void Shard\",\r\n    \"flavor\": \"A raw
-    sliver of nothing, flung outward with intent.\",\r\n    \"tags\": [\"PROJECTILE\"],\r\n   
-    \"damage\": 20.0,\r\n    \"speed\": 8.0,\r\n    \"cooldown\": 0.4,\r\n    \"element\":
-    \"\",\r\n    \"is_merged\": false,\r\n    \"merged_from\": []\r\n  },\r\n  \"corrupted_spells\":
-    []\r\n}"
+  manifestJson: "{\r\n  \"floor_name\": \"The Ashen Gauntlet\",\r\n  \"tileset_id\":
+    \"rocky\",\r\n  \"palette_override\": [\"#8B1A1A\", \"#C05020\", \"#1A0A00\"],\r\n 
+    \"environmental_modifier\": \"\",\r\n  \"stage_message\": \"Fire again. Always
+    fire. You wrap yourself in it like armour, don't you? The sentinels have noticed.
+    They've had time to prepare.\",\r\n  \"enemy_spawns\": [\r\n    { \"enemy_id\":
+    \"ranged_sentinel\", \"count\": 4, \"modifiers\": [\"elemental_immune_fire\"]
+    },\r\n    { \"enemy_id\": \"fast_skitter\", \"count\": 5, \"modifiers\": [] },\r\n   
+    { \"enemy_id\": \"melee_charger\", \"count\": 2, \"modifiers\": [\"berserk\"]
+    }\r\n  ],\r\n  \"new_spell\": {\r\n    \"name\": \"Smouldering Wake\",\r\n   
+    \"flavor\": \"A trail of embers that lingers where you wish it wouldn't.\",\r\n   
+    \"corruption_flavor\": null,\r\n    \"tags\": [\"PROJECTILE\", \"BURN\", \"AOE_BURST\"],\r\n   
+    \"damage\": 30,\r\n    \"speed\": 5.5,\r\n    \"cooldown\": 0.9,\r\n    \"element\":
+    \"fire\",\r\n    \"is_merged\": false,\r\n    \"merged_from\": []\r\n  },\r\n 
+    \"corrupted_spells\": [\r\n    {\r\n      \"spell_name\": \"Void Shard\",\r\n     
+    \"added_tags\": [\"ENEMY_HOMING\"],\r\n      \"removed_tags\": [],\r\n      \"new_flavor\":
+    \"It no longer remembers who it was meant for.\"\r\n    }\r\n  ]\r\n}\r\n"
 --- !u!114 &1457820987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -471,6 +516,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1662301511
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1662301513}
+  - component: {fileID: 1662301512}
+  m_Layer: 0
+  m_Name: Grimoire
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1662301512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1662301511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d112abddfd821c42aba43409ed39742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Grimoire
+  startingSpell: {fileID: 0}
+--- !u!4 &1662301513
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1662301511}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 44.53824, y: 41.25018, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1966499903
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -501,11 +591,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 44.93
+      value: 43
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 51.38
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 6320276645861617004, guid: 4d41807355467484daf6f85cebf5db78, type: 3}
       propertyPath: m_LocalPosition.z
@@ -562,7 +652,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 204598489354529199, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_SortingOrder
-      value: -5108
+      value: -4870
       objectReference: {fileID: 0}
     - target: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_Name
@@ -578,11 +668,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 44.93
+      value: 43
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 51.38
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalPosition.z
@@ -590,11 +680,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.9999627
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0.008639208
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalRotation.y
@@ -606,7 +696,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: -0.99
       objectReference: {fileID: 0}
     - target: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
@@ -623,6 +713,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1299251210}
+    - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1299251222}
   m_SourcePrefab: {fileID: 100100000, guid: ad9bd740773bc4846a638419def8da27, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -632,3 +725,4 @@ SceneRoots:
   - {fileID: 69802698}
   - {fileID: 2063898647}
   - {fileID: 1966499903}
+  - {fileID: 1662301513}
