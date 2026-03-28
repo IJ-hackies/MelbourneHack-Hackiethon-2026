@@ -26,7 +26,7 @@ public class ProjectileHandler : MonoBehaviour
     private Health playerHealth;
     private readonly HashSet<GameObject> chainedEnemies = new();
 
-    private static readonly int WallLayerMask = LayerMask.GetMask("Walls");
+    private const int WallLayerMask = 1 << 9; // Walls layer
 
     private void Awake()
     {
@@ -46,6 +46,7 @@ public class ProjectileHandler : MonoBehaviour
         isSplitChild = splitChild;
 
         rb.linearVelocity = direction * spell.speed;
+        Debug.Log($"[Projectile] Init called. dir={dir} speed={spell.speed} velocity={rb.linearVelocity} rbType={rb.bodyType}");
 
         if (spell.HasTag(SpellTag.STUTTER_MOTION))
             StartCoroutine(StutterMotion());
@@ -63,16 +64,19 @@ public class ProjectileHandler : MonoBehaviour
         if (spell.HasTag(SpellTag.SPIRAL))
             ApplySpiral();
 
-        if (spell.HasTag(SpellTag.WALL_BOUNCE) && bounceCount < maxBounces)
-            ApplyWallBounce();
+        HandleWallInteraction();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!initialized) return;
-        if (!other.CompareTag("Enemy")) return;
 
-        HitEnemy(other.gameObject);
+        // Enemies put colliders on a child (HitBoxChild); walk up to find Health.
+        // Exclude the player by comparing against the cached playerHealth reference.
+        Health h = other.GetComponentInParent<Health>();
+        if (h == null || h == playerHealth || h.IsDead) return;
+
+        HitEnemy(h.gameObject);
     }
 
     private void HitEnemy(GameObject enemyObj)
@@ -148,15 +152,23 @@ public class ProjectileHandler : MonoBehaviour
         );
     }
 
-    private void ApplyWallBounce()
+    private void HandleWallInteraction()
     {
+        if (spell.HasTag(SpellTag.PIERCE_WALLS)) return;
+
         // Look ahead by 2 frames to predict wall contact before it happens
         Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
         RaycastHit2D hit = Physics2D.Linecast(rb.position, nextPos, WallLayerMask);
-        if (hit.collider != null)
+        if (hit.collider == null) return;
+
+        if (spell.HasTag(SpellTag.WALL_BOUNCE) && bounceCount < maxBounces)
         {
             bounceCount++;
             rb.linearVelocity = Vector2.Reflect(rb.linearVelocity, hit.normal);
+        }
+        else if (!spell.HasTag(SpellTag.WALL_BOUNCE))
+        {
+            Destroy(gameObject);
         }
     }
 

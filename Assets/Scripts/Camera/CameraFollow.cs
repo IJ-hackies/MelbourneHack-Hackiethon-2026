@@ -22,25 +22,23 @@ public class CameraFollow : MonoBehaviour
     public static readonly Vector2 StandardMapSize = new Vector2(40f, 22f);
 
     private Camera cam;
+    private MapBoundsMarker boundsMarker;
 
     private void Awake()
     {
         cam = GetComponent<Camera>();
-    }
-
-    private void Start()
-    {
-        var marker = FindObjectOfType<MapBoundsMarker>();
-        if (marker != null)
-        {
-            mapCenter = marker.Center;
-            mapSize   = marker.size;
-        }
+        boundsMarker = FindObjectOfType<MapBoundsMarker>();
     }
 
     private void LateUpdate()
     {
         if (target == null) return;
+
+        if (boundsMarker != null)
+        {
+            mapCenter = boundsMarker.Center;
+            mapSize   = boundsMarker.size;
+        }
 
         float halfCamH = cam.orthographicSize;
         float halfCamW = halfCamH * cam.aspect;
@@ -51,8 +49,8 @@ public class CameraFollow : MonoBehaviour
         float maxY = mapCenter.y + mapSize.y / 2f - halfCamH;
 
         Vector3 desired = new Vector3(target.position.x, target.position.y, transform.position.z);
-        desired.x = Mathf.Clamp(desired.x, minX, maxX);
-        desired.y = Mathf.Clamp(desired.y, minY, maxY);
+        desired.x = (minX <= maxX) ? Mathf.Clamp(desired.x, minX, maxX) : mapCenter.x;
+        desired.y = (minY <= maxY) ? Mathf.Clamp(desired.y, minY, maxY) : mapCenter.y;
 
         transform.position = Vector3.Lerp(transform.position, desired, smoothSpeed * Time.deltaTime);
     }

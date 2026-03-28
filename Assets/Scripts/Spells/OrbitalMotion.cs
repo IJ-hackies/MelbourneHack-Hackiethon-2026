@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Attached to an orbital projectile spawned by SpellExecutor.
 /// Orbits the parent (player) and deals damage to enemies on contact.
+/// Applies all effect/status tags the same way ProjectileHandler does.
 /// </summary>
 public class OrbitalMotion : MonoBehaviour
 {
@@ -15,6 +16,15 @@ public class OrbitalMotion : MonoBehaviour
 
     // Per-enemy cooldown so the orbital doesn't deal damage every frame
     private readonly Dictionary<GameObject, float> hitCooldowns = new();
+
+    private Health playerHealth;
+
+    private void Awake()
+    {
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            playerHealth = playerObj.GetComponent<Health>();
+    }
 
     public void Init(SpellData spellData, int orbitIndex)
     {
@@ -46,6 +56,43 @@ public class OrbitalMotion : MonoBehaviour
 
         h.TakeDamage(spell.damage);
         hitCooldowns[enemy] = now;
+
+        if (spell.HasTag(SpellTag.LIFESTEAL))
+            playerHealth?.Heal(spell.damage * 0.3f);
+
+        if (spell.HasTag(SpellTag.PUSH))
+        {
+            var enemyRb = enemy.GetComponent<Rigidbody2D>();
+            Vector2 pushDir = ((Vector2)enemy.transform.position - (Vector2)transform.position).normalized;
+            enemyRb?.AddForce(pushDir * 8f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.PULL) && playerHealth != null)
+        {
+            var enemyRb = enemy.GetComponent<Rigidbody2D>();
+            Vector2 toPlayer = ((Vector2)playerHealth.transform.position - (Vector2)enemy.transform.position).normalized;
+            enemyRb?.AddForce(toPlayer * 10f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.AOE_BURST))
+        {
+            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(transform.position, 3f, LayerMask.GetMask("Enemy"));
+            foreach (var aoeHit in aoeHits)
+            {
+                var aooh = aoeHit.GetComponent<Health>();
+                if (aooh != null && !aooh.IsDead && aoeHit.gameObject != enemy)
+                    aooh.TakeDamage(spell.damage * 0.5f);
+            }
+        }
+
+        var status = enemy.GetComponent<StatusEffectHandler>()
+                     ?? enemy.AddComponent<StatusEffectHandler>();
+
+        if (spell.HasTag(SpellTag.BURN))   status.ApplyBurn(spell.damage);
+        if (spell.HasTag(SpellTag.FREEZE)) status.ApplyFreeze();
+        if (spell.HasTag(SpellTag.SLOW))   status.ApplySlow();
+        if (spell.HasTag(SpellTag.STUN))   status.ApplyStun();
+        if (spell.HasTag(SpellTag.POISON)) status.ApplyPoison(spell.damage);
     }
 
     private void OnTriggerExit2D(Collider2D other)

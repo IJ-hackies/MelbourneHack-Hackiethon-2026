@@ -15,6 +15,9 @@ public class Health : MonoBehaviour
     // Set by status effects (e.g. Poison vulnerability). Values > 1 increase damage taken.
     public float DamageMultiplier { get; set; } = 1f;
 
+    // Set by EnemySpawner modifiers (e.g. "armored"). 0 = no reduction, 0.5 = 50% reduction.
+    [HideInInspector] public float DamageReduction = 0f;
+
     public UnityEvent<float> OnDamaged;
     public UnityEvent OnDeath;
 

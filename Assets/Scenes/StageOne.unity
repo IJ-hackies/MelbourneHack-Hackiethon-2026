@@ -4331,7 +4331,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1691915034}
   m_SourcePrefab: {fileID: 100100000, guid: ad9bd740773bc4846a638419def8da27, type: 3}
 --- !u!1 &530592330
 GameObject:
@@ -10390,7 +10393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80d4aa1c8fa065e4c8673420d809a20f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapBoundsMarker
-  size: {x: 80, y: 40}
+  size: {x: 40, y: 22}
 --- !u!1001 &1951269660
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10628,3 +10631,4 @@ SceneRoots:
   - {fileID: 429812989}
   - {fileID: 51302514}
   - {fileID: 723966349}
+  - {fileID: 2096273129}
