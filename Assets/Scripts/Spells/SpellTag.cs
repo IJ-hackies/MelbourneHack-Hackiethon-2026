@@ -15,10 +15,16 @@ public enum SpellTag
     AOE_BURST,
     PIERCE,
     CHAIN,
-    SLOW,
     DOUBLE_HIT,
     PULL,
     PUSH,
+
+    // --- Status ---
+    SLOW,
+    BURN,
+    FREEZE,
+    STUN,
+    POISON,
 
     // --- Corruption ---
     SELF_DAMAGE,

@@ -1,0 +1,259 @@
+{
+  "tile_classification": {
+    "alt_floor": 6,
+    "primary_floor": 6,
+    "detail_tiles": [],
+    "primary_wall": 12
+  },
+  "chambers": [
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "An open area with a few scattered pillars. Ideal for unrestricted movement and keeping distance from enemies.",
+      "tags": [
+        "open",
+        "scattered_pillars",
+        "melee_favored"
+      ],
+      "id": "bubblegum_open_pillars_01"
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "ranged_favored",
+        "cover_heavy"
+      ],
+      "description": "A heavily restricted cross-shaped corridor. Forms dangerous chokepoints and funnels enemies into narrow paths.",
+      "id": "bubblegum_cross_chokepoint_02",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFWWWFWWWFFWWWFWWWFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A grid of small walls creating a dense, maze-like environment. Limits visibility and breaks line of sight easily.",
+      "tags": [
+        "cover_heavy",
+        "low_visibility",
+        "symmetric"
+      ],
+      "id": "bubblegum_dense_grid_03"
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A large, solid central pillar turns this room into a ring. Perfect for kiting enemies and flanking maneuvers.",
+      "tags": [
+        "flanking",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "id": "bubblegum_ring_arena_04"
+    },
+    {
+      "id": "bubblegum_four_pillars_05",
+      "description": "Four symmetrically placed pillars create a structured central courtyard. Provides reliable cover from all angles.",
+      "tags": [
+        "scattered_pillars",
+        "symmetric",
+        "open"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "description": "Diamond-shaped central walls block the middle, forcing combat to the perimeter. Great for ambushes.",
+      "tags": [
+        "flanking",
+        "melee_favored",
+        "low_visibility"
+      ],
+      "id": "bubblegum_diamond_center_06",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFWWFFFFFFFFFFFFWWFW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFWFFFFFFFFFFFFFFWFW",
+        "WFWWFFFFFFFFFFFFWWFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "bubblegum_checkered_cover_07",
+      "tags": [
+        "scattered_pillars",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "description": "A checkered pattern of wall blocks scattered throughout the room. Provides ample cover for ranged shootouts."
+    },
+    {
+      "description": "Corner alcoves and dual C-shaped central covers offer fortified defensive positions. Tactical spacing is key.",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "symmetric"
+      ],
+      "id": "bubblegum_fortified_alcoves_08",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tileset_id": "bubblegum"
+}

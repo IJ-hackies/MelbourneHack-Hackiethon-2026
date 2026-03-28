@@ -1,0 +1,260 @@
+{
+  "tile_classification": {
+    "detail_tiles": [
+      6,
+      9,
+      10
+    ],
+    "alt_floor": 12,
+    "primary_wall": 5,
+    "primary_floor": 13
+  },
+  "tileset_id": "ocean",
+  "chambers": [
+    {
+      "tags": [
+        "open",
+        "symmetric"
+      ],
+      "description": "A large open room with ample space for manoeuvring. Ideal for fighting large swarms of enemies without environmental obstructions.",
+      "id": "ocean_open_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "ocean_pillars_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A symmetrical chamber with four pillars spaced out and a small central structure. Offers decent cover and encourages hit-and-run tactics.",
+      "tags": [
+        "scattered_pillars",
+        "symmetric",
+        "melee_favored"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "flanking",
+        "low_visibility"
+      ],
+      "description": "A room dominated by a massive central structure, forcing combat into the tight outer corridors. Great for stealth and bottlenecking enemies.",
+      "id": "ocean_chokepoint_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "ocean_cover_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A heavily segmented room filled with small walls to provide maximum cover. Perfect for ranged duels and peeking shots.",
+      "tags": [
+        "cover_heavy",
+        "ranged_favored"
+      ]
+    },
+    {
+      "description": "Features a grid-like structure of obstacles creating clear horizontal and vertical flanking lanes. Keeps engagements tight and tactical.",
+      "id": "ocean_lanes_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFWWWWWWFFWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "flanking",
+        "symmetric",
+        "cover_heavy"
+      ]
+    },
+    {
+      "id": "ocean_pits_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFOOOOFFFFFFOOOOFFW",
+        "WFFOOOOFFFFFFOOOOFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "FFFFFWWFFFFFFWWFFFFF",
+        "FFFFFWWFFFFFFWWFFFFF",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFOOOOFFFFFFOOOOFFW",
+        "WFFOOOOFFFFFFOOOOFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Corners contain deep voids or pits, pushing combat towards the cross-shaped walkways in the centre. Falling hazards add tension.",
+      "tags": [
+        "low_visibility",
+        "symmetric",
+        "chokepoint"
+      ]
+    },
+    {
+      "tags": [
+        "symmetric",
+        "melee_favored"
+      ],
+      "id": "ocean_diagonals_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWFFFFFFFFWWWFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFFFWWWFFFFWWWFFFFW",
+        "WFFFFFWWWFFWWWFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFWWWFFWWWFFFFFW",
+        "WFFFFWWWFFFFWWWFFFFW",
+        "WFFFWWWFFFFFFWWWFFFW",
+        "WFFWWWFFFFFFFFWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Diagonal structures form a funnel that restricts direct movement, promoting zigzag paths and careful positioning."
+    },
+    {
+      "tags": [
+        "low_visibility",
+        "chokepoint",
+        "cover_heavy"
+      ],
+      "description": "A complicated maze-like layout full of dead ends and tight turns. Easily allows monsters to ambush unprepared adventurers.",
+      "id": "ocean_maze_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFWWWWWFFFFFFWWWWWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWFWWWFFFFFFWWWFWFW",
+        "WFWFWFFFFWWFFFFWFWFW",
+        "WFWFWWFWWWWWWFWWFWFW",
+        "FFFFFWFFFFFFFFWFFFFF",
+        "FFFFFWFFFFFFFFWFFFFF",
+        "WFWFWWFWWWWWWFWWFWFW",
+        "WFWFWFFFFWWFFFFWFWFW",
+        "WFWFWWWFFFFFFWWWFWFW",
+        "WFWFFFFWWWWWWFFFFWFW",
+        "WFWWWWWFFFFFFWWWWWFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ]
+}

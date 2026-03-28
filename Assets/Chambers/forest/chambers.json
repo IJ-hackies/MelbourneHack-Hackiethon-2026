@@ -1,0 +1,264 @@
+{
+  "chambers": [
+    {
+      "tags": [
+        "open",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "id": "forest_open_clearing_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFFFFFDFFFFFFFDFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFDFFFFFFFDFFFFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A wide open grassy clearing that heavily favors ranged attacks. Players can kite enemies easily due to the lack of central obstacles."
+    },
+    {
+      "description": "Four large stone blocks provide ample cover, breaking up sightlines. This layout allows for flanking maneuvers and hit-and-run tactics against slower foes.",
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "symmetric"
+      ],
+      "id": "forest_four_pillars_02",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "symmetric"
+      ],
+      "id": "forest_cross_corridor_03",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Thick wall clusters fill the corners to create an intersecting crossway. Careful positioning is needed to avoid being swarmed from multiple sides in the center."
+    },
+    {
+      "id": "forest_center_block_04",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "cover_heavy",
+        "low_visibility",
+        "flanking"
+      ],
+      "description": "A massive central structure forces movement into a tight ring. Highly effective for isolating melee groups and avoiding crossfire."
+    },
+    {
+      "description": "Staggered horizontal barriers slice the room into segments. Enemies are naturally funneled into narrow gaps, creating tactical chokepoints.",
+      "id": "forest_zig_zag_05",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWWWFFW",
+        "WFFFFWWWWWWWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWWWWWWWFFFFW",
+        "WFFWWWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWWWFFW",
+        "WFFFFWWWWWWWWWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWWWWWWWWWFFFFW",
+        "WFFWWWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "chokepoint",
+        "flanking",
+        "cover_heavy"
+      ]
+    },
+    {
+      "description": "A hollow diamond structure surrounded by blocked corners reduces the playable area to a narrow looping corridor. Creates chaotic close-quarters encounters.",
+      "id": "forest_diamond_06",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFWWFFFFWWWWW",
+        "WWWWFFFFWWWWFFFFWWWW",
+        "WWWFFFFWWWWWWFFFFWWW",
+        "WWFFFFWWWWWWWWFFFFWW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WWFFFFWWWWWWWWFFFFWW",
+        "WWWFFFFWWWWWWFFFFWWW",
+        "WWWWFFFFWWWWFFFFWWWW",
+        "WWWWWFFFFWWFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "melee_favored",
+        "symmetric",
+        "chokepoint"
+      ]
+    },
+    {
+      "id": "forest_corner_alcoves_07",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WWWFFFFFFWWFFFFFFWWW",
+        "WWWFFFFFFWWFFFFFFWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWFFFFFFWWFFFFFFWWW",
+        "WWWFFFFFFWWFFFFFFWWW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WFFFFFFWWFFWWFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "cover_heavy",
+        "flanking",
+        "low_visibility"
+      ],
+      "description": "Wide alcoves in each corner serve as potential traps or defensive staging areas. The fragmented interior breaks up long-range sightlines."
+    },
+    {
+      "description": "A messy scattering of pillars and barricades that heavily obstructs movement and sightlines. Combat feels chaotic and heavily rewards frequent repositioning.",
+      "tags": [
+        "scattered_pillars",
+        "low_visibility",
+        "cover_heavy"
+      ],
+      "id": "forest_scattered_gauntlet_08",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFWWWWWWFFFFFFF",
+        "FFFFFFFWWWWWWFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFWWFFFFFFWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tile_classification": {
+    "alt_floor": 5,
+    "detail_tiles": [
+      1,
+      2,
+      7,
+      11
+    ],
+    "primary_wall": 9,
+    "primary_floor": 6
+  },
+  "tileset_id": "forest"
+}

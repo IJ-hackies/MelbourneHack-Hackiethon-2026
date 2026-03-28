@@ -1,0 +1,261 @@
+{
+  "tile_classification": {
+    "primary_floor": 5,
+    "detail_tiles": [
+      6,
+      10,
+      2
+    ],
+    "primary_wall": 0,
+    "alt_floor": 9
+  },
+  "chambers": [
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDFFFFFFFFFDFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFDFFFFFFFFFDFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A wide open hall without obstructions, ideal for large skirmishes and sweeping ranged attacks. Players can easily get surrounded here.",
+      "id": "rocky_open_hall_01",
+      "tags": [
+        "open",
+        "symmetric"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A hall punctuated by four small stone pillars, offering simple cover and dynamic flanking opportunities for both melee and ranged fighters.",
+      "id": "rocky_pillars_02",
+      "tags": [
+        "scattered_pillars",
+        "symmetric",
+        "flanking"
+      ]
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "FFFFFFWWWWWWWWFFFFFF",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFWWWWWWWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "rocky_central_block_03",
+      "tags": [
+        "chokepoint",
+        "flanking",
+        "low_visibility"
+      ],
+      "description": "A massive central rock block dominates the room, forcing encounters into the tight ring-like perimeter corridor where enemies can easily corner the player."
+    },
+    {
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "id": "rocky_cross_hall_04",
+      "tags": [
+        "ranged_favored",
+        "chokepoint",
+        "low_visibility"
+      ],
+      "description": "A narrow intersection of long corridors. Vision is strictly limited and battles become brutal chokepoint clashes down the straightaways."
+    },
+    {
+      "id": "rocky_diamond_room_05",
+      "tags": [
+        "cover_heavy",
+        "melee_favored",
+        "chokepoint"
+      ],
+      "description": "Thick walls and pits cut sharply into the room, creating diamond-shaped enclosures and blind corners that favor sudden ambushes.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFOWWWFFFFWWWOFFFW",
+        "WFFOWWWWFFFFWWWWOFFW",
+        "WFOWWWWWFFFFWWWWWOFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFOWWWWWFFFFWWWWWOFW",
+        "WFFOWWWWFFFFWWWWOFFW",
+        "WFFFOWWWFFFFWWWOFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "rocky_inner_sanctum_06",
+      "tags": [
+        "cover_heavy",
+        "symmetric",
+        "ranged_favored"
+      ],
+      "description": "An inner sanctum encircled by walls. Breaching the center requires funnelling through tight paths where defending ranged units have the advantage.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWFFFFFFFFWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "rocky_corners_07",
+      "tags": [
+        "melee_favored",
+        "low_visibility",
+        "symmetric"
+      ],
+      "description": "Heavy corner fortifications turn this room into a rounded arena, keeping enemies hidden until the last second and rewarding close-quarters builds.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWFFFFFFFFFFFFFFFFWW",
+        "WWWFFFFFFFFFFFFFFWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "rocky_pit_arena_08",
+      "tags": [
+        "open",
+        "scattered_pillars"
+      ],
+      "description": "Deep pits occupy the corners of this arena, demanding careful positioning to avoid a deadly fall while engaging aggressive melee foes.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFOOOOOFFFFFFOOOOOFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tileset_id": "rocky"
+}

@@ -1,0 +1,262 @@
+{
+  "chambers": [
+    {
+      "tags": [
+        "open",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "id": "honey_open_01",
+      "description": "An expansive chamber featuring wide, bottomless pits. Encourages knocking enemies into the void and long-ranged engagements.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFOOOOFFFFOOOOFFFW",
+        "WFFFOOOOFFFFOOOOFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFOOOOFFFFOOOOFFFW",
+        "WFFFOOOOFFFFOOOOFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "tags": [
+        "scattered_pillars",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "FFFFFFWWFFFFWWFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFWWFFFFWWFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFWWFFFFFFFFFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "A grid of sturdy pillars breaks up sightlines. Allows for tactical repositioning, dodging projectiles, and hit-and-run strikes.",
+      "id": "honey_pillars_01"
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "flanking",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Massive corner structures form a diamond-shaped cross pattern. Focuses intense engagements into the wide, central killing floor.",
+      "id": "honey_diamond_cross_01"
+    },
+    {
+      "tags": [
+        "flanking",
+        "melee_favored",
+        "cover_heavy"
+      ],
+      "description": "A monolithic central block forces all movement into an outer ring. Enemies can flank by circling around the blind corners.",
+      "id": "honey_ring_arena_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "FFFFWWWWWWWWWWWWFFFF",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFWWWWWWWWWWWWFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "id": "honey_maze_01",
+      "description": "Winding dead-end alcoves block the center, pushing linear combat to the edges. Perfect for close-quarters ambushes and trapping foes.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "FFFFFFFFFWWFFFFFFFFF",
+        "WFFFFFFFFWWFFFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFFFWWWWWWFFFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFFFWWWWFFWWWWFFFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFWWWWFFFFFFWWWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "tags": [
+        "low_visibility",
+        "melee_favored",
+        "cover_heavy"
+      ]
+    },
+    {
+      "tags": [
+        "chokepoint",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ],
+      "description": "Pinching horizontal walls force all combatants through a central vertical crossway. Highly favored for area-of-effect abilities.",
+      "id": "honey_chokepoint_01"
+    },
+    {
+      "tags": [
+        "scattered_pillars",
+        "low_visibility",
+        "symmetric"
+      ],
+      "id": "honey_checker_01",
+      "description": "A dense checkerboard of 2x2 pillars creates a claustrophobic battlefield. Ideal for breaking line of sight and sneaking.",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFF",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFWWFFWWFFWWFFWWFFW",
+        "WFFFFFFFFFFFFFFFFFFW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    },
+    {
+      "tags": [
+        "flanking",
+        "cover_heavy",
+        "melee_favored"
+      ],
+      "description": "A massive central octagon structure forces navigation strictly along the perimeter. Fosters chaotic, circular skirmishes without retreat.",
+      "id": "honey_donut_01",
+      "layout": [
+        "WWWWWWWWWFFWWWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWFFFFWWWWWWFFFFWWW",
+        "WWFFFFWWWWWWWWFFFFWW",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "FFFFFWWWWWWWWWWFFFFF",
+        "WFFFFWWWWWWWWWWFFFFW",
+        "WWFFFFWWWWWWWWFFFFWW",
+        "WWWFFFFWWWWWWFFFFWWW",
+        "WWWWFFFFFFFFFFFFWWWW",
+        "WWWWWFFFFFFFFFFWWWWW",
+        "WWWWWWFFFFFFFFWWWWWW",
+        "WWWWWWWFFFFFFWWWWWWW",
+        "WWWWWWWWFFFFWWWWWWWW",
+        "WWWWWWWWWFFWWWWWWWWW"
+      ]
+    }
+  ],
+  "tile_classification": {
+    "alt_floor": 6,
+    "detail_tiles": [
+      9,
+      10
+    ],
+    "primary_floor": 5,
+    "primary_wall": 0
+  },
+  "tileset_id": "honey"
+}

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,26 +9,46 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class ProjectileHandler : MonoBehaviour
 {
+    [SerializeField] private GameObject aoePrefab;
+
     private SpellData spell;
     private Vector2 direction;
     private Rigidbody2D rb;
 
-    private float lifetime = 5f;
     private bool initialized = false;
+    private bool isSplitChild = false;
+    private int hitCount = 0;
+    private int bounceCount = 0;
+    private const int maxPierceHits = 5;
+    private const int maxBounces = 3;
+    private const float lifetime = 5f;
+
+    private Health playerHealth;
+    private readonly HashSet<GameObject> chainedEnemies = new();
+
+    private static readonly int WallLayerMask = LayerMask.GetMask("Walls");
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
+
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            playerHealth = playerObj.GetComponent<Health>();
     }
 
-    public void Init(SpellData spellData, Vector2 dir)
+    public void Init(SpellData spellData, Vector2 dir, bool splitChild = false)
     {
         spell = spellData;
         direction = dir;
         initialized = true;
+        isSplitChild = splitChild;
 
         rb.linearVelocity = direction * spell.speed;
+
+        if (spell.HasTag(SpellTag.STUTTER_MOTION))
+            StartCoroutine(StutterMotion());
 
         Destroy(gameObject, lifetime);
     }
@@ -35,38 +57,200 @@ public class ProjectileHandler : MonoBehaviour
     {
         if (!initialized) return;
 
-        if (spell.HasTag(SpellTag.HOMING))
+        if (spell.HasTag(SpellTag.HOMING) || spell.HasTag(SpellTag.ENEMY_HOMING))
             ApplyHoming();
 
         if (spell.HasTag(SpellTag.SPIRAL))
             ApplySpiral();
+
+        if (spell.HasTag(SpellTag.WALL_BOUNCE) && bounceCount < maxBounces)
+            ApplyWallBounce();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!initialized) return;
+        if (!other.CompareTag("Enemy")) return;
 
-        // TODO: check enemy layer, apply damage via enemy health component
-        // spell.HasTag(SpellTag.PIERCE) → don't destroy on first hit
-        // spell.HasTag(SpellTag.AOE_BURST) → spawn AOE at impact point
-        // spell.HasTag(SpellTag.CHAIN) → seek next nearby enemy
-        // spell.HasTag(SpellTag.SPLIT_ON_IMPACT) → spawn child projectiles
-        // spell.HasTag(SpellTag.WALL_BOUNCE) → reflect off walls
+        HitEnemy(other.gameObject);
+    }
 
-        bool pierce = spell.HasTag(SpellTag.PIERCE);
-        if (!pierce)
+    private void HitEnemy(GameObject enemyObj)
+    {
+        Health enemyHealth = enemyObj.GetComponent<Health>();
+        if (enemyHealth == null || enemyHealth.IsDead) return;
+
+        enemyHealth.TakeDamage(spell.damage);
+
+        if (spell.HasTag(SpellTag.LIFESTEAL))
+            playerHealth?.Heal(spell.damage * 0.3f);
+
+        ApplyStatusEffects(enemyObj);
+
+        if (spell.HasTag(SpellTag.PUSH))
+        {
+            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
+            enemyRb?.AddForce(rb.linearVelocity.normalized * 8f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.PULL) && playerHealth != null)
+        {
+            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
+            Vector2 toPlayer = ((Vector2)playerHealth.transform.position - (Vector2)enemyObj.transform.position).normalized;
+            enemyRb?.AddForce(toPlayer * 10f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.AOE_BURST))
+            ApplyAoeBurst(transform.position);
+
+        if (spell.HasTag(SpellTag.CHAIN))
+        {
+            chainedEnemies.Add(enemyObj);
+            TryChain();
+            return;
+        }
+
+        if (!isSplitChild && spell.HasTag(SpellTag.SPLIT_ON_IMPACT))
+        {
+            SpawnSplitProjectiles();
+            Destroy(gameObject);
+            return;
+        }
+
+        hitCount++;
+        if (!spell.HasTag(SpellTag.PIERCE) || hitCount >= maxPierceHits)
             Destroy(gameObject);
     }
 
-    // --- Tag behavior stubs ---
+    // --- Movement tag behaviors ---
 
     private void ApplyHoming()
     {
-        // TODO: find nearest enemy transform, steer toward it
+        Transform target = spell.HasTag(SpellTag.ENEMY_HOMING)
+            ? (playerHealth != null ? playerHealth.transform : null)
+            : FindNearestEnemyTransform();
+
+        if (target == null) return;
+
+        Vector2 toTarget = ((Vector2)target.position - rb.position).normalized;
+        float turnRad = 180f * Mathf.Deg2Rad * Time.fixedDeltaTime;
+        Vector2 newDir = Vector2.MoveTowards(rb.linearVelocity.normalized, toTarget, turnRad);
+        rb.linearVelocity = newDir.normalized * spell.speed;
     }
 
     private void ApplySpiral()
     {
-        // TODO: rotate velocity vector by a small angle each FixedUpdate
+        float rad = 90f * Mathf.Deg2Rad * Time.fixedDeltaTime;
+        Vector2 v = rb.linearVelocity;
+        rb.linearVelocity = new Vector2(
+            v.x * Mathf.Cos(rad) - v.y * Mathf.Sin(rad),
+            v.x * Mathf.Sin(rad) + v.y * Mathf.Cos(rad)
+        );
+    }
+
+    private void ApplyWallBounce()
+    {
+        // Look ahead by 2 frames to predict wall contact before it happens
+        Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
+        RaycastHit2D hit = Physics2D.Linecast(rb.position, nextPos, WallLayerMask);
+        if (hit.collider != null)
+        {
+            bounceCount++;
+            rb.linearVelocity = Vector2.Reflect(rb.linearVelocity, hit.normal);
+        }
+    }
+
+    // --- Effect tag behaviors ---
+
+    private void ApplyAoeBurst(Vector2 center)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(center, 3f, LayerMask.GetMask("Enemy"));
+        foreach (var hit in hits)
+        {
+            var h = hit.GetComponent<Health>();
+            if (h != null && !h.IsDead)
+                h.TakeDamage(spell.damage * 0.5f);
+        }
+        if (aoePrefab != null)
+            Destroy(Instantiate(aoePrefab, center, Quaternion.identity), 1f);
+    }
+
+    private void TryChain()
+    {
+        EnemyBase[] allEnemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
+        EnemyBase nextTarget = null;
+        float nearest = float.MaxValue;
+
+        foreach (var e in allEnemies)
+        {
+            if (e.IsDead || chainedEnemies.Contains(e.gameObject)) continue;
+            float dist = Vector2.Distance(rb.position, e.transform.position);
+            if (dist < nearest && dist <= 6f)
+            {
+                nearest = dist;
+                nextTarget = e;
+            }
+        }
+
+        if (nextTarget == null) { Destroy(gameObject); return; }
+
+        rb.linearVelocity = ((Vector2)nextTarget.transform.position - rb.position).normalized * spell.speed;
+    }
+
+    private void SpawnSplitProjectiles()
+    {
+        float baseAngle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;
+        float[] offsets = { -30f, 0f, 30f };
+
+        foreach (float offset in offsets)
+        {
+            float angle = (baseAngle + offset) * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            GameObject child = Instantiate(gameObject, transform.position, Quaternion.identity);
+            child.GetComponent<ProjectileHandler>()?.Init(spell, dir, splitChild: true);
+        }
+    }
+
+    private void ApplyStatusEffects(GameObject enemyObj)
+    {
+        // Auto-add StatusEffectHandler if the enemy prefab doesn't have one yet
+        var status = enemyObj.GetComponent<StatusEffectHandler>()
+                     ?? enemyObj.AddComponent<StatusEffectHandler>();
+
+        if (spell.HasTag(SpellTag.BURN))   status.ApplyBurn(spell.damage);
+        if (spell.HasTag(SpellTag.FREEZE)) status.ApplyFreeze();
+        if (spell.HasTag(SpellTag.SLOW))   status.ApplySlow();
+        if (spell.HasTag(SpellTag.STUN))   status.ApplyStun();
+        if (spell.HasTag(SpellTag.POISON)) status.ApplyPoison(spell.damage);
+    }
+
+    // --- Coroutines ---
+
+    private IEnumerator StutterMotion()
+    {
+        while (initialized)
+        {
+            yield return new WaitForSeconds(0.15f);
+            rb.linearVelocity = Vector2.zero;
+            yield return new WaitForSeconds(0.1f);
+            rb.linearVelocity = direction * spell.speed;
+        }
+    }
+
+    // --- Helpers ---
+
+    private Transform FindNearestEnemyTransform()
+    {
+        EnemyBase[] enemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
+        Transform nearest = null;
+        float minDist = float.MaxValue;
+
+        foreach (var e in enemies)
+        {
+            if (e.IsDead) continue;
+            float d = Vector2.Distance(rb.position, e.transform.position);
+            if (d < minDist) { minDist = d; nearest = e.transform; }
+        }
+        return nearest;
     }
 }

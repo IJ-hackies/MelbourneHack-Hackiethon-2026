@@ -3,7 +3,15 @@
     "allow": [
       "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets -name *.png -o -name *.jpg -o -name *.jpeg)",
       "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets -ipath *palette* -o -ipath *Palette*)",
-      "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Library -name *.log)"
+      "Bash(find c:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Library -name *.log)",
+      "Read(//c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/**)",
+      "Bash(grep -E \"\\\\.\\(asset|prefab\\)$\")",
+      "Bash(done)",
+      "Bash(find /c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/Assets -type f \\\\\\(-name *[Tt]ilemap* -o -name *[Tt]ile* \\\\\\) \\\\\\(-name *.asset -o -name *.prefab -o -name *.scene \\\\\\))",
+      "Bash(grep -v \"\\\\.meta$\")",
+      "Bash(grep -r \"Tilemap\\\\|Grid\" /c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
+      "Bash(python -c \"from google import genai; from google.genai import types; from dotenv import load_dotenv; import PIL\")",
+      "Bash(python generate_chambers.py --tileset dungeon)"
     ]
   }
 }

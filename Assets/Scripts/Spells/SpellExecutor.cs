@@ -9,7 +9,16 @@ public class SpellExecutor : MonoBehaviour
     [Header("Projectile")]
     [SerializeField] private GameObject projectilePrefab;
 
+    [Header("Orbital")]
+    [SerializeField] private GameObject orbitalPrefab;
+
     private float lastCastTime = -999f;
+    private Health playerHealth;
+
+    private void Awake()
+    {
+        playerHealth = GetComponent<Health>();
+    }
 
     private void Update()
     {
@@ -29,20 +38,21 @@ public class SpellExecutor : MonoBehaviour
 
     private void ExecuteSpell(SpellData spell)
     {
-        // Corruption: reversed controls inverts the aim direction
         Vector2 aimDir = GetAimDirection();
         if (spell.HasTag(SpellTag.REVERSED_CONTROLS))
             aimDir = -aimDir;
 
-        // Movement tags — pick the dominant one (order = priority)
         if (spell.HasTag(SpellTag.BEAM))
             HandleBeam(spell, aimDir);
         else if (spell.HasTag(SpellTag.ORBITAL))
             HandleOrbital(spell);
         else if (spell.HasTag(SpellTag.PROJECTILE))
+        {
             HandleProjectile(spell, aimDir);
+            if (spell.HasTag(SpellTag.DOUBLE_HIT))
+                HandleProjectile(spell, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir);
+        }
 
-        // Post-cast corruption
         if (spell.HasTag(SpellTag.SELF_DAMAGE))
             HandleSelfDamage(spell);
     }
@@ -65,13 +75,41 @@ public class SpellExecutor : MonoBehaviour
 
     private void HandleOrbital(SpellData spell)
     {
-        // TODO: spawn an orbiting projectile around the player
-        Debug.Log($"[SpellExecutor] ORBITAL cast: {spell.spellName}");
+        if (orbitalPrefab == null)
+        {
+            Debug.LogWarning("SpellExecutor: no orbitalPrefab assigned.");
+            return;
+        }
+
+        // Space multiple orbitals evenly (up to 3)
+        int existing = 0;
+        foreach (Transform child in transform)
+            if (child.GetComponent<OrbitalMotion>() != null)
+                existing++;
+
+        GameObject orb = Instantiate(orbitalPrefab, transform.position, Quaternion.identity, transform);
+        var orbital = orb.GetComponent<OrbitalMotion>();
+        if (orbital == null) orbital = orb.AddComponent<OrbitalMotion>();
+        orbital.Init(spell, existing);
     }
 
     private void HandleBeam(SpellData spell, Vector2 dir)
     {
-        // TODO: fire a beam in aim direction
+        float beamRange = 15f;
+        RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, dir, beamRange, LayerMask.GetMask("Enemy"));
+
+        foreach (var hit in hits)
+        {
+            var h = hit.collider.GetComponent<Health>();
+            if (h == null || h.IsDead) continue;
+            h.TakeDamage(spell.damage);
+            if (spell.HasTag(SpellTag.LIFESTEAL))
+                playerHealth?.Heal(spell.damage * 0.3f);
+            if (!spell.HasTag(SpellTag.PIERCE))
+                break;
+        }
+
+        // TODO: add LineRenderer visual
         Debug.Log($"[SpellExecutor] BEAM cast: {spell.spellName}");
     }
 
@@ -79,8 +117,7 @@ public class SpellExecutor : MonoBehaviour
 
     private void HandleSelfDamage(SpellData spell)
     {
-        // TODO: apply self-damage via player health component
-        Debug.Log($"[SpellExecutor] SELF_DAMAGE triggered by {spell.spellName}");
+        playerHealth?.TakeDamage(spell.damage * 0.2f);
     }
 
     // --- Helpers ---
