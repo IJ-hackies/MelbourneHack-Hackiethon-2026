@@ -43,6 +43,7 @@ Gemini returns a single structured `generate_floor` response:
   "tileset_id": "dungeon",
   "palette_override": ["#8B4513", "#C0A080", "#2F2F2F"],
   "environmental_modifier": "time_dilation_field",
+  "stage_message": "You burned through them so easily, didn't you? Let's see if that hunger serves you when the walls close in and the sentinels don't stop coming.",
   "enemy_spawns": [
     { "enemy_id": "ranged_sentinel", "count": 4, "modifiers": ["armored"] },
     { "enemy_id": "fast_skitter", "count": 6, "modifiers": [] }
@@ -50,6 +51,7 @@ Gemini returns a single structured `generate_floor` response:
   "new_spell": {
     "name": "Chronos Bolt",
     "flavor": "A bolt that stutters through time, hitting twice.",
+    "corruption_flavor": null,
     "tags": ["PROJECTILE", "STUTTER_MOTION", "DOUBLE_HIT"],
     "damage": 35,
     "speed": 6.0,
@@ -121,7 +123,7 @@ Every scene must have a single **`MapBounds`** empty GameObject with a `MapBound
 - Set its `size` field to match the full assembled map (`80 × 40` for the standard 4×2 chamber grid)
 - It draws a **cyan wire box gizmo** in the Scene view
 - Falls back to the camera's inspector fields if no marker is present in the scene
-- **`MapBoundsMarker` is camera-only** — it does NOT block player/enemy movement. Physical wall boundaries are the responsibility of each chamber prefab's `Walls` tilemap.
+- **`MapBoundsMarker` is camera-only** — it does NOT block player/enemy movement. Physical wall boundaries are the responsibility of each chamber prefab's `Walls` tilemap, plus 4 invisible `BoxCollider2D` boundary walls spawned at runtime by `FloorAssembler` around the full map perimeter.
 
 ### Map Creation Workflow
 
@@ -264,6 +266,8 @@ Flat array of 8 IDs — index 0–3 = bottom row (y=0), 4–7 = top row (y=20). 
 1. Looks up each chamber id in its Inspector-configured `chamberLibrary` (List of id → prefab pairs)
 2. Instantiates each chamber prefab at grid offset `(col * 20, row * 20)` world units
 3. Updates `MapBoundsMarker` position to map center `(40, 20)` with size `(80, 40)`
+4. Spawns 4 invisible `BoxCollider2D` boundary walls around the full map perimeter (keeps enemies and player inside)
+5. Calls `EnemySpawner.SpawnFloor(enemySpawns, origin)` to begin the staggered enemy spawn sequence
 
 ### Tileset Integration (PixelLab Assets)
 All 32×32 tilesets are PixelLab assets. The 10 available tilesets are:
@@ -310,6 +314,7 @@ Spells are **pure data** — no runtime code generation. The engine contains han
 - A spell **must** have exactly one of `PROJECTILE`, `ORBITAL`, or `BEAM` — this determines how it fires.
 - All other tags (movement modifiers, effect, status, corruption) are optional.
 - Base damage is a stat (`damage` field), not a tag — a spell with only `PROJECTILE` still deals damage.
+- A spell may include corruption tags in its own `tags` array if it is an **inherently cursed spell** (see below).
 
 ### Spell Data Structure
 
@@ -317,6 +322,7 @@ Spells are **pure data** — no runtime code generation. The engine contains han
 {
   "name": "Crying Cinder",
   "flavor": "A flame that circles the caster, seeking warmth in an enemy's heart.",
+  "corruption_flavor": null,
   "tags": ["PROJECTILE", "ORBITAL", "LIFESTEAL"],
   "damage": 28,
   "speed": 4.5,
@@ -327,15 +333,38 @@ Spells are **pure data** — no runtime code generation. The engine contains han
 }
 ```
 
+`corruption_flavor` is `null` for normal spells. When set, it is a short sentence shown in the Grimoire UI that describes the spell's built-in curse (e.g. *"Each cast sips from your own life."*).
+
 ### Spell Generation
 Each floor, Gemini generates **one new spell** added to the player's Grimoire. No choice is offered — what the Chronicle gives, you receive. The spell is informed by the player's session log and stage number.
 
+Gemini may generate a **cursed spell**: a particularly powerful spell that includes one or more corruption tags (`SELF_DAMAGE`, `ENEMY_HOMING`, `REVERSED_CONTROLS`) baked into its own `tags`. These are the dungeon offering power at a cost — the corruption is intrinsic to the spell, not applied later. Cursed spells always have `corruption_flavor` set to explain the trade-off narratively.
+
+**Example cursed spell:**
+```json
+{
+  "name": "Hungering Void",
+  "flavor": "It devours everything in its path, indiscriminately.",
+  "corruption_flavor": "Each cast draws from the caster's own essence.",
+  "tags": ["PROJECTILE", "PIERCE", "AOE_BURST", "CHAIN", "SELF_DAMAGE"],
+  "damage": 65,
+  "speed": 9.0,
+  "cooldown": 0.6
+}
+```
+
 ### Spell Corruption (Decay System)
-The `corrupted_spells` array in the Floor Manifest can mutate existing spells:
+Two distinct mechanisms exist for corruption:
+
+**1. Cursed spells (intrinsic):** The new spell given by the dungeon is itself corrupted — powerful stats, but corruption tags baked in at creation. The `corruption_flavor` field is set. The player chooses to equip it or not.
+
+**2. Existing spell mutation (external):** The `corrupted_spells` array in the Floor Manifest mutates spells already in the player's Grimoire:
 - Adds degrading tags (`SELF_DAMAGE`, `ENEMY_HOMING`)
 - Removes beneficial tags (`LIFESTEAL`, `HOMING`)
-- Updates the flavor text to reflect the corruption narratively
+- Updates `flavor` text to reflect the corruption narratively
 - This is how the dungeon "fights back" against the player's best weapons
+
+Gemini may use either or both per floor, depending on how aggressively it wants to counter the player. Later stages will more frequently combine both.
 
 ---
 
@@ -374,6 +403,41 @@ At **milestone stages** (every 5 floors: stage 5, 10, 15...) the player is offer
 ```
 
 The merge is a **power trade-off**: you gain a single more powerful spell but lose two individual options (less flexibility, more raw output).
+
+---
+
+## Stage Transition Screen
+
+Between every floor, a full-screen **Stage Transition UI** is shown before the next floor loads. It has three components:
+
+### 1. Stage Title
+The `floor_name` from the incoming Floor Manifest displayed prominently (e.g. *"The Ashen Gauntlet"*).
+
+### 2. Message from the Dungeon
+The `stage_message` field — a short paragraph (2–4 sentences) generated by Gemini in the voice of the Chronicle. It acknowledges how the player has been playing and teases what's coming. Tone is ominous, taunting, or poetic — never neutral.
+
+Gemini is prompted to write this in second person, directly addressing the player, referencing their `combat_style`, `primary_element`, `most_damage_taken_from`, and the `last_word` they chose.
+
+**Examples:**
+- Aggressive fire player: *"You have been very aggressive, haven't you? Burning everything you touch, rushing in before the ash settles. Let's see how that hunger holds up when the sentinels don't stop coming — and they're immune to your fire."*
+- Passive ranged player: *"Careful. Methodical. Always at a distance. The dungeon has noticed. What happens when there is no distance left to hide behind?"*
+
+### 3. Spell Received
+The new spell card for `new_spell` — displays name, flavor, `corruption_flavor` (if any), tags, and stats. If the spell has corruption tags and `corruption_flavor` is set, the card is visually distinct (e.g. dark border, cursed styling) to signal the trade-off.
+
+### `stage_message` in the Floor Manifest
+
+The `stage_message` field is a top-level string in the Floor Manifest JSON:
+
+```json
+{
+  "floor_name": "The Ashen Gauntlet",
+  "stage_message": "You burned through them so easily, didn't you? Let's see if that hunger serves you when the walls close in and the sentinels don't stop coming.",
+  ...
+}
+```
+
+It is generated alongside the rest of the manifest in the same Gemini function call — no extra API call needed.
 
 ---
 
@@ -424,8 +488,10 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
 [FloorAssembler]                       [Add new spell to Grimoire]
 [Look up IDs in chamberLibrary]        [Corrupt existing spells]
 [Instantiate chambers per grid]
+[Spawn boundary wall colliders]
 [Apply palette_override to materials]
-[Spawn enemies at EnemySpawnPoints]
+[EnemySpawner.SpawnFloor() — staggered spawn at 12 computed
+ exterior entry points, randomised order and entry point]
    │
    ▼
 [Player runs floor]

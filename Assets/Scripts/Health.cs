@@ -10,7 +10,11 @@ public class Health : MonoBehaviour
     // Read
     public float Current  => currentHealth;
     public float Max      => maxHealth;
+    public float MaxHealth => maxHealth;
     public bool  IsDead   => currentHealth <= 0f;
+
+    // Set by EnemySpawner modifiers (e.g. "armored"). 0 = no reduction, 0.5 = 50% reduction.
+    [HideInInspector] public float DamageReduction = 0f;
 
     public UnityEvent<float> OnDamaged;
     public UnityEvent OnDeath;
@@ -31,6 +35,7 @@ public class Health : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (IsDead) return;
+        amount *= (1f - Mathf.Clamp01(DamageReduction));
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         OnDamaged.Invoke(amount);
         if (IsDead)
