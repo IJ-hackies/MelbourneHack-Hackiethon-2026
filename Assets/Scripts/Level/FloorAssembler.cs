@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 /// <summary>
 /// Assembles a floor from 8 chamber prefabs arranged in a 4x2 grid (80x40 world units).
@@ -46,6 +47,10 @@ public class FloorAssembler : MonoBehaviour
         "[0][1][2][3]  ← bottom row (y =  0)")]
     public string[] chamberGrid = new string[8];
 
+    [Header("Tilemap Tints")]
+    public Color groundTint = new Color(0.45f, 0.45f, 0.45f, 1f);
+    public Color wallTint   = new Color(1.0f,  0.85f, 0.7f,  1f);
+
     [Header("Auto-assemble")]
     [Tooltip("Assemble the floor automatically on Start using the Inspector values above. Disable when driving from StageLoader.")]
     public bool assembleOnStart = false;
@@ -69,14 +74,37 @@ public class FloorAssembler : MonoBehaviour
         if (!string.IsNullOrEmpty(manifest.tileset_id))
             activeTilesetId = manifest.tileset_id;
 
-        if (manifest.chamber_grid != null)
-            chamberGrid = manifest.chamber_grid;
+        // If the manifest includes a chamber grid (e.g. hardcoded Stage 1), use it.
+        // Otherwise randomize 8 chambers from the active tileset (repetition allowed).
+        chamberGrid = (manifest.chamber_grid != null && manifest.chamber_grid.Length > 0)
+            ? manifest.chamber_grid
+            : RandomizeChamberGrid(activeTilesetId);
 
         enemySpawns.Clear();
         if (manifest.enemy_spawns != null)
             enemySpawns.AddRange(manifest.enemy_spawns);
 
         AssembleFloor();
+    }
+
+    /// <summary>
+    /// Picks 8 chamber IDs at random from the registered chambers for the given tileset.
+    /// Each slot is chosen independently, so chambers can repeat and some may go unused.
+    /// </summary>
+    private string[] RandomizeChamberGrid(string tilesetId)
+    {
+        var library = BuildLibrary(tilesetId);
+        var ids = new System.Collections.Generic.List<string>(library.Keys);
+        if (ids.Count == 0)
+        {
+            Debug.LogWarning($"FloorAssembler: no chambers available for tileset '{tilesetId}' — grid will be empty.");
+            return new string[8];
+        }
+
+        var grid = new string[8];
+        for (int i = 0; i < 8; i++)
+            grid[i] = ids[Random.Range(0, ids.Count)];
+        return grid;
     }
 
     /// <summary>
@@ -117,7 +145,8 @@ public class FloorAssembler : MonoBehaviour
             int row = i / 4;
             Vector3 worldOffset = transform.position + new Vector3(col * ChamberSize, row * ChamberSize, 0f);
 
-            Instantiate(prefab, worldOffset, Quaternion.identity, transform);
+            var chamber = Instantiate(prefab, worldOffset, Quaternion.identity, transform);
+            ApplyGroundTint(chamber);
         }
 
         PositionMapBounds();
@@ -125,6 +154,24 @@ public class FloorAssembler : MonoBehaviour
 
         if (enemySpawner != null && enemySpawns != null && enemySpawns.Count > 0)
             enemySpawner.SpawnFloor(enemySpawns, transform.position);
+    }
+
+    private void ApplyGroundTint(GameObject chamber)
+    {
+        var ground = chamber.transform.Find("Ground");
+        if (ground != null)
+        {
+            var tm = ground.GetComponent<Tilemap>();
+            if (tm != null) tm.color = groundTint;
+        }
+
+        foreach (string layer in new[] { "Walls", "Details" })
+        {
+            var t = chamber.transform.Find(layer);
+            if (t == null) continue;
+            var tm = t.GetComponent<Tilemap>();
+            if (tm != null) tm.color = wallTint;
+        }
     }
 
     private void SpawnBoundaryWalls()
@@ -211,6 +258,7 @@ public class FloorAssembler : MonoBehaviour
             var go = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab, transform);
             go.transform.position = offset;
             UnityEditor.Undo.RegisterCreatedObjectUndo(go, "Assemble Floor");
+            ApplyGroundTint(go);
         }
 
         PositionMapBounds();
