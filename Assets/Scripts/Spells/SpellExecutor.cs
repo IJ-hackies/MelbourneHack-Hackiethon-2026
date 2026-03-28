@@ -29,6 +29,7 @@ public class SpellExecutor : MonoBehaviour
     private void TryCast()
     {
         SpellData spell = Grimoire.Instance?.ActiveSpell;
+        Debug.Log($"[SpellExecutor] TryCast — spell={(spell == null ? "NULL" : spell.spellName)} grimoire={Grimoire.Instance != null}");
         if (spell == null) return;
         if (Time.time - lastCastTime < spell.cooldown) return;
 

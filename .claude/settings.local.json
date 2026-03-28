@@ -11,7 +11,8 @@
       "Bash(grep -v \"\\\\.meta$\")",
       "Bash(grep -r \"Tilemap\\\\|Grid\" /c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
       "Bash(python -c \"from google import genai; from google.genai import types; from dotenv import load_dotenv; import PIL\")",
-      "Bash(python generate_chambers.py --tileset dungeon)"
+      "Bash(python generate_chambers.py --tileset dungeon)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
