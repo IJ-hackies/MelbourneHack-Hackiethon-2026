@@ -22,6 +22,12 @@ public class FloorAssembler : MonoBehaviour
     [Header("Chamber Library — add all prefabs from Assets/Chambers/<tileset>/Prefabs/")]
     public List<ChamberEntry> chamberLibrary = new List<ChamberEntry>();
 
+    [Header("Enemy Spawner — optional, called after map assembly")]
+    public EnemySpawner enemySpawner;
+
+    [Header("Enemy Spawns — filled at runtime from Floor Manifest")]
+    public List<EnemySpawnDTO> enemySpawns = new List<EnemySpawnDTO>();
+
     [Header("Grid — 8 chamber IDs, row-major (index 0-3 = bottom row, 4-7 = top row)")]
     [Tooltip(
         "Visual layout:\n" +
@@ -65,6 +71,9 @@ public class FloorAssembler : MonoBehaviour
 
         PositionMapBounds();
         SpawnBoundaryWalls();
+
+        if (enemySpawner != null && enemySpawns != null && enemySpawns.Count > 0)
+            enemySpawner.SpawnFloor(enemySpawns, transform.position);
     }
 
     private void SpawnBoundaryWalls()
