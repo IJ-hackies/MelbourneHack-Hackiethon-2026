@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.35
+      value: 5.22759
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.48
+      value: -2.77594
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -180,10 +180,10 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 5
+  detectionRange: 40
   canSeeThoughWalls: 0
-  spottedDuration: 1
-  lostDuration: 2
+  spottedDuration: 0.5
+  lostDuration: 1
   minWanderTime: 1.5
   maxWanderTime: 4
   minPauseTime: 0.5
@@ -202,7 +202,7 @@ MonoBehaviour:
   - {fileID: 539946027851580950, guid: 0772a49bc7d654c539254ca358f82bdf, type: 3}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
-  iconHeightOffset: 1.2
+  iconHeightOffset: 1.3
   separationRadius: 1.2
   separationWeight: 0.8
   attackAnimDuration: 0.7

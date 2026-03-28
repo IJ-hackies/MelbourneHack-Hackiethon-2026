@@ -359,7 +359,10 @@ public abstract class EnemyBase : MonoBehaviour
         Vector2 dir      = DirectionToPlayer();
         float   dist     = DistanceToPlayer();
         int     wallMask = LayerMask.GetMask("Walls");
-        return !Physics2D.Raycast(rb.position, dir, dist, wallMask);
+        // Stop 0.45 units short of the player so a player pressed against a wall
+        // doesn't cause the wall collider to occlude the ray end-point.
+        float checkDist = Mathf.Max(0f, dist - 1.1f);
+        return !Physics2D.Raycast(rb.position, dir, checkDist, wallMask);
     }
 
     // ── Sprite Helpers ────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3575338020003203361}
   - component: {fileID: 6293905925407888747}
+  - component: {fileID: 3436573623894295268}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -72,6 +73,21 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 8212464850123692188}
+--- !u!114 &3436573623894295268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5290766997001791161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f13677311ac4bad897da108a374946, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraConfinerBridge
+  confineDamping: 0
+  deadZoneWidth: 0.1
+  deadZoneHeight: 0.05
 --- !u!1 &8458082763876789013
 GameObject:
   m_ObjectHideFlags: 0

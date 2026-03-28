@@ -179,18 +179,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WizardAI
   moveSpeed: 2.5
-  attackRange: 5
+  attackRange: 10
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 5
+  detectionRange: 25
   canSeeThoughWalls: 0
-  spottedDuration: 1
-  lostDuration: 2
+  spottedDuration: 0.5
+  lostDuration: 1
   minWanderTime: 1.5
   maxWanderTime: 4
   minPauseTime: 0.5
   maxPauseTime: 2
-  wanderRadius: 6
+  wanderRadius: 3
   walkPrefix: fw_walk
   attackPrefix: fw_fireball
   rotationSprites:
@@ -204,7 +204,7 @@ MonoBehaviour:
   - {fileID: 539946027851580950, guid: 0d19a52d99eb64a7a9a450d77ebc962a, type: 3}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
-  iconHeightOffset: 1.2
+  iconHeightOffset: 1.7
   separationRadius: 1.2
   separationWeight: 0.8
   attackAnimDuration: 0.6
