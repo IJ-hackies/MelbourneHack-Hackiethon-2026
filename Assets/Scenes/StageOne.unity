@@ -10394,7 +10394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80d4aa1c8fa065e4c8673420d809a20f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapBoundsMarker
-  size: {x: 80, y: 40}
+  size: {x: 40, y: 22}
 --- !u!1001 &1951269660
 PrefabInstance:
   m_ObjectHideFlags: 0

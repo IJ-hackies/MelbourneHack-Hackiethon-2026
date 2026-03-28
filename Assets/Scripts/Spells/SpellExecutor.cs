@@ -43,19 +43,37 @@ public class SpellExecutor : MonoBehaviour
         if (spell.HasTag(SpellTag.REVERSED_CONTROLS))
             aimDir = -aimDir;
 
-        if (spell.HasTag(SpellTag.BEAM))
-            HandleBeam(spell, aimDir);
-        else if (spell.HasTag(SpellTag.ORBITAL))
-            HandleOrbital(spell);
-        else if (spell.HasTag(SpellTag.PROJECTILE))
+        if (spell.isMerged)
         {
-            HandleProjectile(spell, aimDir);
-            if (spell.HasTag(SpellTag.DOUBLE_HIT))
-                HandleProjectile(spell, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir);
+            // Merged spells fire ALL movement types present in their tag list simultaneously
+            if (spell.HasTag(SpellTag.BEAM))    HandleBeam(spell, aimDir);
+            if (spell.HasTag(SpellTag.ORBITAL)) HandleOrbital(spell);
+            if (spell.HasTag(SpellTag.PROJECTILE))
+            {
+                HandleProjectile(spell, aimDir);
+                if (spell.HasTag(SpellTag.DOUBLE_HIT))
+                    HandleProjectile(spell, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir);
+            }
+        }
+        else
+        {
+            // Normal spells: exactly one movement type fires (BEAM > ORBITAL > PROJECTILE)
+            if (spell.HasTag(SpellTag.BEAM))
+                HandleBeam(spell, aimDir);
+            else if (spell.HasTag(SpellTag.ORBITAL))
+                HandleOrbital(spell);
+            else if (spell.HasTag(SpellTag.PROJECTILE))
+            {
+                HandleProjectile(spell, aimDir);
+                if (spell.HasTag(SpellTag.DOUBLE_HIT))
+                    HandleProjectile(spell, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir);
+            }
         }
 
         if (spell.HasTag(SpellTag.SELF_DAMAGE))
             HandleSelfDamage(spell);
+
+        Grimoire.Instance?.RecordSpellUsed(spell);
     }
 
     // --- Movement handlers ---
@@ -103,15 +121,60 @@ public class SpellExecutor : MonoBehaviour
         {
             var h = hit.collider.GetComponent<Health>();
             if (h == null || h.IsDead) continue;
+
             h.TakeDamage(spell.damage);
+
             if (spell.HasTag(SpellTag.LIFESTEAL))
                 playerHealth?.Heal(spell.damage * 0.3f);
+
+            ApplyHitEffects(spell, hit.collider.gameObject, hit.point);
+
             if (!spell.HasTag(SpellTag.PIERCE))
                 break;
         }
 
         // TODO: add LineRenderer visual
         Debug.Log($"[SpellExecutor] BEAM cast: {spell.spellName}");
+    }
+
+    // --- Shared per-hit effect application (used by beam; projectile uses ProjectileHandler) ---
+
+    /// <summary>Applies status effects, PUSH, PULL, and AOE_BURST to a hit enemy.</summary>
+    private void ApplyHitEffects(SpellData spell, GameObject enemyObj, Vector2 hitPoint)
+    {
+        var status = enemyObj.GetComponent<StatusEffectHandler>()
+                     ?? enemyObj.AddComponent<StatusEffectHandler>();
+
+        if (spell.HasTag(SpellTag.BURN))   status.ApplyBurn(spell.damage);
+        if (spell.HasTag(SpellTag.FREEZE)) status.ApplyFreeze();
+        if (spell.HasTag(SpellTag.SLOW))   status.ApplySlow();
+        if (spell.HasTag(SpellTag.STUN))   status.ApplyStun();
+        if (spell.HasTag(SpellTag.POISON)) status.ApplyPoison(spell.damage);
+
+        if (spell.HasTag(SpellTag.PUSH))
+        {
+            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
+            Vector2 pushDir = ((Vector2)enemyObj.transform.position - (Vector2)transform.position).normalized;
+            enemyRb?.AddForce(pushDir * 8f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.PULL))
+        {
+            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
+            Vector2 pullDir = ((Vector2)transform.position - (Vector2)enemyObj.transform.position).normalized;
+            enemyRb?.AddForce(pullDir * 10f, ForceMode2D.Impulse);
+        }
+
+        if (spell.HasTag(SpellTag.AOE_BURST))
+        {
+            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(hitPoint, 3f, LayerMask.GetMask("Enemy"));
+            foreach (var aoeHit in aoeHits)
+            {
+                var aooh = aoeHit.GetComponent<Health>();
+                if (aooh != null && !aooh.IsDead && aoeHit.gameObject != enemyObj)
+                    aooh.TakeDamage(spell.damage * 0.5f);
+            }
+        }
     }
 
     // --- Corruption handlers ---
