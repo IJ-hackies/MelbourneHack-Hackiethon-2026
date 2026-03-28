@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 1219128580608914759}
   - component: {fileID: 1539073658769773145}
   - component: {fileID: 1819055938402997570}
+  - component: {fileID: 3219586476747754627}
+  - component: {fileID: 3896163043988006939}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -35,7 +37,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 1}
+  m_LocalScale: {x: 3.5, y: 3.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 701290234507027562}
@@ -88,7 +90,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 285542781
   m_SortingLayer: 2
-  m_SortingOrder: -351
+  m_SortingOrder: 600
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1808982527863717971, guid: cd054dfaeb4604f088d7c43cba00b191, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -258,6 +260,38 @@ CapsuleCollider2D:
   m_Offset: {x: 0.0025448196, y: -0.16270502}
   m_Size: {x: 0.18459767, y: 0.09907886}
   m_Direction: 1
+--- !u!114 &3219586476747754627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844718356868029949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 976387512b13e4639a847b6c8fa5e026, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusEffects
+  zoneSlowMultiplier: 0.4
+--- !u!114 &3896163043988006939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844718356868029949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d4e04c689e374c478b7c6545cd7842c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHUD
+  boardPrefab: {fileID: 8801271780445070481, guid: 8534d44a894f24f358249b943f5bd3f8, type: 3}
+  heartIconPrefab: {fileID: 4397395701804125825, guid: 4fa3f8fb3884b4586b226d7eeb784fc8, type: 3}
+  burnIconPrefab: {fileID: 1674279841299045591, guid: 66c34a2a67eae49548af6b50d2c69466, type: 3}
+  poisonIconPrefab: {fileID: 6688461660628168954, guid: da88ff62aa0df49c99aaf20e0fecb578, type: 3}
+  bleedIconPrefab: {fileID: 7012058873730672359, guid: 1831ba10ca06a4dbeb009b24dff8ec0c, type: 3}
+  slowIconPrefab: {fileID: 4206263808547117881, guid: aa94b60dde7a84446aef07bbb9a4c876, type: 3}
+  alagardFont: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
 --- !u!1 &8593515427785355930
 GameObject:
   m_ObjectHideFlags: 0

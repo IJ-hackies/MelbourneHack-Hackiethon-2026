@@ -87,11 +87,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.97
+      value: 2.7375898
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 7.49
+      value: 1.64406
       objectReference: {fileID: 0}
     - target: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: -1808982527863717971, guid: 276fbdc1fd6894d9ba3798d41d110858, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: -679
+      value: -94
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -176,22 +176,17 @@ MonoBehaviour:
   attackRange: 10
   attackDamage: 10
   attackCooldown: 1.5
-  separationRadius: 1.2
-  separationWeight: 0.8
-  walkPrefix: alien_walk
-  attackPrefix: alien_attack
+  detectionRange: 10
+  canSeeThoughWalls: 0
+  spottedDuration: 1
+  lostDuration: 2
   minWanderTime: 1
   maxWanderTime: 3
-  minIdleTime: 1
-  maxIdleTime: 3
-  wanderRadius: 6
-  attackAnimDuration: 0.6
-  damageHitFrame: 0.3
-  projectileSpeed: 7
-  projectileColorA: {r: 0.4, g: 1, b: 0.9, a: 1}
-  projectileColorB: {r: 0.8, g: 0.4, b: 1, a: 1}
-  hitColorA: {r: 0.4, g: 1, b: 0.9, a: 1}
-  hitColorB: {r: 0.8, g: 0.4, b: 1, a: 1}
+  minPauseTime: 0.5
+  maxPauseTime: 2
+  wanderRadius: 3
+  walkPrefix: alien_walk
+  attackPrefix: alien_attack
   rotationSprites:
   - {fileID: 4814271557941635497, guid: 9b4bd1234b4b143f283576d9a10dee8f, type: 3}
   - {fileID: -206670225839568205, guid: 27e80dd8592494014a03629441cfda2f, type: 3}
@@ -201,6 +196,18 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: 566cb4b9bf4f84ae492057445a0e1625, type: 3}
   - {fileID: 3373983171478037719, guid: 98e8f229968a441c380a95ebf529f015, type: 3}
   - {fileID: 539946027851580950, guid: ccde88499577c4c7ba95f0a34f9b9de1, type: 3}
+  exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
+  questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
+  iconHeightOffset: 1.7
+  separationRadius: 1.2
+  separationWeight: 0.8
+  attackAnimDuration: 0.6
+  damageHitFrame: 0.3
+  projectileSpeed: 7
+  projectileColorA: {r: 0.4, g: 1, b: 0.9, a: 1}
+  projectileColorB: {r: 0.8, g: 0.4, b: 1, a: 1}
+  hitColorA: {r: 0.4, g: 1, b: 0.9, a: 1}
+  hitColorB: {r: 0.8, g: 0.4, b: 1, a: 1}
 --- !u!70 &6532061402065731062
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

@@ -107,6 +107,99 @@ public static class HitEffectSpawner
         Object.Destroy(go, travelTime + 0.3f);
     }
 
+    // Ground crack — spawned at the DragonNewt's feet on landing.
+    // Shoots a small burst of flat, earthy particles radially outward to read as a crack.
+    public static void SpawnGroundCrack(Vector3 position, Color colorA, Color colorB)
+    {
+        GameObject go = new GameObject("FX_GroundCrack");
+        go.transform.position = position;
+
+        ParticleSystem ps = go.AddComponent<ParticleSystem>();
+        go.GetComponent<ParticleSystemRenderer>().material = GetParticleMaterial();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main = ps.main;
+        main.duration        = 0.1f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(1.0f, 1.5f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.4f, 1.2f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.04f, 0.09f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(colorA, colorB);
+        main.gravityModifier = 0f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = ps.emission;
+        emission.enabled = true;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 16, 24) });
+
+        // Flat disc shape so particles radiate outward along the ground plane
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Circle;
+        shape.radius    = 0.05f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(colorA, 0f), new GradientColorKey(colorB, 0.5f) },
+            new[] { new GradientAlphaKey(0.6f, 0f), new GradientAlphaKey(0.3f, 0.5f), new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size    = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.3f, 1f, 1f));
+
+        ps.Play();
+        Object.Destroy(go, 2f);
+    }
+
+    // Small icy burst — plays on the player during freeze zone DoT ticks
+    public static void SpawnFrostBurst(Vector3 position)
+    {
+        var lightBlue = new Color(0.55f, 0.85f, 1.00f, 1f);
+        var white     = new Color(0.90f, 0.97f, 1.00f, 1f);
+
+        GameObject go = new GameObject("FX_FrostBurst");
+        go.transform.position = position;
+
+        ParticleSystem ps = go.AddComponent<ParticleSystem>();
+        go.GetComponent<ParticleSystemRenderer>().material = GetParticleMaterial();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main = ps.main;
+        main.duration        = 0.2f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.8f, 2.5f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.03f, 0.09f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(lightBlue, white);
+        main.gravityModifier = -0.2f; // drift slightly upward — icy crystals
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = ps.emission;
+        emission.enabled = true;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 10, 16) });
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius    = 0.15f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(white, 0f), new GradientColorKey(lightBlue, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f),    new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        ps.Play();
+        Object.Destroy(go, 1f);
+    }
+
     // Subtle blood — plays on the player when hit
     public static void SpawnBlood(Vector3 position)
     {

@@ -8,9 +8,12 @@ public class Health : MonoBehaviour
     private float currentHealth;
 
     // Read
-    public float Current  => currentHealth;
-    public float Max      => maxHealth;
-    public bool  IsDead   => currentHealth <= 0f;
+    public float Current         => currentHealth;
+    public float Max             => maxHealth;
+    public bool  IsDead          => currentHealth <= 0f;
+
+    // Set by status effects (e.g. Poison vulnerability). Values > 1 increase damage taken.
+    public float DamageMultiplier { get; set; } = 1f;
 
     public UnityEvent<float> OnDamaged;
     public UnityEvent OnDeath;
@@ -31,7 +34,7 @@ public class Health : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (IsDead) return;
-        currentHealth = Mathf.Max(0f, currentHealth - amount);
+        currentHealth = Mathf.Max(0f, currentHealth - amount * DamageMultiplier);
         OnDamaged.Invoke(amount);
         if (IsDead)
             OnDeath.Invoke();

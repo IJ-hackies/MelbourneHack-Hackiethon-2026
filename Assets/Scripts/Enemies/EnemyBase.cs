@@ -1,15 +1,15 @@
+using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
 using UnityEngine;
 
-// Base class for all enemies. Handles movement, direction, and shared state.
-// All combat stats are exposed via public properties for runtime scaling.
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Seeker))]
 public abstract class EnemyBase : MonoBehaviour
 {
+    // ── Combat Stats ──────────────────────────────────────────────────────────
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 2.5f;
 
@@ -18,34 +18,95 @@ public abstract class EnemyBase : MonoBehaviour
     [SerializeField] private float attackDamage   = 10f;
     [SerializeField] private float attackCooldown = 1.5f;
 
-    // Public read/write — safe to modify at any time (e.g. auto-scaling)
     public float MoveSpeed      { get => moveSpeed;      set => moveSpeed      = Mathf.Max(0f,    value); }
     public float AttackDamage   { get => attackDamage;   set => attackDamage   = Mathf.Max(0f,    value); }
     public float AttackCooldown { get => attackCooldown; set => attackCooldown = Mathf.Max(0.05f, value); }
+    public float AttackRange    => attackRange;
 
-    // Read-only at runtime — set in Inspector only
-    public float AttackRange => attackRange;
+    // ── Detection ─────────────────────────────────────────────────────────────
+    [Header("Detection")]
+    [SerializeField] private float detectionRange    = 5f;
+    [SerializeField] private bool  canSeeThoughWalls = false;
+    [SerializeField] private float spottedDuration   = 1f;
+    [SerializeField] private float lostDuration      = 2f;
 
-    protected Rigidbody2D rb;
-    protected Animator    animator;
-    protected Health      health;
-    protected Transform   player;
-    protected Health      playerHealth;
-    protected Seeker      seeker;
+    public float DetectionRange    { get => detectionRange;    set => detectionRange    = Mathf.Max(0f, value); }
+    public bool  CanSeeThoughWalls { get => canSeeThoughWalls; set => canSeeThoughWalls = value; }
+
+    // ── Wander ────────────────────────────────────────────────────────────────
+    [Header("Wander")]
+    [SerializeField] private float minWanderTime = 1.5f;
+    [SerializeField] private float maxWanderTime = 4.0f;
+    [SerializeField] private float minPauseTime  = 0.5f;
+    [SerializeField] private float maxPauseTime  = 2.0f;
+    [SerializeField] private float wanderRadius  = 6f;
+
+    // ── Animation ─────────────────────────────────────────────────────────────
+    [Header("Animation Prefixes")]
+    [SerializeField] private string walkPrefix   = "walk";
+    [SerializeField] private string attackPrefix = "attack";
+
+    public string WalkPrefix   { get => walkPrefix;   set => walkPrefix   = value; }
+    public string AttackPrefix { get => attackPrefix; set => attackPrefix = value; }
+
+    // ── Rotation Sprites ──────────────────────────────────────────────────────
+    [Header("Rotation Sprites")]
+    [SerializeField] protected Sprite[] rotationSprites = new Sprite[8];
+
+    protected static readonly string[] DirOrder =
+        { "north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west" };
+    private static readonly string[] RotationDirFiles =
+        { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
+
+    // ── Icons ─────────────────────────────────────────────────────────────────
+    [Header("Icons")]
+    [SerializeField] private GameObject exclamationIconPrefab;
+    [SerializeField] private GameObject questionIconPrefab;
+    [SerializeField] private float iconHeightOffset = 1.2f;
+
+    // ── References ────────────────────────────────────────────────────────────
+    protected Rigidbody2D        rb;
+    protected Animator           animator;
+    protected Health             health;
+    protected Transform          player;
+    protected Health             playerHealth;
+    protected Seeker             seeker;
+    protected SpriteRenderer     sr;
+    protected PlayerHitEffect    playerHitEffect;
+    protected PlayerStatusEffects playerStatusEffects;
 
     protected float   attackTimer;
     protected Vector2 currentDir = Vector2.down;
+    protected string  currentClip = "";
 
-    // Read-only references for scaling systems that need to inspect state
     public Health HealthComponent => health;
     public bool   IsDead          => health != null && health.IsDead;
 
+    // ── Detection State Machine ───────────────────────────────────────────────
+    protected enum DetectionState { Wander, Spotted, Active, Lost }
+    protected DetectionState detectionState = DetectionState.Wander;
+
+    private enum WanderSubState { Moving, Pausing }
+    private WanderSubState wanderSubState;
+    private float   wanderTimer;
+    private Vector2 wanderTarget;
+    protected Vector2 WanderTarget => wanderTarget;
+
+    private float stateTimer;
+    private float lookAroundTimer;
+    private int   lookAroundStep;
+    private const float LookAroundInterval = 0.35f;
+
+    private GameObject activeIcon;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected virtual void Awake()
     {
         rb       = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         health   = GetComponent<Health>();
         seeker   = GetComponent<Seeker>();
+        sr       = GetComponent<SpriteRenderer>();
     }
 
     protected virtual void Start()
@@ -53,32 +114,344 @@ public abstract class EnemyBase : MonoBehaviour
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
-            player       = playerObj.transform;
-            playerHealth = playerObj.GetComponent<Health>();
-        }
-        else
-        {
-            Debug.LogWarning($"{name}: No GameObject tagged 'Player' found.");
+            player              = playerObj.transform;
+            playerHealth        = playerObj.GetComponent<Health>();
+            playerHitEffect     = playerObj.GetComponent<PlayerHitEffect>();
+            playerStatusEffects = playerObj.GetComponent<PlayerStatusEffects>()
+                               ?? playerObj.AddComponent<PlayerStatusEffects>();
         }
 
         health.OnDeath.AddListener(OnDeath);
+        LoadRotationSprites();
         EnsureSafeSpawnDistance();
+        EnterWander();
     }
 
-    private void EnsureSafeSpawnDistance()
+    // ── Update Loop ───────────────────────────────────────────────────────────
+    private void Update()
     {
-        if (player == null) return;
-        float safeDistance = attackRange + 1f;
-        if (DistanceToPlayer() < safeDistance)
+        if (health.IsDead) return;
+        switch (detectionState)
         {
-            Vector2 awayFromPlayer = -DirectionToPlayer();
-            Vector2 newPos = (Vector2)player.position + awayFromPlayer * safeDistance;
-            rb.position = newPos;
-            transform.position = newPos;
-            Physics2D.SyncTransforms();
+            case DetectionState.Wander:  UpdateWander();      break;
+            case DetectionState.Spotted: UpdateSpotted();     break;
+            case DetectionState.Active:  UpdateActiveState(); break;
+            case DetectionState.Lost:    UpdateLost();        break;
         }
     }
 
+    private void FixedUpdate()
+    {
+        if (health.IsDead) return;
+        switch (detectionState)
+        {
+            case DetectionState.Wander: FixedUpdateWander(); break;
+            case DetectionState.Active: FixedUpdateActive(); break;
+        }
+    }
+
+    // ── Wander State ──────────────────────────────────────────────────────────
+    private void EnterWander()
+    {
+        detectionState = DetectionState.Wander;
+        wanderSubState = WanderSubState.Moving;
+        wanderTimer    = Random.Range(minWanderTime, maxWanderTime);
+        wanderTarget   = PickWanderDestination();
+        OnWanderDestinationSet(wanderTarget);
+
+        currentDir = (wanderTarget - rb.position).sqrMagnitude > 0.01f
+            ? (wanderTarget - rb.position).normalized : Vector2.down;
+
+        animator.enabled = true;
+        currentClip = "";
+        PlayClip($"{walkPrefix}_{GetDirectionKey(currentDir)}");
+    }
+
+    private void UpdateWander()
+    {
+        if (CanDetectPlayer())
+        {
+            EnterSpotted();
+            return;
+        }
+
+        wanderTimer -= Time.deltaTime;
+
+        if (wanderSubState == WanderSubState.Moving)
+        {
+            bool arrived = Vector2.Distance(rb.position, wanderTarget) < 0.35f;
+            if (wanderTimer <= 0f || arrived || PathComplete)
+            {
+                wanderSubState   = WanderSubState.Pausing;
+                wanderTimer      = Random.Range(minPauseTime, maxPauseTime);
+                animator.enabled = false;
+                UpdateDirectionSprite(GetDirectionKey(currentDir));
+            }
+        }
+        else
+        {
+            if (wanderTimer <= 0f)
+            {
+                wanderSubState   = WanderSubState.Moving;
+                wanderTimer      = Random.Range(minWanderTime, maxWanderTime);
+                wanderTarget     = PickWanderDestination();
+                OnWanderDestinationSet(wanderTarget);
+                animator.enabled = true;
+                currentClip      = "";
+                PlayClip($"{walkPrefix}_{GetDirectionKey(currentDir)}");
+            }
+        }
+    }
+
+    private void FixedUpdateWander()
+    {
+        if (wanderSubState != WanderSubState.Moving) return;
+
+        Vector2 dir = GetWanderMoveDirection();
+        if (dir == Vector2.zero) return;
+
+        Vector2 finalDir = (dir + GetSeparationForce()).normalized;
+        rb.MovePosition(rb.position + finalDir * MoveSpeed * Time.fixedDeltaTime);
+
+        if (Vector2.Angle(currentDir, finalDir) > 22.5f)
+        {
+            currentDir = finalDir;
+            PlayClip($"{walkPrefix}_{GetDirectionKey(currentDir)}");
+        }
+    }
+
+    // Override in Ghost: direct wall-phasing movement direction
+    protected virtual Vector2 GetWanderMoveDirection()
+    {
+        Vector2 dir = GetNextPathDirection();
+        if (dir == Vector2.zero) dir = LastPathDir;
+        return dir;
+    }
+
+    // Override in Ghost: skip StartPathTo (moves directly, no path needed)
+    protected virtual void OnWanderDestinationSet(Vector2 destination)
+    {
+        StartPathTo(destination);
+    }
+
+    protected virtual Vector2 PickWanderDestination()
+    {
+        if (AstarPath.active == null) return rb.position;
+        for (int i = 0; i < 10; i++)
+        {
+            Vector2   candidate = rb.position + Random.insideUnitCircle * wanderRadius;
+            GraphNode node      = AstarPath.active.GetNearest(candidate, NNConstraint.Default).node;
+            if (node != null && node.Walkable)
+                return (Vector3)node.position;
+        }
+        return rb.position;
+    }
+
+    // ── Spotted State ─────────────────────────────────────────────────────────
+    private void EnterSpotted()
+    {
+        detectionState   = DetectionState.Spotted;
+        stateTimer       = spottedDuration;
+        currentDir       = DirectionToPlayer();
+        animator.enabled = false;
+        UpdateDirectionSprite(GetDirectionKey(currentDir));
+        SpawnIcon(exclamationIconPrefab, spottedDuration, false);
+    }
+
+    private void UpdateSpotted()
+    {
+        stateTimer -= Time.deltaTime;
+        currentDir  = DirectionToPlayer();
+        UpdateDirectionSprite(GetDirectionKey(currentDir));
+        if (stateTimer <= 0f) EnterActive();
+    }
+
+    // ── Active State ──────────────────────────────────────────────────────────
+    private void EnterActive()
+    {
+        detectionState   = DetectionState.Active;
+        attackTimer      = AttackCooldown;
+        animator.enabled = true;
+        currentClip      = "";
+        OnActivated();
+    }
+
+    private void UpdateActiveState()
+    {
+        attackTimer += Time.deltaTime;
+        if (!CanDetectPlayer(extendedRange: true))
+        {
+            EnterLost();
+            return;
+        }
+        UpdateActive();
+    }
+
+    protected virtual void UpdateActive()       {}
+    protected virtual void FixedUpdateActive()  {}
+    protected virtual void OnActivated()        {}
+    protected virtual void OnDeactivated()      {}
+
+    // ── Lost State ────────────────────────────────────────────────────────────
+    private void EnterLost()
+    {
+        detectionState   = DetectionState.Lost;
+        stateTimer       = lostDuration;
+        lookAroundTimer  = 0f;
+        lookAroundStep   = 0;
+        animator.enabled = false;
+        UpdateDirectionSprite(GetDirectionKey(currentDir));
+        SpawnIcon(questionIconPrefab, lostDuration, true);
+        OnDeactivated();
+    }
+
+    private void UpdateLost()
+    {
+        if (CanDetectPlayer())
+        {
+            EnterSpotted();
+            return;
+        }
+
+        stateTimer      -= Time.deltaTime;
+        lookAroundTimer -= Time.deltaTime;
+
+        if (lookAroundTimer <= 0f)
+        {
+            lookAroundTimer = LookAroundInterval;
+            DoLookAroundStep();
+        }
+
+        if (stateTimer <= 0f)
+        {
+            animator.enabled = true;
+            currentClip      = "";
+            EnterWander();
+        }
+    }
+
+    private void DoLookAroundStep()
+    {
+        int baseIdx = System.Array.IndexOf(DirOrder, GetDirectionKey(currentDir));
+        if (baseIdx < 0) return;
+
+        // Sequence: centre → left → centre → right → centre → ...
+        string dirKey;
+        switch (lookAroundStep % 4)
+        {
+            case 1:  dirKey = DirOrder[(baseIdx + 7) % 8]; break; // left-adjacent
+            case 3:  dirKey = DirOrder[(baseIdx + 1) % 8]; break; // right-adjacent
+            default: dirKey = DirOrder[baseIdx];            break; // centre
+        }
+        lookAroundStep++;
+        UpdateDirectionSprite(dirKey);
+    }
+
+    // ── Detection Check ───────────────────────────────────────────────────────
+    private bool CanDetectPlayer(bool extendedRange = false)
+    {
+        if (player == null || playerHealth == null || playerHealth.IsDead) return false;
+
+        float range = extendedRange ? detectionRange * 1.5f : detectionRange;
+        if (DistanceToPlayer() > range) return false;
+        if (canSeeThoughWalls) return true;
+
+        Vector2 dir      = DirectionToPlayer();
+        float   dist     = DistanceToPlayer();
+        int     wallMask = LayerMask.GetMask("Walls");
+        return !Physics2D.Raycast(rb.position, dir, dist, wallMask);
+    }
+
+    // ── Sprite Helpers ────────────────────────────────────────────────────────
+    protected void UpdateDirectionSprite(string dirKey)
+    {
+        if (sr == null || rotationSprites == null || rotationSprites.Length < 8) return;
+        int idx = System.Array.IndexOf(DirOrder, dirKey);
+        if (idx >= 0 && rotationSprites[idx] != null)
+            sr.sprite = rotationSprites[idx];
+    }
+
+    protected void PlayClip(string clip)
+    {
+        if (clip == currentClip) return;
+        currentClip = clip;
+        animator.Play(clip);
+    }
+
+    // ── Icons ─────────────────────────────────────────────────────────────────
+    private void SpawnIcon(GameObject prefab, float duration, bool shake)
+    {
+        if (activeIcon != null) Destroy(activeIcon);
+        if (prefab == null) return;
+
+        activeIcon = Instantiate(prefab);
+        activeIcon.transform.localScale = Vector3.zero;
+
+        if (shake) StartCoroutine(AnimateShake(activeIcon, duration));
+        else       StartCoroutine(AnimatePopIn(activeIcon, duration));
+    }
+
+    private IEnumerator AnimatePopIn(GameObject icon, float duration)
+    {
+        float riseTime   = duration * 0.2f;
+        float settleTime = duration * 0.1f;
+        float holdTime   = duration * 0.5f;
+        float shrinkTime = duration * 0.2f;
+
+        for (float t = 0f; t < riseTime; t += Time.deltaTime)
+        {
+            if (icon == null) yield break;
+            icon.transform.position   = transform.position + Vector3.up * iconHeightOffset;
+            icon.transform.localScale = Vector3.one * Mathf.Lerp(0f, 1.2f, t / riseTime);
+            yield return null;
+        }
+        for (float t = 0f; t < settleTime; t += Time.deltaTime)
+        {
+            if (icon == null) yield break;
+            icon.transform.position   = transform.position + Vector3.up * iconHeightOffset;
+            icon.transform.localScale = Vector3.one * Mathf.Lerp(1.2f, 1.0f, t / settleTime);
+            yield return null;
+        }
+
+        float holdEnd = Time.time + holdTime;
+        while (Time.time < holdEnd)
+        {
+            if (icon == null) yield break;
+            icon.transform.position = transform.position + Vector3.up * iconHeightOffset;
+            yield return null;
+        }
+
+        for (float t = 0f; t < shrinkTime; t += Time.deltaTime)
+        {
+            if (icon == null) yield break;
+            icon.transform.position   = transform.position + Vector3.up * iconHeightOffset;
+            icon.transform.localScale = Vector3.one * Mathf.Lerp(1.0f, 0f, t / shrinkTime);
+            yield return null;
+        }
+        if (icon != null) Destroy(icon);
+    }
+
+    private IEnumerator AnimateShake(GameObject icon, float duration)
+    {
+        if (icon != null) icon.transform.localScale = Vector3.one;
+
+        float   elapsed  = 0f;
+        int     step     = 0;
+        float[] angles   = { 0f, 30f, 0f, -30f };
+
+        while (elapsed < duration)
+        {
+            if (icon == null) yield break;
+            icon.transform.position   = transform.position + Vector3.up * iconHeightOffset;
+            icon.transform.rotation   = Quaternion.Euler(0f, 0f, angles[step % 4]);
+            step++;
+            yield return new WaitForSeconds(0.25f);
+            elapsed += 0.25f;
+        }
+        if (icon != null) Destroy(icon);
+    }
+
+    // ── Shared Helpers ────────────────────────────────────────────────────────
     protected float DistanceToPlayer()
     {
         if (player == null) return float.MaxValue;
@@ -95,29 +468,28 @@ public abstract class EnemyBase : MonoBehaviour
     {
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (angle < 0) angle += 360f;
-        if (angle >= 337.5f || angle < 22.5f)  return "east";
-        if (angle < 67.5f)                      return "north_east";
-        if (angle < 112.5f)                     return "north";
-        if (angle < 157.5f)                     return "north_west";
-        if (angle < 202.5f)                     return "west";
-        if (angle < 247.5f)                     return "south_west";
-        if (angle < 292.5f)                     return "south";
-        return                                         "south_east";
+        if (angle >= 337.5f || angle < 22.5f) return "east";
+        if (angle < 67.5f)                    return "north_east";
+        if (angle < 112.5f)                   return "north";
+        if (angle < 157.5f)                   return "north_west";
+        if (angle < 202.5f)                   return "west";
+        if (angle < 247.5f)                   return "south_west";
+        if (angle < 292.5f)                   return "south";
+        return                                       "south_east";
     }
 
     protected abstract void Attack();
 
     protected virtual void OnDeath()
     {
+        if (activeIcon != null) Destroy(activeIcon);
         Destroy(gameObject, 0.1f);
     }
 
-    // ── Separation ───────────────────────────────────────────────────────────
-
+    // ── Separation ────────────────────────────────────────────────────────────
     [Header("Separation")]
     [SerializeField] private float separationRadius = 1.2f;
     [SerializeField] [Range(0f, 2f)] private float separationWeight = 0.8f;
-
     private static readonly Collider2D[] SeparationBuffer = new Collider2D[16];
 
     protected Vector2 GetSeparationForce()
@@ -137,28 +509,23 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     // ── Pathfinding ───────────────────────────────────────────────────────────
-
     private List<Vector3> _pathWaypoints;
     private int           _waypointIndex;
     private bool          _pathReady;
     private Vector2       _lastPathDir;
+    private const float   WaypointReachedDist = 0.2f;
 
-    private const float WaypointReachedDist = 0.2f;
-
-    protected bool PathComplete => _pathReady && _waypointIndex >= (_pathWaypoints?.Count ?? 0);
-    protected bool HasPath      => _pathReady && _pathWaypoints != null && _pathWaypoints.Count > 0;
-    protected Vector2 LastPathDir => _lastPathDir;
+    protected bool    PathComplete => _pathReady && _waypointIndex >= (_pathWaypoints?.Count ?? 0);
+    protected bool    HasPath      => _pathReady && _pathWaypoints != null && _pathWaypoints.Count > 0;
+    protected Vector2 LastPathDir  => _lastPathDir;
 
     protected void StartPathTo(Vector2 target)
     {
         if (seeker == null || AstarPath.active == null) return;
+        _pathReady = false;
         seeker.StartPath(rb.position, target, p =>
         {
-            if (p.error)
-            {
-                Debug.LogWarning($"{name}: Path failed — {p.errorLog}");
-                return;
-            }
+            if (p.error) return;
             _pathWaypoints = p.vectorPath;
             _waypointIndex = 0;
             _pathReady     = true;
@@ -168,16 +535,60 @@ public abstract class EnemyBase : MonoBehaviour
     protected Vector2 GetNextPathDirection()
     {
         if (!HasPath) return Vector2.zero;
-
         while (_waypointIndex < _pathWaypoints.Count &&
                Vector2.Distance(rb.position, _pathWaypoints[_waypointIndex]) < WaypointReachedDist)
         {
             _waypointIndex++;
         }
-
         if (_waypointIndex >= _pathWaypoints.Count) return Vector2.zero;
-
         _lastPathDir = ((Vector2)_pathWaypoints[_waypointIndex] - rb.position).normalized;
         return _lastPathDir;
     }
+
+    // ── Spawn Safety ──────────────────────────────────────────────────────────
+    private void EnsureSafeSpawnDistance()
+    {
+        if (player == null) return;
+        float safeDistance = attackRange + 1f;
+        if (DistanceToPlayer() < safeDistance)
+        {
+            Vector2 away   = -DirectionToPlayer();
+            Vector2 newPos = (Vector2)player.position + away * safeDistance;
+            rb.position        = newPos;
+            transform.position = newPos;
+            Physics2D.SyncTransforms();
+        }
+    }
+
+    // ── Rotation Sprites ──────────────────────────────────────────────────────
+    protected void LoadRotationSprites()
+    {
+        if (rotationSprites != null && rotationSprites.Length == 8 && rotationSprites[0] != null) return;
+#if UNITY_EDITOR
+        string enemyName = gameObject.name.Replace("(Clone)", "").Replace(" Variant", "").Trim();
+        rotationSprites = new Sprite[8];
+        for (int i = 0; i < 8; i++)
+        {
+            string path = $"Assets/Art/Sprites/Enemies/{enemyName}/rotations/{RotationDirFiles[i]}.png";
+            rotationSprites[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+#endif
+    }
+
+#if UNITY_EDITOR
+    [ContextMenu("Bake Rotation Sprites")]
+    private void BakeRotationSprites()
+    {
+        string enemyName = gameObject.name.Replace("(Clone)", "").Replace(" Variant", "").Trim();
+        rotationSprites  = new Sprite[8];
+        for (int i = 0; i < 8; i++)
+        {
+            string path = $"Assets/Art/Sprites/Enemies/{enemyName}/rotations/{RotationDirFiles[i]}.png";
+            rotationSprites[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+        UnityEditor.EditorUtility.SetDirty(this);
+        int loaded = System.Array.FindAll(rotationSprites, s => s != null).Length;
+        Debug.Log($"Baked {loaded}/8 rotation sprites for {enemyName}");
+    }
+#endif
 }
