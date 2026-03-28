@@ -44,6 +44,10 @@ Gemini returns a single structured `generate_floor` response:
   "palette_override": ["#8B4513", "#C0A080", "#2F2F2F"],
   "environmental_modifier": "time_dilation_field",
   "stage_message": "You burned through them so easily, didn't you? Let's see if that hunger serves you when the walls close in and the sentinels don't stop coming.",
+  "chamber_grid": [
+    "dungeon_open_arena_01", "dungeon_pillar_hall_02", "dungeon_central_block_03", "dungeon_scattered_cover_04",
+    "dungeon_scattered_cover_04", "dungeon_open_arena_01", "dungeon_tight_maze_06", "dungeon_open_arena_01"
+  ],
   "enemy_spawns": [
     { "enemy_id": "ranged_sentinel", "count": 4, "modifiers": ["armored"] },
     { "enemy_id": "fast_skitter", "count": 6, "modifiers": [] }
@@ -51,11 +55,13 @@ Gemini returns a single structured `generate_floor` response:
   "new_spell": {
     "name": "Chronos Bolt",
     "flavor": "A bolt that stutters through time, hitting twice.",
-    "corruption_flavor": null,
     "tags": ["PROJECTILE", "STUTTER_MOTION", "DOUBLE_HIT"],
     "damage": 35,
     "speed": 6.0,
-    "cooldown": 1.2
+    "cooldown": 1.2,
+    "element": "",
+    "is_merged": false,
+    "merged_from": []
   },
   "corrupted_spells": [
     {
@@ -235,8 +241,9 @@ Assets/Chambers/
 **Generation workflow:**
 1. `python generate_chambers.py` — sends each tileset spritesheet to Gemini, writes `chambers.json` per tileset
 2. `Tools > Generate Chamber Prefabs` (Unity Editor) — reads all `chambers.json` files, paints tiles, saves `.prefab` assets
+3. `Tools > Populate Chamber Library` (Unity Editor) — scans `Assets/Chambers/` and auto-wires every prefab into `FloorAssembler.tilesetLibraries`. Run once after new prefabs are generated; no manual dragging needed.
 
-`FloorAssembler` has a `chamberLibrary` (Inspector list of id → prefab pairs) and a `chamberGrid` (8 IDs). No ScriptableObject registry — prefabs are wired up in the Inspector.
+`FloorAssembler` has a `tilesetLibraries` list (grouped by tileset — each entry holds a `tilesetId` string and a list of `ChamberEntry` id → prefab pairs) and a `chamberGrid` (8 IDs). At runtime, `activeTilesetId` is set from the manifest's `tileset_id` field and `BuildLibrary` only looks up chambers within that tileset — preventing any cross-tileset mixing. No ScriptableObject registry — prefabs are wired via `Tools > Populate Chamber Library`.
 
 #### What Gemini Receives (in addition to session log)
 ```json
@@ -263,11 +270,13 @@ Flat array of 8 IDs — index 0–3 = bottom row (y=0), 4–7 = top row (y=20). 
 
 #### FloorAssembler
 `FloorAssembler.cs` reads `chamber_grid` from the Floor Manifest and:
-1. Looks up each chamber id in its Inspector-configured `chamberLibrary` (List of id → prefab pairs)
+1. Sets `activeTilesetId` from `manifest.tileset_id`, then looks up each chamber id in `tilesetLibraries[activeTilesetId]` only — other tilesets are never touched
 2. Instantiates each chamber prefab at grid offset `(col * 20, row * 20)` world units
 3. Updates `MapBoundsMarker` position to map center `(40, 20)` with size `(80, 40)`
 4. Spawns 4 invisible `BoxCollider2D` boundary walls around the full map perimeter (keeps enemies and player inside)
 5. Calls `EnemySpawner.SpawnFloor(enemySpawns, origin)` to begin the staggered enemy spawn sequence
+
+Floor assembly is driven by `StageLoader.cs` (not auto-assembled on `Start`). `StageLoader` parses the manifest JSON, calls `FloorAssembler.LoadManifest()`, then handles Grimoire spell additions and corruptions. The manifest JSON is set via a `[TextArea]` Inspector field; leaving it blank loads the hardcoded Stage 1 manifest.
 
 ### Tileset Integration (PixelLab Assets)
 All 32×32 tilesets are PixelLab assets. The 10 available tilesets are:
@@ -284,8 +293,8 @@ The `tileset_id` in the Floor Manifest tells `FloorAssembler` which set of prefa
 
 ### Difficulty Scaling
 Stage number is always passed in the session log. Difficulty scales via:
-- Enemy stat multiplier: `base_stat * (1 + stage * 0.08)` — tunable curve
-- Gemini is prompted to increase enemy density and modifier count as stage increases
+- **Enemy stats:** `base_stat * (1 + stage * 0.08)` — tunable curve, Gemini is prompted to increase density and modifier count
+- **Player HP:** grows each stage at a slower rate than enemies — deliberate difficulty creep. Gemini returns a `player_hp_increase_pct` float (e.g. `0.05` = +5%) in the Floor Manifest; the client applies `newHp = currentHp * (1 + player_hp_increase_pct)`. Shown as a before/after delta on the Stage Transition scroll (Page 2). Prompt engineering keeps this value lower than the enemy stat growth rate.
 - Spell corruption rate increases with stage (more tags mutated per floor)
 
 ---
@@ -373,10 +382,19 @@ Gemini may use either or both per floor, depending on how aggressively it wants 
 ### The Grimoire (Spell Inventory)
 The player accumulates spells across floors. The Grimoire holds all owned spells — there is no hard cap enforced in the design, but the UI should cap display at ~8 slots for clarity.
 
-### Active Spell: One at a Time
-During a run, the player has **one active spell** at a time as their primary fire. They can open the **Spell Menu** (accessible mid-floor) to switch which spell is currently equipped. This is like weapon-switching in a shooter — tactical, not overwhelming.
+The Grimoire UI has two modes accessible from the same screen:
+- **Loadout view** — assign spells from the library into the 3 active slots
+- **Library view** — browse all owned spells, inspect stats/flavor/corruption, initiate the Merge Ritual
 
-There is no secondary fire for now.
+Merged spells land in the Grimoire first; the player must manually slot them in.
+
+### Active Loadout: 3 Equipped Spells
+During a run, the player has **3 equipped spell slots** as their active loadout. They quickswap between them with keys **1**, **2**, and **3**. Only the currently selected slot fires.
+
+Corrupted spells are visually flagged in both the hotbar and the Grimoire (e.g. a red tint or corrupted border).
+
+### UI Pause Behaviour
+Any UI popup (Grimoire, settings, stage transition scroll) pauses the game via `Time.timeScale = 0`. This lets players manage their loadout, read spell details, and perform merges mid-run without time pressure. Input that drives gameplay (movement, casting) is blocked while paused; UI navigation input is not.
 
 ### Spell Merging
 At **milestone stages** (every 5 floors: stage 5, 10, 15...) the player is offered a **Merge Ritual**:
@@ -408,22 +426,26 @@ The merge is a **power trade-off**: you gain a single more powerful spell but lo
 
 ## Stage Transition Screen
 
-Between every floor, a full-screen **Stage Transition UI** is shown before the next floor loads. It has three components:
+Between every floor, a full-screen **scroll popup** is shown before the next floor loads. It is presented as a physical parchment scroll that the player clicks through — two pages.
 
-### 1. Stage Title
-The `floor_name` from the incoming Floor Manifest displayed prominently (e.g. *"The Ashen Gauntlet"*).
+### Page 1 — The Chronicle Speaks
+The scroll unfurls to show the `stage_message`: a short paragraph (2–4 sentences) generated by Gemini in the voice of the Chronicle. Ominous, taunting, or poetic — never neutral. Displayed as handwritten-style text on the scroll.
 
-### 2. Message from the Dungeon
-The `stage_message` field — a short paragraph (2–4 sentences) generated by Gemini in the voice of the Chronicle. It acknowledges how the player has been playing and teases what's coming. Tone is ominous, taunting, or poetic — never neutral.
-
-Gemini is prompted to write this in second person, directly addressing the player, referencing their `combat_style`, `primary_element`, `most_damage_taken_from`, and the `last_word` they chose.
+Gemini is prompted to write in second person, referencing `combat_style`, `primary_element`, `most_damage_taken_from`, and the `last_word` the player chose.
 
 **Examples:**
 - Aggressive fire player: *"You have been very aggressive, haven't you? Burning everything you touch, rushing in before the ash settles. Let's see how that hunger holds up when the sentinels don't stop coming — and they're immune to your fire."*
 - Passive ranged player: *"Careful. Methodical. Always at a distance. The dungeon has noticed. What happens when there is no distance left to hide behind?"*
 
-### 3. Spell Received
-The new spell card for `new_spell` — displays name, flavor, `corruption_flavor` (if any), tags, and stats. If the spell has corruption tags and `corruption_flavor` is set, the card is visually distinct (e.g. dark border, cursed styling) to signal the trade-off.
+The player clicks the scroll (or a "turn page" arrow) to advance.
+
+### Page 2 — Stage Details
+The scroll's second page shows the mechanical summary of what's incoming:
+
+- **Stage title** — `floor_name` displayed prominently
+- **New spell card** — name, flavor, `corruption_flavor` (if any), tags, stats. Visually distinct (dark border, cursed glow) if the spell carries corruption tags.
+- **Spell corruptions** — any spells from `corrupted_spells` are listed with what changed (tags added/removed, new flavor)
+- **Player stat changes** — shows the player's updated stats for this stage (HP, etc.) as a delta (e.g. `HP: 100 → 115`). Both player HP and enemy stats scale with stage number; player HP grows at a slower rate than enemies, creating deliberate difficulty creep.
 
 ### `stage_message` in the Floor Manifest
 
@@ -462,8 +484,9 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
 [Stage 1 — Hardcoded Floor Manifest]   ← no Gemini call
       │
       ▼
-[FloorAssembler reads chamber_grid (flat array of 8 IDs)]
-[Looks up each ID in chamberLibrary (Inspector-configured id→prefab map)]
+[StageLoader parses Floor Manifest JSON]
+[FloorAssembler.LoadManifest() — sets activeTilesetId + chamberGrid + enemySpawns]
+[BuildLibrary filters tilesetLibraries to activeTilesetId only]
 [Instantiates 8 chamber prefabs at grid offsets (col*20, row*20)]
 [Updates MapBoundsMarker to center (40,20) size (80,40)]
       │
@@ -485,8 +508,9 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
       │
    ┌──┴──────────────────────────────────────────┐
    │                                             │
-[FloorAssembler]                       [Add new spell to Grimoire]
-[Look up IDs in chamberLibrary]        [Corrupt existing spells]
+[StageLoader → FloorAssembler]                    [StageLoader → Grimoire]
+[Look up IDs in tilesetLibraries[activeTilesetId]] [Add new spell]
+                                                   [Corrupt existing spells]
 [Instantiate chambers per grid]
 [Spawn boundary wall colliders]
 [Apply palette_override to materials]
