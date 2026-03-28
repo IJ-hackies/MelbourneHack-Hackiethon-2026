@@ -64,6 +64,30 @@ public class FloorAssembler : MonoBehaviour
         }
 
         PositionMapBounds();
+        SpawnBoundaryWalls();
+    }
+
+    private void SpawnBoundaryWalls()
+    {
+        float mapW = ChamberSize * 4;
+        float mapH = ChamberSize * 2;
+        float cx   = transform.position.x + mapW / 2f;
+        float cy   = transform.position.y + mapH / 2f;
+        float thickness = 1f;
+
+        CreateWall("Boundary_Bottom", new Vector2(cx, transform.position.y - thickness / 2f), new Vector2(mapW, thickness));
+        CreateWall("Boundary_Top",    new Vector2(cx, transform.position.y + mapH + thickness / 2f), new Vector2(mapW, thickness));
+        CreateWall("Boundary_Left",   new Vector2(transform.position.x - thickness / 2f, cy), new Vector2(thickness, mapH));
+        CreateWall("Boundary_Right",  new Vector2(transform.position.x + mapW + thickness / 2f, cy), new Vector2(thickness, mapH));
+    }
+
+    private void CreateWall(string wallName, Vector2 position, Vector2 size)
+    {
+        var go = new GameObject(wallName);
+        go.transform.SetParent(transform);
+        go.transform.position = position;
+        var col = go.AddComponent<BoxCollider2D>();
+        col.size = size;
     }
 
     private Dictionary<string, GameObject> BuildLibrary()
