@@ -31,19 +31,21 @@ public class EnemySpawner : MonoBehaviour
     public float spawnInterval = 0.5f;
 
     // Chamber grid constants — must match FloorAssembler
-    private const int   ChamberSize   = 20;
-    private const float OpeningCenter = 9.5f;   // tile 9.5 in local chamber space
-    private const float SpawnOffset   = 1f;     // how far outside the map edge to place the enemy
+    private const int   ChamberSize  = 20;
+    private const float OpeningCenter = 9.5f;  // tile 9.5 in local chamber space
+    private const float SpawnInset   = 2f;     // how far INSIDE the map edge to place the enemy
 
     // 12 exterior entry points computed from the 4x2 grid geometry.
+    // Enemies are placed just inside the map edge so boundary wall colliders
+    // don't block them from entering.
     // Assumes the assembler's origin is (0,0). If FloorAssembler is offset,
     // pass its position into SpawnFloor().
     private static Vector2[] ComputeEntryPoints(Vector2 assemblerOrigin)
     {
-        float left   = assemblerOrigin.x - SpawnOffset;
-        float right  = assemblerOrigin.x + ChamberSize * 4 + SpawnOffset;
-        float bottom = assemblerOrigin.y - SpawnOffset;
-        float top    = assemblerOrigin.y + ChamberSize * 2 + SpawnOffset;
+        float left   = assemblerOrigin.x + SpawnInset;
+        float right  = assemblerOrigin.x + ChamberSize * 4 - SpawnInset;
+        float bottom = assemblerOrigin.y + SpawnInset;
+        float top    = assemblerOrigin.y + ChamberSize * 2 - SpawnInset;
 
         // Opening X positions for bottom/top (one per column)
         float[] colX = new float[4];
