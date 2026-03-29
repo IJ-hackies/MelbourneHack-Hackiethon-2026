@@ -298,25 +298,88 @@ Stage number is always passed in the session log. Difficulty scales via:
 
 Spells are **pure data** — no runtime code generation. The engine contains handlers for every possible behavior tag. The LLM creates novel spells by composing new *combinations* of tags, producing emergent behaviors without any new code.
 
-### Behavior Tag Vocabulary (~30 tags)
+### Behavior Tag Vocabulary (~60 tags)
 
-**Movement:**
-`PROJECTILE`, `ORBITAL`, `BEAM`, `HOMING`, `WALL_BOUNCE`, `PIERCE_WALLS`, `SPIRAL`, `STUTTER_MOTION`, `SPLIT_ON_IMPACT`
+#### Movement base type — exactly ONE required per spell
+| Tag | Behavior |
+|-----|----------|
+| `PROJECTILE` | Standard fired projectile |
+| `ORBITAL` | Orbits the caster as a rotating shield |
+| `BEAM` | Instant raycast beam |
+| `CHANNELED` | Fires a projectile; steerable toward cursor while mouse held; destroys on release |
 
-**Effect:**
-`LIFESTEAL`, `AOE_BURST`, `PIERCE`, `CHAIN`, `DOUBLE_HIT`, `PULL`, `PUSH`
+#### Trajectory modifiers — stack freely on PROJECTILE / CHANNELED
+| Tag | Behavior |
+|-----|----------|
+| `HOMING` | Curves toward nearest enemy |
+| `WALL_BOUNCE` | Reflects off walls up to 3 times |
+| `REFLECTING` | Reflects off walls indefinitely |
+| `PIERCE_WALLS` | Passes through wall geometry |
+| `SPIRAL` | Corkscrews through the air |
+| `STUTTER_MOTION` | Stop-start lurching movement |
+| `BOOMERANG` | Travels to max range then returns to caster |
+| `SURFACE_CRAWLING` | Slides along wall surfaces instead of bouncing |
+| `SKIPPING` | Bounces periodically with a scale pulse (top-down stone-skip) |
+| `DELAYED_ARC` | Grows large at midpoint (arc peak), then accelerates forward |
+| `SENTIENT` | AI-controlled; pathfinds to nearest enemy independently |
+| `DELAYED` | Sits dormant for 1.2s after firing before activating |
+| `PHASING` | Alternates intangible/solid every 0.5s; can only hit during solid phase |
+| `PERSISTENT` | No lifetime — stays in world until it hits something |
 
-**Status:**
-`SLOW`, `BURN`, `FREEZE`, `STUN`, `POISON`
+#### Caster modifiers — resolved in SpellExecutor before the projectile spawns
+| Tag | Behavior |
+|-----|----------|
+| `DOUBLE_HIT` | Fires a second copy at +15° offset |
+| `MIRRORED` | Also fires an identical copy in the opposite direction |
+| `GHOST_CAST` | Also fires an invisible damage copy alongside the visible spell |
+| `SACRIFICE` | Costs 15% of current HP; the projectile deals 2× damage |
+| `ECHOING` | After 3s, automatically re-casts the spell once |
 
-**Corruption (added by LLM as decay):**
-`SELF_DAMAGE`, `ENEMY_HOMING`, `REVERSED_CONTROLS`
+#### On-impact behaviors — trigger when the projectile hits an enemy
+| Tag | Behavior |
+|-----|----------|
+| `CHAIN` | Jumps to nearest un-hit enemy within 6 units after each hit |
+| `FRAGMENTING` | Breaks into 4–6 chaotic random-angle projectiles on hit |
+| `AOE_BURST` | Explodes for 50% damage in a 3-unit radius on hit |
+| `PIERCE` | Passes through enemies (up to 5 hits before destroying) |
+| `LIFESTEAL` | Heals caster for 30% of damage dealt |
+| `PUSH` | Knocks hit enemy away from caster |
+| `PULL` | Yanks hit enemy toward caster |
+| `DETONATING` | Embeds in enemy; explodes for 2× AoE damage after 2.5s |
+| `LINGERING` | Leaves a 5s / 2-unit damage zone where it lands |
+| `SWAPPING` | Teleports the caster to the projectile's impact point |
+| `CONTAGIOUS` | Spawns a 40%-damage copy from the hit enemy toward the next nearest foe |
+| `BURROWING` | Goes underground after 0.5s; erupts with 1.5× AoE under the nearest enemy |
+| `TETHERED` | Embeds in enemy on hit; pulls them toward caster for 2.5s via LineRenderer tether |
 
-### Tag Rules
-- A spell **must** have exactly one of `PROJECTILE`, `ORBITAL`, or `BEAM` — this determines how it fires.
-- All other tags (movement modifiers, effect, status, corruption) are optional.
-- Base damage is a stat (`damage` field), not a tag — a spell with only `PROJECTILE` still deals damage.
-- A spell may include corruption tags in its own `tags` array if it is an **inherently cursed spell** (see below).
+#### Status effects — apply a condition to each enemy hit
+| Tag | Effect |
+|-----|--------|
+| `SLOW` | Reduces move speed to 40% for 2s |
+| `BURN` | 10% damage/tick every 0.5s for 3s (orange tint) |
+| `FREEZE` | Stops movement + triples attack cooldown for 2s (icy blue tint) |
+| `STUN` | Stops movement + disables attacking for 1.5s (yellow tint) |
+| `POISON` | 5%×stacks damage/s for 5s, stacks up to 3× (green tint) |
+| `BLEED` | Escalating DoT: each tick 15% stronger than the last, for 4s (red tint) |
+| `ROOT` | Locks position for 2s; enemy can still attack (softer than STUN) (green tint) |
+| `WEAKNESS` | Amplifies all incoming damage on target by 1.5× for 3s (amber tint) |
+| `CURSE` | Enemy flees from player for 3s — movement direction inverted (purple tint) |
+| `BLIND` | Enemy loses player detection for 2.5s and wanders randomly (pale yellow tint) |
+
+#### Corruption tags — Gemini uses these to decay/curse spells
+| Tag | Effect |
+|-----|--------|
+| `SELF_DAMAGE` | Caster takes 20% of spell damage on each cast |
+| `ENEMY_HOMING` | Projectile homes toward the player instead of enemies |
+| `REVERSED_CONTROLS` | Aim direction is flipped on cast |
+
+### Tag Composition Rules
+- **Movement base:** Exactly one of `PROJECTILE`, `ORBITAL`, `BEAM`, `CHANNELED` is required. Merged spells may combine multiple movement types.
+- **Status effects:** Include zero or one status tag per spell. Choose based on the spell's narrative and element — e.g. fire → BURN, ice → FREEZE or SLOW, shadow → CURSE or BLIND, void → WEAKNESS. Neutral/generic spells may have no status tag.
+- **Corruption tags** may appear in a spell's own `tags` array if it is a **cursed spell** (powerful stats, built-in downside). Set `corruption_flavor` when used.
+- Base damage is a stat field (`damage`), not a tag — a `PROJECTILE`-only spell still deals damage.
+- Avoid combining mutually-redundant tags (e.g. `HOMING` + `SENTIENT`, `WALL_BOUNCE` + `REFLECTING`, `STUN` + `FREEZE`).
+- `PROBABILITY` may be added to any spell to make it randomly pick ONE behavior tag per cast (engine handles resolution — Gemini should still include all candidate behavior tags in the `tags` array alongside `PROBABILITY`).
 
 ### Spell Data Structure
 

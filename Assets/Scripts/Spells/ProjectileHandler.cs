@@ -1,181 +1,308 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Attached to a projectile prefab. Initialized by SpellExecutor with the
-/// casting spell's data and aim direction. Reads tags to modify behavior.
+/// Orchestrator for all projectile behavior. Reads SpellTags and wires up
+/// modular ProjectileBehaviorBase components at Init time. Core responsibilities:
+///   - PROBABILITY resolution (picks one behavior tag per cast)
+///   - AddBehaviors() — AddComponent per relevant tag
+///   - HitEnemy()     — damage, status, force, then callbacks to behavior components
+///   - Default wall-destruction for non-bounce projectiles
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class ProjectileHandler : MonoBehaviour
 {
     [SerializeField] private GameObject aoePrefab;
 
-    private SpellData spell;
-    private Vector2 direction;
-    private Rigidbody2D rb;
+    // ── State ────────────────────────────────────────────────────────────────
+    private ProjectileContext ctx;
+    private bool              initialized;
+    private int               hitCount;
+    private readonly HashSet<GameObject> hitEnemies = new();
 
-    private bool initialized = false;
-    private bool isSplitChild = false;
-    private int hitCount = 0;
-    private int bounceCount = 0;
-    private const int maxPierceHits = 5;
-    private const int maxBounces = 3;
-    private const float lifetime = 5f;
+    private const int   MaxPierceHits = 5;
+    private const float Lifetime      = 5f;
+    private const int   WallLayer     = 1 << 9;
 
-    private Health playerHealth;
-    private readonly HashSet<GameObject> chainedEnemies = new();
+    // ── Init ─────────────────────────────────────────────────────────────────
 
-    private const int WallLayerMask = 1 << 9; // Walls layer
-
-    private void Awake()
+    public void Init(SpellData spell, Vector2 dir,
+                     bool  isSplitChild    = false,
+                     bool  isGhost         = false,
+                     float damageMultiplier = 1f)
     {
-        rb = GetComponent<Rigidbody2D>();
+        var rb      = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
 
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-            playerHealth = playerObj.GetComponent<Health>();
-    }
+        // Resolve PROBABILITY before anything else
+        HashSet<SpellTag> effectiveTags = ResolveEffectiveTags(spell);
 
-    public void Init(SpellData spellData, Vector2 dir, bool splitChild = false)
-    {
-        spell = spellData;
-        direction = dir;
+        // Locate player
+        GameObject playerObj   = GameObject.FindGameObjectWithTag("Player");
+        Health     playerHealth = playerObj != null ? playerObj.GetComponent<Health>() : null;
+        Transform  casterTf    = playerObj != null ? playerObj.transform : null;
+
+        // Apply optional damage multiplier (e.g. SACRIFICE boost)
+        SpellData activeSpell = spell;
+        if (!Mathf.Approximately(damageMultiplier, 1f))
+        {
+            SpellData boosted  = ScriptableObject.CreateInstance<SpellData>();
+            boosted.spellName  = spell.spellName;
+            boosted.flavor     = spell.flavor;
+            boosted.tags       = spell.tags;
+            boosted.damage     = spell.damage * damageMultiplier;
+            boosted.speed      = spell.speed;
+            boosted.cooldown   = spell.cooldown;
+            boosted.element    = spell.element;
+            boosted.isMerged   = spell.isMerged;
+            boosted.mergedFrom = spell.mergedFrom;
+            activeSpell        = boosted;
+        }
+
+        ctx = new ProjectileContext(activeSpell, effectiveTags, rb, playerHealth, casterTf, dir, this);
+
+        // Ghost: invisible but fully damaging
+        if (isGhost)
+        {
+            var sr = GetComponentInChildren<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
+        }
+        else
+        {
+            HitEffectSpawner.AddGlowSprite(transform, ElementToColor(ctx.Spell.element), 0.35f, 5);
+        }
+
+        // Set initial velocity
+        rb.linearVelocity = dir * activeSpell.speed;
+
+        // DELAYED: sit dormant for 1.2s before activating
+        if (ctx.HasTag(SpellTag.DELAYED))
+        {
+            rb.linearVelocity = Vector2.zero;
+            var col = GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+            Invoke(nameof(Activate), 1.2f);
+        }
+
+        // Wire up behavior components
+        AddBehaviors(isSplitChild);
+
+        // Lifetime — PERSISTENT spells never auto-destroy
+        if (!ctx.HasTag(SpellTag.PERSISTENT))
+            Destroy(gameObject, Lifetime);
+
         initialized = true;
-        isSplitChild = splitChild;
-
-        HitEffectSpawner.AddGlowSprite(transform, ElementToColor(spell.element), 0.35f, 5);
-
-        rb.linearVelocity = direction * spell.speed;
-        Debug.Log($"[Projectile] Init called. dir={dir} speed={spell.speed} velocity={rb.linearVelocity} rbType={rb.bodyType}");
-
-        if (spell.HasTag(SpellTag.STUTTER_MOTION))
-            StartCoroutine(StutterMotion());
-
-        Destroy(gameObject, lifetime);
     }
+
+    private void Activate()
+    {
+        if (ctx == null) return;
+        ctx.Rb.linearVelocity = ctx.InitialDirection * ctx.Spell.speed;
+        var col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = true;
+    }
+
+    // ── PROBABILITY resolution ────────────────────────────────────────────────
+
+    private static HashSet<SpellTag> ResolveEffectiveTags(SpellData spell)
+    {
+        var all = new HashSet<SpellTag>(spell.tags ?? System.Array.Empty<SpellTag>());
+        if (!all.Contains(SpellTag.PROBABILITY)) return all;
+
+        // Collect all "behavior" tags (not movement / status / corruption)
+        var candidates = new List<SpellTag>();
+        foreach (var t in all)
+            if (IsBehaviorTag(t)) candidates.Add(t);
+
+        // Randomly keep exactly one; drop the rest
+        if (candidates.Count > 1)
+        {
+            var chosen = candidates[Random.Range(0, candidates.Count)];
+            foreach (var t in candidates)
+                if (t != chosen) all.Remove(t);
+        }
+
+        return all;
+    }
+
+    private static bool IsBehaviorTag(SpellTag t) => t switch
+    {
+        SpellTag.CHAIN           => true,
+        SpellTag.FRAGMENTING     => true,
+        SpellTag.SPLIT_ON_IMPACT => true,
+        SpellTag.AOE_BURST       => true,
+        SpellTag.LINGERING       => true,
+        SpellTag.SWAPPING        => true,
+        SpellTag.CONTAGIOUS      => true,
+        SpellTag.DETONATING      => true,
+        SpellTag.BURROWING       => true,
+        SpellTag.PUSH            => true,
+        SpellTag.PULL            => true,
+        _ => false,
+    };
+
+    // ── Behavior wiring ───────────────────────────────────────────────────────
+
+    private void AddBehaviors(bool isSplitChild)
+    {
+        // ── Trajectory ──
+        if (ctx.HasTag(SpellTag.HOMING) || ctx.HasTag(SpellTag.ENEMY_HOMING))
+            AddBehavior<HomingBehavior>();
+        if (ctx.HasTag(SpellTag.SPIRAL))
+            AddBehavior<SpiralBehavior>();
+        if (ctx.HasTag(SpellTag.STUTTER_MOTION))
+            AddBehavior<StutterMotionBehavior>();
+        if (ctx.HasTag(SpellTag.WALL_BOUNCE) || ctx.HasTag(SpellTag.REFLECTING))
+            AddBehavior<WallBounceBehavior>();
+        if (ctx.HasTag(SpellTag.BOOMERANG))
+            AddBehavior<BoomerangBehavior>();
+        if (ctx.HasTag(SpellTag.SENTIENT))
+            AddBehavior<SentientBehavior>();
+        if (ctx.HasTag(SpellTag.CHANNELED))
+            AddBehavior<ChanneledBehavior>();
+        if (ctx.HasTag(SpellTag.TETHERED))
+            AddBehavior<TetheredBehavior>();
+        if (ctx.HasTag(SpellTag.DELAYED_ARC))
+            AddBehavior<DelayedArcBehavior>();
+        if (ctx.HasTag(SpellTag.SKIPPING))
+            AddBehavior<SkippingBehavior>();
+        if (ctx.HasTag(SpellTag.SURFACE_CRAWLING))
+            AddBehavior<SurfaceCrawlingBehavior>();
+        if (ctx.HasTag(SpellTag.BURROWING))
+            AddBehavior<BurrowingBehavior>();
+        if (ctx.HasTag(SpellTag.PHASING))
+            AddBehavior<PhasingBehavior>();
+
+        // ── Impact ──
+        if (ctx.HasTag(SpellTag.CHAIN))
+            AddBehavior<ChainBehavior>();
+        if (!isSplitChild && (ctx.HasTag(SpellTag.FRAGMENTING) || ctx.HasTag(SpellTag.SPLIT_ON_IMPACT)))
+            AddBehavior<FragmentingBehavior>();
+        if (ctx.HasTag(SpellTag.DETONATING))
+            AddBehavior<DetonatingBehavior>();
+        if (ctx.HasTag(SpellTag.LINGERING))
+            AddBehavior<LingeringBehavior>();
+        if (ctx.HasTag(SpellTag.SWAPPING))
+            AddBehavior<SwappingBehavior>();
+        if (ctx.HasTag(SpellTag.CONTAGIOUS))
+            AddBehavior<ContagiousBehavior>();
+    }
+
+    private T AddBehavior<T>() where T : ProjectileBehaviorBase
+    {
+        var b = gameObject.AddComponent<T>();
+        b.Initialize(ctx);
+        return b;
+    }
+
+    // ── Physics ───────────────────────────────────────────────────────────────
 
     private void FixedUpdate()
     {
         if (!initialized) return;
 
-        if (spell.HasTag(SpellTag.HOMING) || spell.HasTag(SpellTag.ENEMY_HOMING))
-            ApplyHoming();
+        // Behaviors that handle their own wall interactions skip this
+        if (ctx.HasTag(SpellTag.WALL_BOUNCE)     ||
+            ctx.HasTag(SpellTag.REFLECTING)       ||
+            ctx.HasTag(SpellTag.PIERCE_WALLS)     ||
+            ctx.HasTag(SpellTag.SURFACE_CRAWLING) ||
+            ctx.HasTag(SpellTag.BURROWING))
+            return;
 
-        if (spell.HasTag(SpellTag.SPIRAL))
-            ApplySpiral();
-
-        HandleWallInteraction();
+        // Default: destroy on wall contact
+        Vector2      nextPos = ctx.Rb.position + ctx.Rb.linearVelocity * Time.fixedDeltaTime * 2f;
+        RaycastHit2D hit     = Physics2D.Linecast(ctx.Rb.position, nextPos, WallLayer);
+        if (hit.collider != null) RequestDestroy();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!initialized) return;
 
-        // Enemies put colliders on a child (HitBoxChild); walk up to find Health.
-        // Exclude the player by comparing against the cached playerHealth reference.
         Health h = other.GetComponentInParent<Health>();
-        if (h == null || h == playerHealth || h.IsDead) return;
+        if (h == null || h == ctx.PlayerHealth || h.IsDead) return;
+        if (hitEnemies.Contains(h.gameObject)) return;
 
         HitEnemy(h.gameObject);
     }
 
-    private void HitEnemy(GameObject enemyObj)
+    // ── Hit processing ────────────────────────────────────────────────────────
+
+    public void HitEnemy(GameObject enemyObj)
     {
-        Health enemyHealth = enemyObj.GetComponent<Health>();
-        if (enemyHealth == null || enemyHealth.IsDead) return;
+        var h = enemyObj.GetComponent<Health>();
+        if (h == null || h.IsDead) return;
 
-        enemyHealth.TakeDamage(spell.damage);
-        HitEffectSpawner.SpawnImpactFlash(transform.position, ElementToColor(spell.element), Color.white);
+        h.TakeDamage(ctx.Spell.damage);
+        HitEffectSpawner.SpawnImpactFlash(transform.position,
+            ElementToColor(ctx.Spell.element), Color.white);
 
-        if (spell.HasTag(SpellTag.LIFESTEAL))
-            playerHealth?.Heal(spell.damage * 0.3f);
+        if (ctx.HasTag(SpellTag.LIFESTEAL))
+            ctx.PlayerHealth?.Heal(ctx.Spell.damage * 0.3f);
 
         ApplyStatusEffects(enemyObj);
+        ApplyForceEffects(enemyObj);
 
-        if (spell.HasTag(SpellTag.PUSH))
-        {
-            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
-            enemyRb?.AddForce(rb.linearVelocity.normalized * 8f, ForceMode2D.Impulse);
-        }
-
-        if (spell.HasTag(SpellTag.PULL) && playerHealth != null)
-        {
-            var enemyRb = enemyObj.GetComponent<Rigidbody2D>();
-            Vector2 toPlayer = ((Vector2)playerHealth.transform.position - (Vector2)enemyObj.transform.position).normalized;
-            enemyRb?.AddForce(toPlayer * 10f, ForceMode2D.Impulse);
-        }
-
-        if (spell.HasTag(SpellTag.AOE_BURST))
+        if (ctx.HasTag(SpellTag.AOE_BURST))
             ApplyAoeBurst(transform.position);
 
-        if (spell.HasTag(SpellTag.CHAIN))
+        // Notify behavior components — any may suppress the default destroy
+        bool suppressDestroy = false;
+        foreach (var behavior in GetComponents<ProjectileBehaviorBase>())
         {
-            chainedEnemies.Add(enemyObj);
-            TryChain();
-            return;
+            if (behavior.OnHitEnemy(enemyObj))
+                suppressDestroy = true;
         }
 
-        if (!isSplitChild && spell.HasTag(SpellTag.SPLIT_ON_IMPACT))
-        {
-            SpawnSplitProjectiles();
-            Destroy(gameObject);
-            return;
-        }
-
+        hitEnemies.Add(enemyObj);
         hitCount++;
-        if (!spell.HasTag(SpellTag.PIERCE) || hitCount >= maxPierceHits)
-            Destroy(gameObject);
-    }
 
-    // --- Movement tag behaviors ---
-
-    private void ApplyHoming()
-    {
-        Transform target = spell.HasTag(SpellTag.ENEMY_HOMING)
-            ? (playerHealth != null ? playerHealth.transform : null)
-            : FindNearestEnemyTransform();
-
-        if (target == null) return;
-
-        Vector2 toTarget = ((Vector2)target.position - rb.position).normalized;
-        float turnRad = 180f * Mathf.Deg2Rad * Time.fixedDeltaTime;
-        Vector2 newDir = Vector2.MoveTowards(rb.linearVelocity.normalized, toTarget, turnRad);
-        rb.linearVelocity = newDir.normalized * spell.speed;
-    }
-
-    private void ApplySpiral()
-    {
-        float rad = 90f * Mathf.Deg2Rad * Time.fixedDeltaTime;
-        Vector2 v = rb.linearVelocity;
-        rb.linearVelocity = new Vector2(
-            v.x * Mathf.Cos(rad) - v.y * Mathf.Sin(rad),
-            v.x * Mathf.Sin(rad) + v.y * Mathf.Cos(rad)
-        );
-    }
-
-    private void HandleWallInteraction()
-    {
-        if (spell.HasTag(SpellTag.PIERCE_WALLS)) return;
-
-        // Look ahead by 2 frames to predict wall contact before it happens
-        Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
-        RaycastHit2D hit = Physics2D.Linecast(rb.position, nextPos, WallLayerMask);
-        if (hit.collider == null) return;
-
-        if (spell.HasTag(SpellTag.WALL_BOUNCE) && bounceCount < maxBounces)
+        if (!suppressDestroy)
         {
-            bounceCount++;
-            rb.linearVelocity = Vector2.Reflect(rb.linearVelocity, hit.normal);
-        }
-        else if (!spell.HasTag(SpellTag.WALL_BOUNCE))
-        {
-            Destroy(gameObject);
+            if (!ctx.HasTag(SpellTag.PIERCE) || hitCount >= MaxPierceHits)
+                RequestDestroy();
         }
     }
 
-    // --- Effect tag behaviors ---
+    public void RequestDestroy() => Destroy(gameObject);
+
+    // ── Status effects ────────────────────────────────────────────────────────
+
+    private void ApplyStatusEffects(GameObject enemyObj)
+    {
+        var status = enemyObj.GetComponent<StatusEffectHandler>()
+                  ?? enemyObj.AddComponent<StatusEffectHandler>();
+
+        if (ctx.HasTag(SpellTag.BURN))     status.ApplyBurn(ctx.Spell.damage);
+        if (ctx.HasTag(SpellTag.FREEZE))   status.ApplyFreeze();
+        if (ctx.HasTag(SpellTag.SLOW))     status.ApplySlow();
+        if (ctx.HasTag(SpellTag.STUN))     status.ApplyStun();
+        if (ctx.HasTag(SpellTag.POISON))   status.ApplyPoison(ctx.Spell.damage);
+        if (ctx.HasTag(SpellTag.BLEED))    status.ApplyBleed(ctx.Spell.damage);
+        if (ctx.HasTag(SpellTag.ROOT))     status.ApplyRoot();
+        if (ctx.HasTag(SpellTag.WEAKNESS)) status.ApplyWeakness();
+        if (ctx.HasTag(SpellTag.CURSE))    status.ApplyCurse();
+        if (ctx.HasTag(SpellTag.BLIND))    status.ApplyBlind();
+    }
+
+    // ── Force effects ─────────────────────────────────────────────────────────
+
+    private void ApplyForceEffects(GameObject enemyObj)
+    {
+        if (ctx.HasTag(SpellTag.PUSH))
+        {
+            var rb = enemyObj.GetComponent<Rigidbody2D>();
+            rb?.AddForce(ctx.Rb.linearVelocity.normalized * 8f, ForceMode2D.Impulse);
+        }
+
+        if (ctx.HasTag(SpellTag.PULL) && ctx.PlayerHealth != null)
+        {
+            var rb         = enemyObj.GetComponent<Rigidbody2D>();
+            Vector2 toward = ((Vector2)ctx.PlayerHealth.transform.position
+                           - (Vector2)enemyObj.transform.position).normalized;
+            rb?.AddForce(toward * 10f, ForceMode2D.Impulse);
+        }
+    }
 
     private void ApplyAoeBurst(Vector2 center)
     {
@@ -184,77 +311,16 @@ public class ProjectileHandler : MonoBehaviour
         {
             var h = hit.GetComponent<Health>();
             if (h != null && !h.IsDead)
-                h.TakeDamage(spell.damage * 0.5f);
+                h.TakeDamage(ctx.Spell.damage * 0.5f);
         }
         if (aoePrefab != null)
             Destroy(Instantiate(aoePrefab, center, Quaternion.identity), 1f);
     }
 
-    private void TryChain()
-    {
-        EnemyBase[] allEnemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
-        EnemyBase nextTarget = null;
-        float nearest = float.MaxValue;
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-        foreach (var e in allEnemies)
-        {
-            if (e.IsDead || chainedEnemies.Contains(e.gameObject)) continue;
-            float dist = Vector2.Distance(rb.position, e.transform.position);
-            if (dist < nearest && dist <= 6f)
-            {
-                nearest = dist;
-                nextTarget = e;
-            }
-        }
-
-        if (nextTarget == null) { Destroy(gameObject); return; }
-
-        rb.linearVelocity = ((Vector2)nextTarget.transform.position - rb.position).normalized * spell.speed;
-    }
-
-    private void SpawnSplitProjectiles()
-    {
-        float baseAngle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;
-        float[] offsets = { -30f, 0f, 30f };
-
-        foreach (float offset in offsets)
-        {
-            float angle = (baseAngle + offset) * Mathf.Deg2Rad;
-            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            GameObject child = Instantiate(gameObject, transform.position, Quaternion.identity);
-            child.GetComponent<ProjectileHandler>()?.Init(spell, dir, splitChild: true);
-        }
-    }
-
-    private void ApplyStatusEffects(GameObject enemyObj)
-    {
-        // Auto-add StatusEffectHandler if the enemy prefab doesn't have one yet
-        var status = enemyObj.GetComponent<StatusEffectHandler>()
-                     ?? enemyObj.AddComponent<StatusEffectHandler>();
-
-        if (spell.HasTag(SpellTag.BURN))   status.ApplyBurn(spell.damage);
-        if (spell.HasTag(SpellTag.FREEZE)) status.ApplyFreeze();
-        if (spell.HasTag(SpellTag.SLOW))   status.ApplySlow();
-        if (spell.HasTag(SpellTag.STUN))   status.ApplyStun();
-        if (spell.HasTag(SpellTag.POISON)) status.ApplyPoison(spell.damage);
-    }
-
-    // --- Coroutines ---
-
-    private IEnumerator StutterMotion()
-    {
-        while (initialized)
-        {
-            yield return new WaitForSeconds(0.15f);
-            rb.linearVelocity = Vector2.zero;
-            yield return new WaitForSeconds(0.1f);
-            rb.linearVelocity = direction * spell.speed;
-        }
-    }
-
-    // --- Helpers ---
-
-    private static Color ElementToColor(string element) => element?.ToLower() switch
+    /// <summary>Exposed so behavior components (e.g. DetonatingBehavior) can call SpawnImpactFlash.</summary>
+    public static Color ElementToColor(string element) => element?.ToLower() switch
     {
         "fire"      => new Color(1.0f, 0.4f, 0.1f),
         "ice"       => new Color(0.5f, 0.85f, 1.0f),
@@ -262,21 +328,6 @@ public class ProjectileHandler : MonoBehaviour
         "lightning" => new Color(0.9f, 0.85f, 0.2f),
         "void"      => new Color(0.6f, 0.2f, 1.0f),
         "shadow"    => new Color(0.4f, 0.1f, 0.6f),
-        _           => new Color(0.6f, 0.8f, 1.0f), // default pale blue
+        _           => new Color(0.6f, 0.8f, 1.0f),
     };
-
-    private Transform FindNearestEnemyTransform()
-    {
-        EnemyBase[] enemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
-        Transform nearest = null;
-        float minDist = float.MaxValue;
-
-        foreach (var e in enemies)
-        {
-            if (e.IsDead) continue;
-            float d = Vector2.Distance(rb.position, e.transform.position);
-            if (d < minDist) { minDist = d; nearest = e.transform; }
-        }
-        return nearest;
-    }
 }
