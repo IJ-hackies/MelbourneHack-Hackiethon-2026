@@ -22,6 +22,8 @@ GameObject:
   - component: {fileID: 3896163043988006939}
   - component: {fileID: 8057779570072822142}
   - component: {fileID: 5425909883886301592}
+  - component: {fileID: 2176450301470225019}
+  - component: {fileID: 2342344787006180580}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -93,7 +95,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 285542781
   m_SortingLayer: 2
-  m_SortingOrder: 800
+  m_SortingOrder: -2770
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1808982527863717971, guid: cd054dfaeb4604f088d7c43cba00b191, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -261,8 +263,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0025448196, y: -0.16270502}
-  m_Size: {x: 0.18459767, y: 0.09907886}
+  m_Offset: {x: -0.0011960089, y: -0.20477648}
+  m_Size: {x: 0.203573, y: 0.06899188}
   m_Direction: 1
 --- !u!114 &3219586476747754627
 MonoBehaviour:
@@ -289,14 +291,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d4e04c689e374c478b7c6545cd7842c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHUD
-  boardPrefab: {fileID: 8801271780445070481, guid: 8534d44a894f24f358249b943f5bd3f8, type: 3}
   heartIconPrefab: {fileID: 4397395701804125825, guid: 4fa3f8fb3884b4586b226d7eeb784fc8, type: 3}
   burnIconPrefab: {fileID: 1674279841299045591, guid: 66c34a2a67eae49548af6b50d2c69466, type: 3}
   poisonIconPrefab: {fileID: 6688461660628168954, guid: da88ff62aa0df49c99aaf20e0fecb578, type: 3}
   bleedIconPrefab: {fileID: 7012058873730672359, guid: 1831ba10ca06a4dbeb009b24dff8ec0c, type: 3}
   slowIconPrefab: {fileID: 4206263808547117881, guid: aa94b60dde7a84446aef07bbb9a4c876, type: 3}
   alagardFont: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
-  boardPosition: {x: 10, y: -10}
+  heartPosition: {x: 20, y: -20}
+  statusPosition: {x: 20, y: 20}
 --- !u!114 &8057779570072822142
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -314,6 +316,36 @@ MonoBehaviour:
   alpha: 1
   shadowScale: {x: 0.85, y: 0.5}
 --- !u!114 &5425909883886301592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844718356868029949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5e6c776182cfb74b800475863c43d22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpellExecutor
+  projectilePrefab: {fileID: 7665902609262389764, guid: 2d4fee1863d7f0e448cab913d8e581a8, type: 3}
+  orbitalPrefab: {fileID: 0}
+--- !u!114 &2176450301470225019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844718356868029949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5495d7f97f590b47b8ad9a5ba1d933f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpriteShadow
+  offsetX: 0.12
+  offsetY: -0.2
+  alpha: 1
+  shadowScale: {x: 0.85, y: 0.5}
+--- !u!114 &2342344787006180580
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -375,7 +407,7 @@ MonoBehaviour:
   m_ComponentVersion: 2
   m_LightType: 3
   m_BlendStyleIndex: 0
-  m_FalloffIntensity: 0.623
+  m_FalloffIntensity: 0.834
   m_Color: {r: 0.56087774, g: 0.22530258, b: 0.7830189, a: 1}
   m_Intensity: 1
   m_LightVolumeIntensity: 1
@@ -401,7 +433,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 1
-  m_PointLightOuterRadius: 5
+  m_PointLightOuterRadius: 15
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1

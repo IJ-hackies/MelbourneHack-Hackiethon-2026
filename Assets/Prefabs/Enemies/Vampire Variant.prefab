@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: 2324236343598682440, guid: f3f2d5fa881f14ae08ff9e3f674b7a26, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: 774
+      value: 704
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -198,8 +198,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.000521075, y: -0.10687406}
-  m_Size: {x: 0.17310832, y: 0.063693985}
+  m_Offset: {x: -0.0017433566, y: -0.13219562}
+  m_Size: {x: 0.20881894, y: 0.0503285}
   m_Direction: 1
 --- !u!114 &9187211385060121449
 MonoBehaviour:
@@ -217,7 +217,7 @@ MonoBehaviour:
   attackRange: 35
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 35
+  detectionRange: 200
   canSeeThoughWalls: 1
   spottedDuration: 0.5
   lostDuration: 1

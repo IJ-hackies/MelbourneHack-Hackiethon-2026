@@ -163,7 +163,7 @@ public class SpellExecutor : MonoBehaviour
     private void HandleBeam(SpellData spell, Vector2 dir)
     {
         const float BeamRange = 15f;
-        RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, dir, BeamRange, LayerMask.GetMask("Enemy"));
+        RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, dir, BeamRange, ProjectileHandler.EnemyMask);
 
         foreach (var hit in hits)
         {
@@ -214,7 +214,7 @@ public class SpellExecutor : MonoBehaviour
 
         if (spell.HasTag(SpellTag.AOE_BURST))
         {
-            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(hitPoint, 3f, LayerMask.GetMask("Enemy"));
+            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(hitPoint, 3f, ProjectileHandler.EnemyMask);
             foreach (var aoe in aoeHits)
             {
                 var aoeH = aoe.GetComponent<Health>();

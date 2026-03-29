@@ -3,11 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Screen-space HUD: wooden board (top-left), heart with health, status effect queue.
+// Screen-space HUD: heart with health (top-left), status effect queue (bottom-left).
 //
 // Setup on the Player prefab:
 //   1. Add this component.
-//   2. Assign Board, Heart, Burn, Poison, Bleed, Slow prefabs from Prefabs/Icons/ & Prefabs/UI/.
+//   2. Assign Heart, Burn, Poison, Bleed, Slow prefabs from Prefabs/Icons/ & Prefabs/UI/.
 //   3. Create a TMP font asset from Assets/Fonts/alagard.ttf via
 //      Window > TextMeshPro > Font Asset Creator, then assign it here.
 [RequireComponent(typeof(Health))]
@@ -15,7 +15,6 @@ using TMPro;
 public class PlayerHUD : MonoBehaviour
 {
     [Header("Prefabs (sprites are extracted at runtime)")]
-    [SerializeField] private GameObject boardPrefab;
     [SerializeField] private GameObject heartIconPrefab;
     [SerializeField] private GameObject burnIconPrefab;
     [SerializeField] private GameObject poisonIconPrefab;
@@ -25,13 +24,13 @@ public class PlayerHUD : MonoBehaviour
     [Header("Font — assign TMP font asset generated from Assets/Fonts/alagard.ttf")]
     [SerializeField] private TMP_FontAsset alagardFont;
 
-    [Header("Position (canvas units at 1920×1080 — adjust in Inspector to place the panel)")]
-    [SerializeField] private Vector2 boardPosition = new Vector2(10f, -10f);
+    [Header("Heart Position (canvas units at 1920×1080)")]
+    [SerializeField] private Vector2 heartPosition = new Vector2(20f, -20f);
+
+    [Header("Status Row Position (canvas units at 1920×1080)")]
+    [SerializeField] private Vector2 statusPosition = new Vector2(20f, 20f);
 
     // ── Layout (at 1920×1080 reference resolution) ────────────────────────────
-    private const float BoardWidth  = 300f;
-    private const float BoardHeight = 218f;
-    private const float FrameInset  = 18f;
     private const float HeartSize   = 110f;
     private const float IconSize    = 58f;
     private const float IconSpacing = 61f; // icon width + gap
@@ -121,25 +120,14 @@ public class PlayerHUD : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Board background
-        var boardRT = MakeRT("Board", canvasGO.transform,
-            anchorMin: Vector2.up, anchorMax: Vector2.up, pivot: Vector2.up,
-            pos: boardPosition, size: new Vector2(BoardWidth, BoardHeight));
-
-        var boardImg    = boardRT.gameObject.AddComponent<Image>();
-        boardImg.sprite = ExtractSprite(boardPrefab);
-        boardImg.type   = Image.Type.Simple;
-
-        // Heart container — heartRT is the root so the heartbeat scale moves everything together.
-        // Children: shadow → main sprite → text shadow → text  (front-to-back via sibling order)
-        heartRT = MakeRT("Heart", boardRT,
-            anchorMin: new Vector2(0.5f, 1f), anchorMax: new Vector2(0.5f, 1f),
-            pivot: new Vector2(0.5f, 1f),
-            pos: new Vector2(0f, -(FrameInset + 5f)),
+        // Heart container — anchored to top-left of canvas
+        heartRT = MakeRT("Heart", canvasGO.transform,
+            anchorMin: Vector2.up, anchorMax: Vector2.up,
+            pivot: new Vector2(0f, 1f),
+            pos: heartPosition,
             size: new Vector2(HeartSize, HeartSize));
 
-        // Heart drop shadow — slightly larger than the heart so it bleeds out around the edges,
-        // offset down-right. Fixed size (not stretch) so it isn't clipped by the container.
+        // Heart drop shadow
         var heartShadowRT    = MakeRT("HeartShadow", heartRT,
             anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
             pivot: new Vector2(0.5f, 0.5f),
@@ -149,7 +137,7 @@ public class PlayerHUD : MonoBehaviour
         heartShadowImg.preserveAspect = true;
         heartShadowImg.color = new Color(0f, 0f, 0f, 0.6f);
 
-        // Main heart sprite (on top of shadow)
+        // Main heart sprite
         var heartMainRT      = MakeRT("HeartMain", heartRT,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
@@ -158,7 +146,7 @@ public class PlayerHUD : MonoBehaviour
         heartImg.sprite      = ExtractSprite(heartIconPrefab);
         heartImg.preserveAspect = true;
 
-        // Health number drop shadow — dark offset copy, rendered before main text
+        // Health number drop shadow
         var healthShadowRT   = MakeRT("HealthTextShadow", heartRT,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
@@ -172,7 +160,7 @@ public class PlayerHUD : MonoBehaviour
         healthShadowText.overflowMode = TextOverflowModes.Overflow;
         healthShadowText.color        = new Color(0f, 0f, 0f, 0.85f);
 
-        // Health number main text (on top of shadow)
+        // Health number main text
         var healthTextRT = MakeRT("HealthText", heartRT,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
@@ -189,12 +177,12 @@ public class PlayerHUD : MonoBehaviour
         healthText.outlineWidth = 0.3f;
         healthText.outlineColor = new Color32(0, 0, 0, 210);
 
-        // Status icon row — bottom strip inside frame
-        statusContainer = MakeRT("StatusRow", boardRT,
+        // Status icon row — anchored to bottom-left of canvas
+        statusContainer = MakeRT("StatusRow", canvasGO.transform,
             anchorMin: Vector2.zero, anchorMax: Vector2.zero,
             pivot: Vector2.zero,
-            pos: new Vector2(FrameInset, FrameInset + 4f),
-            size: new Vector2(BoardWidth - FrameInset * 2f, IconSize));
+            pos: statusPosition,
+            size: new Vector2(IconSpacing * 4f, IconSize));
 
         // Cache effect sprites
         spriteBurn   = ExtractSprite(burnIconPrefab);
@@ -202,7 +190,7 @@ public class PlayerHUD : MonoBehaviour
         spriteBleed  = ExtractSprite(bleedIconPrefab);
         spriteSlow   = ExtractSprite(slowIconPrefab);
 
-        // Full-screen damage flash overlay — rendered last so it sits on top of all HUD elements
+        // Full-screen damage flash overlay
         var flashRT = MakeRT("DamageFlash", canvasGO.transform,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),

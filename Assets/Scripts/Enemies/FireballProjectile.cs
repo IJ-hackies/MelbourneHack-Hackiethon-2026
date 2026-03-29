@@ -16,6 +16,7 @@ public class FireballProjectile : MonoBehaviour
     private float               burnDamagePerTick;
     private float               burnDuration;
     private float               poisonDuration;
+    private bool                pierceWalls;
 
     private Rigidbody2D         rb;
     private Transform           playerTransform;
@@ -35,7 +36,8 @@ public class FireballProjectile : MonoBehaviour
                              Transform playerTransform = null,
                              float homingStrength = 2.5f, float stopHomingRadius = 2.5f,
                              float burnDamagePerTick = 0f, float burnDuration = 0f,
-                             float poisonDuration = 0f)
+                             float poisonDuration = 0f,
+                             bool pierceWalls = false)
     {
         var go = new GameObject("FX_Fireball");
         go.transform.position = from;
@@ -61,6 +63,7 @@ public class FireballProjectile : MonoBehaviour
         proj.burnDamagePerTick = burnDamagePerTick;
         proj.burnDuration      = burnDuration;
         proj.poisonDuration    = poisonDuration;
+        proj.pierceWalls       = pierceWalls;
         proj.playerTransform     = playerTransform;
         proj.speed               = speed;
         proj.homingStrength      = homingStrength;
@@ -76,11 +79,14 @@ public class FireballProjectile : MonoBehaviour
     {
         age += Time.fixedDeltaTime;
 
-        Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
-        if (Physics2D.Linecast(rb.position, nextPos, WallLayerMask).collider != null)
+        if (!pierceWalls)
         {
-            Destroy(gameObject);
-            return;
+            Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
+            if (Physics2D.Linecast(rb.position, nextPos, WallLayerMask).collider != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
         }
 
         if (homingLocked || playerTransform == null) return;
