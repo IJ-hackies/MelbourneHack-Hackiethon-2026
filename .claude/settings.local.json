@@ -13,7 +13,25 @@
       "Bash(python -c \"from google import genai; from google.genai import types; from dotenv import load_dotenv; import PIL\")",
       "Bash(python generate_chambers.py --tileset dungeon)",
       "Bash(xargs grep:*)",
-      "Bash(grep \"CameraFollow\" /c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Scenes/*.unity)"
+      "Bash(grep \"CameraFollow\" /c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Scenes/*.unity)",
+      "Bash(xargs cat:*)",
+      "Bash(python -c \":*)",
+      "Edit(/.claude/skills/generate-chambers/**)",
+      "Bash(python _validate_layouts.py)",
+      "Bash(ls -la /c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/*.py)",
+      "Bash(find /c/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026 -name *.py)",
+      "Bash(pip install:*)",
+      "Bash(export GEMINI_API_KEY=AIzaSyCasTQxze-_waLPVAz3oe3RMrP_oUxWT8w)",
+      "Bash(python generate_chambers.py dungeon)",
+      "Bash(python3 -c \":*)",
+      "Bash(python -c \"from PIL import Image; img = Image.open\\(''c:/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/Assets/Art/UI/Grimoire/GrimoireBook.png''\\); print\\(f''Size: {img.size}''\\); print\\(f''Aspect: {img.size[0]/img.size[1]:.3f}''\\)\")",
+      "Bash(find C:UsersJorvanDocumentsProjectsMelbourneHack-Hackiethon-2026 -type f -name *.py)",
+      "Bash(ls \"c:/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/\"*.py)",
+      "Bash(python generate_chambers.py)",
+      "Bash(start:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"
     ]
   }
 }

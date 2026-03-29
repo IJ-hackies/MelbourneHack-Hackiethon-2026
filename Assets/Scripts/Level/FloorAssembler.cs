@@ -152,6 +152,9 @@ public class FloorAssembler : MonoBehaviour
         PositionMapBounds();
         SpawnBoundaryWalls();
 
+        if (AstarPath.active != null)
+            AstarPath.active.Scan();
+
         if (enemySpawner != null && enemySpawns != null && enemySpawns.Count > 0)
             enemySpawner.SpawnFloor(enemySpawns, transform.position);
     }

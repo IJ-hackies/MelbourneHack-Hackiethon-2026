@@ -11,6 +11,7 @@ public class SpellDTO
 {
     public string name;
     public string flavor;
+    public string corruption_flavor;
     public string[] tags;
     public float damage;
     public float speed;
@@ -28,6 +29,7 @@ public class SpellDTO
         SpellData data = ScriptableObject.CreateInstance<SpellData>();
         data.spellName = name;
         data.flavor = flavor;
+        data.corruptionFlavor = corruption_flavor;
         data.element = element;
         data.damage = damage;
         data.speed = speed;

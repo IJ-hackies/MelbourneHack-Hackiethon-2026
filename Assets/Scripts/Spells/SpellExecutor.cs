@@ -33,9 +33,9 @@ public class SpellExecutor : MonoBehaviour
     {
         SpellData spell = Grimoire.Instance?.ActiveSpell;
         if (spell == null) return;
-        if (Time.time - lastCastTime < spell.cooldown) return;
+        if (!grimoire.IsSlotReady(slot)) return;
 
-        lastCastTime = Time.time;
+        grimoire.RecordCast(slot);
         ExecuteSpell(spell);
     }
 
