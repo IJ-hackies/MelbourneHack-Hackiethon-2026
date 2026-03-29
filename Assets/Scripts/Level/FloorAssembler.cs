@@ -147,13 +147,70 @@ public class FloorAssembler : MonoBehaviour
 
             var chamber = Instantiate(prefab, worldOffset, Quaternion.identity, transform);
             ApplyGroundTint(chamber);
+            ConfigureChamberLayers(chamber);
         }
 
         PositionMapBounds();
         SpawnBoundaryWalls();
 
         if (AstarPath.active != null)
+        {
+            float mapW = ChamberSize * 4;
+            float mapH = ChamberSize * 2;
+            Vector3 mapCenter = transform.position + new Vector3(mapW / 2f, mapH / 2f, 0f);
+
+            bool foundGrid = false;
+            foreach (var graph in AstarPath.active.data.graphs)
+            {
+                if (graph is Pathfinding.GridGraph gridGraph)
+                {
+                    foundGrid = true;
+                    gridGraph.center = mapCenter;
+                    gridGraph.SetDimensions(
+                        Mathf.RoundToInt(mapW / gridGraph.nodeSize),
+                        Mathf.RoundToInt(mapH / gridGraph.nodeSize),
+                        gridGraph.nodeSize);
+
+                    // Force 2D mode — sets rotation to XY plane and enables 2D physics
+                    gridGraph.is2D = true;
+                    gridGraph.collision.use2D = true;
+                    gridGraph.collision.collisionCheck = true;
+                    gridGraph.collision.mask = LayerMask.GetMask("Walls");
+                    gridGraph.collision.diameter = 2.0f;
+                    gridGraph.collision.type = Pathfinding.ColliderType.Sphere;
+                    gridGraph.cutCorners = false;
+                    gridGraph.erodeIterations = 1;
+                }
+            }
+
+            if (!foundGrid)
+                Debug.LogWarning("FloorAssembler: AstarPath is active but has NO GridGraph — pathfinding will not work. Add a GridGraph in the A* Inspector.");
+
+            AstarPath.active.logPathResults = Pathfinding.PathLog.None;
+
+            // Force all CompositeCollider2D on Walls tilemaps to rebuild immediately,
+            // otherwise the A* scan runs before Unity's physics step and sees no walls.
+            Physics2D.SyncTransforms();
+            foreach (var composite in FindObjectsOfType<CompositeCollider2D>())
+                composite.GenerateGeometry();
+
             AstarPath.active.Scan();
+
+            // Count walkable vs unwalkable nodes
+            int walkable = 0, unwalkable = 0;
+            foreach (var graph in AstarPath.active.data.graphs)
+            {
+                if (graph is Pathfinding.GridGraph scanned)
+                {
+                    scanned.GetNodes(node => { if (node.Walkable) walkable++; else unwalkable++; });
+                }
+            }
+            Debug.Log($"FloorAssembler: A* scan complete — walkable={walkable}, unwalkable={unwalkable}, total={walkable + unwalkable}");
+        }
+        else
+        {
+            Debug.LogWarning("FloorAssembler: AstarPath.active is NULL — no Pathfinder object in scene. Enemies will not pathfind.");
+        }
 
         if (enemySpawner != null && enemySpawns != null && enemySpawns.Count > 0)
             enemySpawner.SpawnFloor(enemySpawns, transform.position);
@@ -175,6 +232,31 @@ public class FloorAssembler : MonoBehaviour
             var tm = t.GetComponent<Tilemap>();
             if (tm != null) tm.color = wallTint;
         }
+    }
+
+    private void ConfigureChamberLayers(GameObject chamber)
+    {
+        int wallLayer   = LayerMask.NameToLayer("Walls");
+        int groundLayer = LayerMask.NameToLayer("Ground");
+
+        var walls = chamber.transform.Find("Walls");
+        if (walls != null)
+        {
+            walls.gameObject.layer = wallLayer;
+
+            // Ensure CompositeCollider2D uses filled polygons, not just outlines
+            var composite = walls.GetComponent<CompositeCollider2D>();
+            if (composite != null)
+                composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+        }
+
+        var ground = chamber.transform.Find("Ground");
+        if (ground != null)
+            ground.gameObject.layer = groundLayer;
+
+        var details = chamber.transform.Find("Details");
+        if (details != null)
+            details.gameObject.layer = groundLayer;
     }
 
     private void SpawnBoundaryWalls()

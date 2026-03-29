@@ -370,6 +370,7 @@ public class MergeRitualUI : MonoBehaviour
         string placeholderFlavor = "Two powers, one vessel.";
 
         grimoire.MergeSpells(selected.ToArray(), placeholderName, placeholderFlavor);
+        SFXManager.Instance?.PlayMergeSpell();
         selected.Clear();
 
         RefreshList();

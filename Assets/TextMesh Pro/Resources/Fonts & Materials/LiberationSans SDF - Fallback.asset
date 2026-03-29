@@ -216,7 +216,7 @@ MonoBehaviour:
   m_AtlasPopulationMode: 1
   InternalDynamicOS: 0
   m_GlyphTable:
-  - m_Index: 2104
+  - m_Index: 2102
     m_Metrics:
       m_Width: 52
       m_Height: 22
@@ -233,8 +233,8 @@ MonoBehaviour:
     m_ClassDefinitionType: 0
   m_CharacterTable:
   - m_ElementType: 1
-    m_Unicode: 8594
-    m_GlyphIndex: 2104
+    m_Unicode: 8592
+    m_GlyphIndex: 2102
     m_Scale: 1
   m_AtlasTextures:
   - {fileID: 28268798066460806}

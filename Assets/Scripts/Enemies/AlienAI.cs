@@ -34,6 +34,7 @@ public class AlienAI : EnemyBase
     protected override void Start()
     {
         base.Start();
+        CanSeeThoughWalls = true;
         attackTimer = AttackCooldown;
     }
 
@@ -127,6 +128,7 @@ public class AlienAI : EnemyBase
         FireballProjectile.Spawn(spawnPos, dir, AttackDamage,
                                  projectileColorA, projectileColorB,
                                  playerHealth, playerHitEffect, projectileSpeed,
-                                 poisonDuration: 2f);
+                                 poisonDuration: 2f,
+                                 pierceWalls: true);
     }
 }
