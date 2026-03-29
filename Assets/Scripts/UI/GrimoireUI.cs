@@ -23,15 +23,14 @@ public class GrimoireUI : MonoBehaviour
     [SerializeField] private TMP_FontAsset font;
 
     [Header("Layout (tweak in Inspector)")]
-    [SerializeField] private float bookW = 1050f;
-    [SerializeField] private float rowH = 42f;
-    [SerializeField] private float rowGap = 6f;
-    [SerializeField] private float titleFontSize = 18f;
-    [SerializeField] private float detailNameFontSize = 22f;
-    [SerializeField] private float detailBodyFontSize = 12f;
-    [SerializeField] private float statsFontSize = 14f;
-    [SerializeField] private float listFontSize = 14f;
-    [SerializeField] private float loadoutSlotSize = 65f;
+    [SerializeField] private float bookW = 1200f;
+    [SerializeField] private float spellBoxSize = 80f;
+    [SerializeField] private float spellBoxGap  = 10f;
+    [SerializeField] private float titleFontSize = 26f;
+    [SerializeField] private float detailNameFontSize = 28f;
+    [SerializeField] private float detailBodyFontSize = 13f;
+    [SerializeField] private float statsFontSize = 15f;
+    [SerializeField] private float listFontSize = 15f;
 
     private GameObject canvasGO;
     private bool isOpen;
@@ -47,13 +46,6 @@ public class GrimoireUI : MonoBehaviour
     private TMP_Text detailCorruptionFlavor;
     private TMP_Text detailTags;
     private TMP_Text detailStats;
-    private RectTransform equipBtnRT;
-    private int equipTargetSlot = 0;
-    private TMP_Text equipBtnText;
-
-    // Bottom: loadout slots
-    private Image[] loadoutSlotImages;
-    private TMP_Text[] loadoutSlotNames;
 
     private SpellData selectedSpell;
 
@@ -128,11 +120,19 @@ public class GrimoireUI : MonoBehaviour
             : 1.805f;
         float bH = bookW / spriteAspect;
 
-        var bookRT = MakeRT("Book", canvasGO.transform,
+        // Book image — rendered 20% larger for visual weight
+        float imageW = bookW * 1.2f;
+        float imageH = imageW / spriteAspect;
+        var bookImageRT = MakeRT("BookImage", canvasGO.transform,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 30f), new Vector2(bookW, bH));
-        var bookImg = bookRT.gameObject.AddComponent<Image>();
+            new Vector2(0f, 0f), new Vector2(imageW, imageH));
+        var bookImg = bookImageRT.gameObject.AddComponent<Image>();
         bookImg.sprite = bookSprite;
+
+        // Content layer — original dimensions so all text positions are unchanged
+        var bookRT = MakeRT("BookContent", canvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 0f), new Vector2(bookW, bH));
 
         // ── Page content areas (derived from sprite proportions) ────────
         // GrimoireBook.png (278×154): writable page areas approximately:
@@ -142,7 +142,7 @@ public class GrimoireUI : MonoBehaviour
         const float kSpineRFrac = 0.540f;  // right page left edge (150/278)
         const float kTopFrac    = 0.065f;  // top border (10/154)
         const float kBotFrac    = 0.780f;  // bottom of writable area (120/154)
-        const float kInnerPad   = 10f;     // breathing room per side
+        const float kInnerPad   = 2f;      // breathing room per side
 
         float lpLeft  = bookW * kBorderFrac + kInnerPad;
         float lpRight = bookW * kSpineLFrac - kInnerPad;
@@ -210,58 +210,6 @@ public class GrimoireUI : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 25f),
             "", statsFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
-        dy -= 40f;
-
-        // Equip button
-        equipBtnRT = MakeRT("EquipBtn", bookRT,
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(Mathf.Min(170f, pageW - 20f), 40f));
-        var eqImg = equipBtnRT.gameObject.AddComponent<Image>();
-        eqImg.sprite = buttonSprite;
-        eqImg.type = Image.Type.Sliced;
-        eqImg.color = new Color(0.72f, 0.58f, 0.42f);
-        var eqBtn = equipBtnRT.gameObject.AddComponent<Button>();
-        eqBtn.targetGraphic = eqImg;
-        eqBtn.onClick.AddListener(OnEquipClick);
-
-        equipBtnText = MakeTMP("EquipText", equipBtnRT,
-            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
-            Vector2.zero, Vector2.zero,
-            "Equip to Slot 1", statsFontSize, Color.white, TextAlignmentOptions.Center);
-
-        // ── Bottom: loadout slots ───────────────────────────────────────
-        float lsGap = 15f;
-        float slotsStartX = -(loadoutSlotSize + lsGap);
-
-        MakeTMP("LoadoutLabel", canvasGO.transform,
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -(bH / 2f + 10f)), new Vector2(300f, 22f),
-            "Current Loadout", statsFontSize, Color.white, TextAlignmentOptions.Center);
-
-        loadoutSlotImages = new Image[Grimoire.LoadoutSize];
-        loadoutSlotNames = new TMP_Text[Grimoire.LoadoutSize];
-
-        for (int i = 0; i < Grimoire.LoadoutSize; i++)
-        {
-            float sx = slotsStartX + i * (loadoutSlotSize + lsGap);
-            var srt = MakeRT($"LSlot_{i}", canvasGO.transform,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(sx, -(bH / 2f + 45f)), new Vector2(loadoutSlotSize, loadoutSlotSize));
-
-            loadoutSlotImages[i] = srt.gameObject.AddComponent<Image>();
-            loadoutSlotImages[i].sprite = slotSprite;
-            loadoutSlotImages[i].preserveAspect = true;
-
-            int slotIdx = i;
-            var slotBtn = srt.gameObject.AddComponent<Button>();
-            slotBtn.targetGraphic = loadoutSlotImages[i];
-            slotBtn.onClick.AddListener(() => SetEquipTarget(slotIdx));
-
-            loadoutSlotNames[i] = MakeTMP($"LName_{i}", srt,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(loadoutSlotSize + 10f, 40f),
-                "", 10f, Color.white, TextAlignmentOptions.Center);
-        }
 
         canvasGO.SetActive(false);
     }
@@ -278,52 +226,68 @@ public class GrimoireUI : MonoBehaviour
             if (row.rt != null) Destroy(row.rt.gameObject);
         spellRows.Clear();
 
-        // Build rows
+        // Build icon grid
         var allSpells = grimoire.AllSpells;
+
+        float boxSize  = spellBoxSize;
+        float gap      = spellBoxGap;
+        float nameH    = 20f;
+        float cellH    = boxSize + 4f + nameH;
+        float contW    = libraryContainer.sizeDelta.x;
+        int   cols     = Mathf.Max(1, Mathf.FloorToInt((contW + gap) / (boxSize + gap)));
+        float gridW    = cols * boxSize + (cols - 1) * gap;
+        float startX   = -gridW / 2f + boxSize / 2f;
+
         for (int i = 0; i < allSpells.Count; i++)
         {
             SpellData spell = allSpells[i];
-            float y = -(i * (rowH + rowGap));
-
-            var row = new SpellRowUI { spell = spell };
-            row.rt = MakeRT($"Row_{i}", libraryContainer,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, y), new Vector2(libraryContainer.sizeDelta.x - 10f, rowH));
-
-            row.bg = row.rt.gameObject.AddComponent<Image>();
-            row.bg.sprite = boxSprite;
-            row.bg.type = Image.Type.Sliced;
-            row.bg.color = new Color(1f, 0.99f, 0.92f);
+            int c = i % cols;
+            int r = i / cols;
 
             bool isCorrupted = spell.HasTag(SpellTag.SELF_DAMAGE)
                             || spell.HasTag(SpellTag.ENEMY_HOMING)
                             || spell.HasTag(SpellTag.REVERSED_CONTROLS);
 
+            var row = new SpellRowUI { spell = spell };
+
+            // Cell container (box + name)
+            row.rt = MakeRT($"Cell_{i}", libraryContainer,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(startX + c * (boxSize + gap), -(r * (cellH + gap))),
+                new Vector2(boxSize, cellH));
+
+            // Square icon box
+            var boxRT = MakeRT($"Box_{i}", row.rt,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                Vector2.zero, new Vector2(boxSize, boxSize));
+            row.bg = boxRT.gameObject.AddComponent<Image>();
+            row.bg.sprite = boxSprite;
+            row.bg.type = Image.Type.Sliced;
+            row.bg.color = isCorrupted
+                ? new Color(0.38f, 0.12f, 0.12f)
+                : new Color(1f, 0.99f, 0.92f);
+
+            var btn = boxRT.gameObject.AddComponent<Button>();
+            btn.targetGraphic = row.bg;
+            btn.transition = Selectable.Transition.None;
+            SpellData captured = spell;
+            btn.onClick.AddListener(() => SelectSpell(captured));
+
+            // Name label below the box
             Color textColor = isCorrupted
                 ? new Color(0.79f, 0.17f, 0.17f)
                 : new Color(0.12f, 0.12f, 0.12f);
 
             string label = spell.spellName;
-            if (isCorrupted) label += "  [corrupted]";
-            if (spell.isMerged) label += "  [merged]";
+            if (spell.isMerged) label += " *";
 
             row.nameText = MakeTMP($"Name_{i}", row.rt,
-                new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(10f, 0f), new Vector2(0f, rowH),
-                label, listFontSize, textColor, TextAlignmentOptions.MidlineLeft);
-            row.nameText.rectTransform.offsetMax = new Vector2(-10f, 0f);
-
-            // Click to select
-            var btn = row.rt.gameObject.AddComponent<Button>();
-            btn.targetGraphic = row.bg;
-            SpellData captured = spell;
-            btn.onClick.AddListener(() => SelectSpell(captured));
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -(boxSize + 4f)), new Vector2(boxSize + 10f, nameH),
+                label, listFontSize * 0.8f, textColor, TextAlignmentOptions.Center);
 
             spellRows.Add(row);
         }
-
-        // Refresh loadout slots
-        RefreshLoadoutSlots();
 
         // Select first spell if none selected
         if (selectedSpell == null && allSpells.Count > 0)
@@ -336,13 +300,16 @@ public class GrimoireUI : MonoBehaviour
     {
         selectedSpell = spell;
 
-        // Highlight selected row
+        // Highlight selected box
         foreach (var row in spellRows)
         {
             bool sel = row.spell == spell;
+            bool corrupted = row.spell.HasTag(SpellTag.SELF_DAMAGE)
+                          || row.spell.HasTag(SpellTag.ENEMY_HOMING)
+                          || row.spell.HasTag(SpellTag.REVERSED_CONTROLS);
             row.bg.color = sel
-                ? new Color(1f, 0.95f, 0.75f) // yellow highlight
-                : new Color(1f, 0.99f, 0.92f);
+                ? new Color(1f, 0.95f, 0.75f)
+                : corrupted ? new Color(0.38f, 0.12f, 0.12f) : new Color(1f, 0.99f, 0.92f);
         }
 
         // Populate right page
@@ -354,7 +321,6 @@ public class GrimoireUI : MonoBehaviour
             detailCorruptionFlavor.text = "";
             detailTags.text = "";
             detailStats.text = "";
-            equipBtnRT.gameObject.SetActive(false);
             return;
         }
 
@@ -382,40 +348,6 @@ public class GrimoireUI : MonoBehaviour
         detailTags.text = tags.TrimEnd();
 
         detailStats.text = $"DMG: {spell.damage:F0}   SPD: {spell.speed:F1}   CD: {spell.cooldown:F1}";
-
-        equipBtnRT.gameObject.SetActive(true);
-        equipBtnText.text = $"Equip to Slot {equipTargetSlot + 1}";
-    }
-
-    private void RefreshLoadoutSlots()
-    {
-        var grimoire = Grimoire.Instance;
-        if (grimoire == null) return;
-
-        for (int i = 0; i < Grimoire.LoadoutSize; i++)
-        {
-            SpellData s = grimoire.Loadout[i];
-            bool isTarget = i == equipTargetSlot;
-            loadoutSlotImages[i].sprite = isTarget ? slotSelectedSprite : slotSprite;
-            loadoutSlotNames[i].text = s != null ? s.spellName : "Empty";
-            loadoutSlotNames[i].color = s != null ? Color.white : new Color(1f, 1f, 1f, 0.4f);
-        }
-    }
-
-    // ── Actions ──────────────────────────────────────────────────────────────
-
-    private void SetEquipTarget(int slot)
-    {
-        equipTargetSlot = slot;
-        equipBtnText.text = $"Equip to Slot {slot + 1}";
-        RefreshLoadoutSlots();
-    }
-
-    private void OnEquipClick()
-    {
-        if (selectedSpell == null) return;
-        Grimoire.Instance?.EquipToSlot(selectedSpell, equipTargetSlot);
-        RefreshLibrary();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
