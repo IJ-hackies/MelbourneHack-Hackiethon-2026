@@ -46,6 +46,7 @@ public class GrimoireUI : MonoBehaviour
     private TMP_Text detailCorruptionFlavor;
     private TMP_Text detailTags;
     private TMP_Text detailStats;
+    private GameObject equipSlotsGO;
 
     private SpellData selectedSpell;
 
@@ -210,7 +211,40 @@ public class GrimoireUI : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 25f),
             "", statsFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+        dy -= 42f;
 
+        // Equip slot buttons (1 / 2 / 3)
+        float slotBtnW   = Mathf.Min(88f, (pageW - 16f) / 3f);
+        float slotBtnGap = 8f;
+        float totalSlotW = 3f * slotBtnW + 2f * slotBtnGap;
+        float slotStartX = rightPageX - totalSlotW / 2f + slotBtnW / 2f;
+
+        var equipRT = MakeRT("EquipSlots", bookRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(rightPageX, dy), new Vector2(totalSlotW, 36f));
+        equipSlotsGO = equipRT.gameObject;
+
+        for (int i = 0; i < 3; i++)
+        {
+            int slot = i;
+            float bx = (i - 1) * (slotBtnW + slotBtnGap);
+            var bRT = MakeRT($"SlotBtn_{i}", equipRT,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(bx, 0f), new Vector2(slotBtnW, 36f));
+            var bImg = bRT.gameObject.AddComponent<Image>();
+            bImg.sprite = buttonSprite;
+            bImg.type = Image.Type.Sliced;
+            bImg.color = new Color(0.72f, 0.58f, 0.42f);
+            var btn = bRT.gameObject.AddComponent<Button>();
+            btn.targetGraphic = bImg;
+            btn.onClick.AddListener(() => OnEquipToSlot(slot));
+            MakeTMP($"SlotLabel_{i}", bRT,
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero,
+                $"Slot {i + 1}", statsFontSize, Color.white, TextAlignmentOptions.Center);
+        }
+
+        equipSlotsGO.SetActive(false);
         canvasGO.SetActive(false);
     }
 
@@ -321,8 +355,11 @@ public class GrimoireUI : MonoBehaviour
             detailCorruptionFlavor.text = "";
             detailTags.text = "";
             detailStats.text = "";
+            if (equipSlotsGO != null) equipSlotsGO.SetActive(false);
             return;
         }
+
+        if (equipSlotsGO != null) equipSlotsGO.SetActive(true);
 
         detailName.text = spell.spellName;
 
@@ -348,6 +385,12 @@ public class GrimoireUI : MonoBehaviour
         detailTags.text = tags.TrimEnd();
 
         detailStats.text = $"DMG: {spell.damage:F0}   SPD: {spell.speed:F1}   CD: {spell.cooldown:F1}";
+    }
+
+    private void OnEquipToSlot(int slot)
+    {
+        if (selectedSpell == null) return;
+        Grimoire.Instance?.EquipToSlot(selectedSpell, slot);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

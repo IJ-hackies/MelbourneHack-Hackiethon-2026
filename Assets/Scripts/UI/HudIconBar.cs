@@ -63,9 +63,14 @@ public class HudIconBar : MonoBehaviour
         }
 
         // Keyboard shortcuts (unscaled so they work while paused)
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (grimoireUI != null && grimoireUI.IsOpen)       grimoireUI.Close();
+            else if (mergeRitualUI != null && mergeRitualUI.IsOpen) mergeRitualUI.Close();
+        }
         if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.G))
             ToggleGrimoire();
-        if (Input.GetKeyDown(KeyCode.M) && IsMergeStage())
+        if (Input.GetKeyDown(KeyCode.M))
             ToggleMerge();
     }
 
@@ -176,7 +181,6 @@ public class HudIconBar : MonoBehaviour
 
     private void ToggleMerge()
     {
-        if (!IsMergeStage()) return;
         if (mergeRitualUI != null) mergeRitualUI.Toggle();
     }
 
