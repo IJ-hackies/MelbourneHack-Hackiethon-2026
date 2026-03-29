@@ -1,0 +1,264 @@
+{
+  "tileset_id": "ocean",
+  "format": "hex",
+  "tile_classification": {
+    "wall_indices": [
+      0,
+      8,
+      12,
+      13,
+      15
+    ],
+    "detail_indices": [],
+    "floor_base": 6
+  },
+  "chambers": [
+    {
+      "id": "ocean_open_arena_01",
+      "description": "Wide open arena, minimal obstacles.",
+      "tags": [
+        "open",
+        "ranged_favored",
+        "symmetric"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "66666666666666666666",
+        "66666666666666666666",
+        "66666666666666666666",
+        "66666666666666666666",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_center_block_02",
+      "description": "Solid center block, ring corridor.",
+      "tags": [
+        "flanking",
+        "cover_heavy",
+        "symmetric"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666679999a66666bc",
+        "6666666bcccc16666666",
+        "6666666bcccc16666666",
+        "6666666bcccc16666666",
+        "6666666bcccc16666666",
+        "c16666623333566666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_four_pillars_03",
+      "description": "Four pillar blocks, one per quadrant.",
+      "tags": [
+        "scattered_pillars",
+        "symmetric",
+        "melee_favored"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c1666cc666666cc666bc",
+        "c1666cc666666cc666bc",
+        "c16666666666666666bc",
+        "66666666666666666666",
+        "66666666666666666666",
+        "66666666666666666666",
+        "66666666666666666666",
+        "c16666666666666666bc",
+        "c1666cc666666cc666bc",
+        "c1666cc666666cc666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_scattered_cover_04",
+      "description": "Scattered irregular wall clusters.",
+      "tags": [
+        "cover_heavy",
+        "low_visibility"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666cccd56666666bc",
+        "c16666ccd566666666bc",
+        "c16666cd5666666666bc",
+        "666666d5666666666666",
+        "66666656666666666666",
+        "66666666666667666666",
+        "6666666666667f666666",
+        "c16666666667fc6666bc",
+        "c1666666667fcc6666bc",
+        "c166666667fccc6666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_hazard_field_05",
+      "description": "Hazard zones with safe path network.",
+      "tags": [
+        "chokepoint",
+        "ranged_favored"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666c66666666666bc",
+        "c16666c66666666666bc",
+        "c16666c666666ccccccc",
+        "666666c666666c666666",
+        "666666c666666c666666",
+        "666666c666666c666666",
+        "666666c666666c666666",
+        "ccccccc666666c6666bc",
+        "c166666666666c6666bc",
+        "c166666666666c6666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_diagonal_split_06",
+      "description": "Diagonal walls from opposite corners.",
+      "tags": [
+        "symmetric",
+        "flanking",
+        "chokepoint"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c1666c8666666fc666bc",
+        "c16660c86666fcd666bc",
+        "c166660c866fcd6666bc",
+        "66666660c8fcd6666666",
+        "666666660ccd66666666",
+        "66666666fcc866666666",
+        "6666666fcd0c86666666",
+        "c16666fcd660c86666bc",
+        "c1666fcd66660c8666bc",
+        "c1666cd6666660c666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_grid_pillars_07",
+      "description": "Regular grid of small pillars.",
+      "tags": [
+        "scattered_pillars",
+        "low_visibility",
+        "cover_heavy"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666cc6666cc6666bc",
+        "c16666cc6666cc6666bc",
+        "c16666cc6666cc6666bc",
+        "666666cc6666cc666666",
+        "666666cc6666cc666666",
+        "666666cc6666cc666666",
+        "666666cc6666cc666666",
+        "c16666cc6666cc6666bc",
+        "c16666cc6666cc6666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    },
+    {
+      "id": "ocean_divided_rooms_08",
+      "description": "Sub-areas connected by doorways.",
+      "tags": [
+        "chokepoint",
+        "melee_favored",
+        "low_visibility",
+        "divided_rooms"
+      ],
+      "layout": [
+        "cccccccc6666cccccccc",
+        "cd33333366663333330c",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c1666cccc66cccc666bc",
+        "c1666c66666666c666bc",
+        "c1666c66666666c666bc",
+        "c1666c66666666c666bc",
+        "66666c66666666c66666",
+        "66666666666666666666",
+        "66666666666666666666",
+        "66666c66666666c66666",
+        "c1666c66666666c666bc",
+        "c1666c66666666c666bc",
+        "c1666cccc66cccc666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c16666666666666666bc",
+        "c89999996666999999fc",
+        "cccccccc6666cccccccc"
+      ]
+    }
+  ]
+}

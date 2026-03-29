@@ -17,6 +17,9 @@ public class SpellData : ScriptableObject
     public float speed;
     public float cooldown;
 
+    [Header("Icon")]
+    public Sprite icon;              // spell icon sprite (loaded from Resources or generated via Nano Banana)
+
     [Header("Visuals")]
     public string projectileColor;   // hex e.g. "#FF4400", overrides element default
     public string secondaryColor;    // hex for trail/glow gradient

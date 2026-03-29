@@ -32,6 +32,17 @@ public class MainMenuController : MonoBehaviour
 
     private void OnPlay()
     {
+        // Play cutscene first if the scene exists, otherwise go straight to gameplay
+        string cutsceneScene = "IntroCutscene";
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            if (path.Contains(cutsceneScene))
+            {
+                SceneManager.LoadScene(cutsceneScene);
+                return;
+            }
+        }
         SceneManager.LoadScene("StageTest");
     }
 
