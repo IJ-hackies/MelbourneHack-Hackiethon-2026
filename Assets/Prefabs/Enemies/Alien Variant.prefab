@@ -131,7 +131,7 @@ PrefabInstance:
       objectReference: {fileID: -1808982527863717971, guid: 276fbdc1fd6894d9ba3798d41d110858, type: 3}
     - target: {fileID: 3812907494096302110, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_SortingOrder
-      value: 480
+      value: 410
       objectReference: {fileID: 0}
     - target: {fileID: 7367066776294414393, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}
       propertyPath: m_Name
@@ -173,11 +173,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AlienAI
   moveSpeed: 2.5
-  attackRange: 25
+  attackRange: 7
   attackDamage: 10
   attackCooldown: 1.5
-  detectionRange: 25
-  canSeeThoughWalls: 0
+  detectionRange: 200
+  canSeeThoughWalls: 1
   spottedDuration: 0.5
   lostDuration: 1
   minWanderTime: 1
@@ -243,8 +243,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.013657919, y: -0.10685452}
-  m_Size: {x: 0.18343838, y: 0.05810519}
+  m_Offset: {x: -0.0064209113, y: -0.12603293}
+  m_Size: {x: 0.20698379, y: 0.06281663}
   m_Direction: 1
 --- !u!4 &5740621028232615829 stripped
 Transform:

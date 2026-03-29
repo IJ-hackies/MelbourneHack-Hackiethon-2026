@@ -24,6 +24,9 @@ public class ProjectileHandler : MonoBehaviour
     private const float Lifetime      = 5f;
     private const int   WallLayer     = 1 << 9;
 
+    /// <summary>Mask that covers all damageable enemy layers (Enemy + Ghost).</summary>
+    public static int EnemyMask => LayerMask.GetMask("Enemy", "Ghost");
+
     // ── Init ─────────────────────────────────────────────────────────────────
 
     public void Init(SpellData spell, Vector2 dir,
@@ -306,7 +309,7 @@ public class ProjectileHandler : MonoBehaviour
 
     private void ApplyAoeBurst(Vector2 center)
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(center, 3f, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = Physics2D.OverlapCircleAll(center, 3f, EnemyMask);
         foreach (var hit in hits)
         {
             var h = hit.GetComponent<Health>();

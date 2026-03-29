@@ -33,6 +33,12 @@ public class WizardAI : MeleeChaseAI
     public float BurnDuration      { get => burnDuration;      set => burnDuration      = Mathf.Max(0f, value); }
 
 
+    protected override void Start()
+    {
+        base.Start();
+        CanSeeThoughWalls = true;
+    }
+
     protected override void Attack()
     {
         if (playerHealth == null || playerHealth.IsDead) return;
@@ -45,6 +51,7 @@ public class WizardAI : MeleeChaseAI
                                  playerTransform: player,
                                  homingStrength: homingStrength, stopHomingRadius: stopHomingRadius,
                                  burnDamagePerTick: AttackDamage * burnDamagePercent,
-                                 burnDuration: burnDuration);
+                                 burnDuration: burnDuration,
+                                 pierceWalls: true);
     }
 }

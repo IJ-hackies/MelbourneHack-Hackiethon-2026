@@ -36,7 +36,7 @@ public class BurrowingBehavior : ProjectileBehaviorBase
     {
         if (ctx == null || !burrowed) return;
 
-        Collider2D[] nearby = Physics2D.OverlapCircleAll(ctx.Rb.position, EruptRadius, LayerMask.GetMask("Enemy"));
+        Collider2D[] nearby = Physics2D.OverlapCircleAll(ctx.Rb.position, EruptRadius, ProjectileHandler.EnemyMask);
         if (nearby.Length == 0) return;
 
         // Erupt!

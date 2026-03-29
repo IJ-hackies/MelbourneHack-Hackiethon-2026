@@ -43,7 +43,7 @@ public class OrbitalMotion : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (!other.CompareTag("Enemy")) return;
+        if (!other.CompareTag("Enemy") && other.gameObject.layer != LayerMask.NameToLayer("Ghost")) return;
 
         GameObject enemy = other.gameObject;
         float now = Time.time;
@@ -76,7 +76,7 @@ public class OrbitalMotion : MonoBehaviour
 
         if (spell.HasTag(SpellTag.AOE_BURST))
         {
-            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(transform.position, 3f, LayerMask.GetMask("Enemy"));
+            Collider2D[] aoeHits = Physics2D.OverlapCircleAll(transform.position, 3f, ProjectileHandler.EnemyMask);
             foreach (var aoeHit in aoeHits)
             {
                 var aooh = aoeHit.GetComponent<Health>();

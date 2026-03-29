@@ -30,7 +30,7 @@ public class LingeringZone : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
             elapsed += 0.5f;
 
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, LayerMask.GetMask("Enemy"));
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, ProjectileHandler.EnemyMask);
             foreach (var hit in hits)
             {
                 var h = hit.GetComponentInParent<Health>();

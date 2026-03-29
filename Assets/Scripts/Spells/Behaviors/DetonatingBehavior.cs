@@ -40,7 +40,7 @@ public class DetonatingBehavior : ProjectileBehaviorBase
         }
 
         // Explode
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, ExplosionRadius, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, ExplosionRadius, ProjectileHandler.EnemyMask);
         foreach (var hit in hits)
         {
             var h = hit.GetComponentInParent<Health>();
