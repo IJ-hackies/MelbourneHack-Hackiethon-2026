@@ -209,6 +209,7 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: b637a3dce074b40b4bbd105cb257d39b, type: 3}
   - {fileID: 3373983171478037719, guid: e538f212765164baa9313d6575ab056f, type: 3}
   - {fileID: 539946027851580950, guid: c1db4769f915a4760b879c9b8e716763, type: 3}
+  barColor: {r: 0.49056602, g: 0.43734422, b: 0.43734422, a: 1}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
   iconHeightOffset: 1.7

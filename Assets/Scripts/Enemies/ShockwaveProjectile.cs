@@ -49,6 +49,8 @@ public class ShockwaveProjectile : MonoBehaviour
         proj.playerHitEffect = playerHitEffect;
 
         proj.SetupParticles(colorA, colorB);
+        HitEffectSpawner.AddGlowSprite(go.transform, colorA, 0.22f, 99);
+        HitEffectSpawner.AddTrailRenderer(go, colorA, colorB, trailTime: 0.08f, startWidth: 0.15f);
         Destroy(go, maxLife);
     }
 
@@ -60,10 +62,8 @@ public class ShockwaveProjectile : MonoBehaviour
         var ps = child.AddComponent<ParticleSystem>();
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        Shader urp      = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        Shader fallback = Shader.Find("Sprites/Default");
         var psr              = child.GetComponent<ParticleSystemRenderer>();
-        psr.material         = new Material(urp != null ? urp : fallback);
+        psr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
         psr.sortingLayerName = "Entities";
         psr.sortingOrder     = 100;
 
@@ -104,6 +104,7 @@ public class ShockwaveProjectile : MonoBehaviour
         hit = true;
         playerHealth.TakeDamage(damage);
         HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
+        HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
         playerHitEffect?.PlayHitEffect();
         Destroy(gameObject);
     }

@@ -49,6 +49,10 @@ public abstract class EnemyBase : MonoBehaviour
     public string WalkPrefix   { get => walkPrefix;   set => walkPrefix   = value; }
     public string AttackPrefix { get => attackPrefix; set => attackPrefix = value; }
 
+    // ── Death Effect ──────────────────────────────────────────────────────────
+    // Sprites are loaded automatically from Resources/Dead/DeadSpritesheet — no Inspector setup needed.
+    private static Sprite[] _deathFrames;
+
     // ── Rotation Sprites ──────────────────────────────────────────────────────
     [Header("Rotation Sprites")]
     [SerializeField] protected Sprite[] rotationSprites = new Sprite[8];
@@ -57,6 +61,13 @@ public abstract class EnemyBase : MonoBehaviour
         { "north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west" };
     private static readonly string[] RotationDirFiles =
         { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
+
+    // ── Health Bar ────────────────────────────────────────────────────────────
+    [Header("Health Bar")]
+    [Tooltip("Bar colour override. Leave fully transparent (default) to use the green→yellow→red health gradient. Set for elemental/special enemies.")]
+    [SerializeField] private Color barColor = Color.clear;
+
+    public Color BarColor => barColor;
 
     // ── Icons ─────────────────────────────────────────────────────────────────
     [Header("Icons")]
@@ -107,6 +118,10 @@ public abstract class EnemyBase : MonoBehaviour
         health   = GetComponent<Health>();
         seeker   = GetComponent<Seeker>();
         sr       = GetComponent<SpriteRenderer>();
+
+        // Auto-attach health bar and push the serialized barColor directly (avoids abstract-type GetComponent timing issues)
+        if (GetComponent<EnemyHealthBar>() == null)
+            gameObject.AddComponent<EnemyHealthBar>().SetThemeColor(barColor);
     }
 
     protected virtual void Start()
@@ -485,8 +500,60 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void OnDeath()
     {
+        // Disable all colliders immediately — dead bodies shouldn't block movement or projectiles
+        foreach (var col in GetComponentsInChildren<Collider2D>())
+            col.enabled = false;
+
+        // Freeze the rigidbody so the corpse doesn't drift
+        if (rb != null)
+            rb.constraints = RigidbodyConstraints2D.FreezeAll;
+
+        // Stop animator and shadow immediately
+        if (animator != null) animator.enabled = false;
+        var shadow = GetComponent<SpriteShadow>();
+        if (shadow != null)
+        {
+            shadow.enabled = false;
+            transform.Find("_Shadow")?.gameObject.SetActive(false);
+        }
+
+        // Lazy-load death frames once from Resources/Dead/DeadSpritesheet
+        if (_deathFrames == null || _deathFrames.Length == 0)
+            _deathFrames = Resources.LoadAll<Sprite>("Dead/DeadSpritesheet");
+
+        if (_deathFrames == null || _deathFrames.Length == 0)
+            Debug.LogWarning("[EnemyBase] Death frames not found. Make sure DeadSpritesheet.png is at Assets/Resources/Dead/DeadSpritesheet.png and is set to Multiple sprite mode with sliced frames.");
+
+        // Dissolve the enemy's own sprite in-place over 2 s
+        if (sr != null) StartCoroutine(DissolveSprite(sr));
+
+        // Spawn the floating ghost effect simultaneously
+        EnemyDeathEffect.Spawn(transform.position, _deathFrames,
+                               sr != null ? sr.sortingLayerName : "Entities",
+                               sr != null ? sr.sortingOrder     : 0);
+
         if (activeIcon != null) Destroy(activeIcon);
-        Destroy(gameObject, 0.1f);
+        Destroy(gameObject, 2f);
+    }
+
+    private static IEnumerator DissolveSprite(SpriteRenderer target)
+    {
+        var shader = Shader.Find("Custom/EnemyDissolve");
+        if (shader == null) yield break;
+
+        var mat = new Material(shader);
+        mat.SetTexture("_NoiseTex", EnemyDeathEffect.GetNoiseTexture());
+        mat.SetFloat("_Dissolve", 0f);
+        target.sharedMaterial = mat;
+
+        const float Duration = 2f;
+        float elapsed = 0f;
+        while (elapsed < Duration && target != null)
+        {
+            mat.SetFloat("_Dissolve", elapsed / Duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     // ── Separation ────────────────────────────────────────────────────────────
@@ -552,7 +619,7 @@ public abstract class EnemyBase : MonoBehaviour
     private void EnsureSafeSpawnDistance()
     {
         if (player == null) return;
-        float safeDistance = attackRange + 1f;
+        float safeDistance = 2.5f;
         if (DistanceToPlayer() < safeDistance)
         {
             Vector2 away   = -DirectionToPlayer();

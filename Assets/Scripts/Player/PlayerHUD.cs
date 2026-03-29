@@ -25,6 +25,9 @@ public class PlayerHUD : MonoBehaviour
     [Header("Font — assign TMP font asset generated from Assets/Fonts/alagard.ttf")]
     [SerializeField] private TMP_FontAsset alagardFont;
 
+    [Header("Position (canvas units at 1920×1080 — adjust in Inspector to place the panel)")]
+    [SerializeField] private Vector2 boardPosition = new Vector2(10f, -10f);
+
     // ── Layout (at 1920×1080 reference resolution) ────────────────────────────
     private const float BoardWidth  = 300f;
     private const float BoardHeight = 218f;
@@ -41,12 +44,21 @@ public class PlayerHUD : MonoBehaviour
     // ── UI nodes ──────────────────────────────────────────────────────────────
     private RectTransform heartRT;
     private TMP_Text      healthText;
+    private TMP_Text      healthShadowText; // drop-shadow copy of healthText
     private RectTransform statusContainer;
+
+    private static Texture2D _glowTex; // cached soft-circle texture for status glows
 
     // ── Heartbeat ─────────────────────────────────────────────────────────────
     private float beatPhase;
     private float fastBeatTimer;
     private float healthFlashTimer;
+
+    // ── Screen damage flash ───────────────────────────────────────────────────
+    private Image screenFlashImage;
+    private float screenFlashTimer;
+    private const float ScreenFlashDuration = 0.25f;
+    private const float ScreenFlashMaxAlpha = 0.02f;
 
     // ── Status slots ──────────────────────────────────────────────────────────
     private enum EffectType { Burn, Poison, Bleed, Slow }
@@ -60,6 +72,7 @@ public class PlayerHUD : MonoBehaviour
         public float         currentX;
         public float         lastRemaining;
         public float         flashTimer;
+        public RawImage      glowImage; // pulsing glow behind the icon
     }
 
     private readonly List<StatusSlot> slots = new List<StatusSlot>();
@@ -89,6 +102,7 @@ public class PlayerHUD : MonoBehaviour
     {
         fastBeatTimer    = 2f;
         healthFlashTimer = 0.45f;
+        screenFlashTimer = ScreenFlashDuration;
     }
 
     // ── Canvas construction ───────────────────────────────────────────────────
@@ -110,29 +124,59 @@ public class PlayerHUD : MonoBehaviour
         // Board background
         var boardRT = MakeRT("Board", canvasGO.transform,
             anchorMin: Vector2.up, anchorMax: Vector2.up, pivot: Vector2.up,
-            pos: new Vector2(10f, -10f), size: new Vector2(BoardWidth, BoardHeight));
+            pos: boardPosition, size: new Vector2(BoardWidth, BoardHeight));
 
         var boardImg    = boardRT.gameObject.AddComponent<Image>();
         boardImg.sprite = ExtractSprite(boardPrefab);
         boardImg.type   = Image.Type.Simple;
 
-        // Heart icon
+        // Heart container — heartRT is the root so the heartbeat scale moves everything together.
+        // Children: shadow → main sprite → text shadow → text  (front-to-back via sibling order)
         heartRT = MakeRT("Heart", boardRT,
             anchorMin: new Vector2(0.5f, 1f), anchorMax: new Vector2(0.5f, 1f),
             pivot: new Vector2(0.5f, 1f),
             pos: new Vector2(0f, -(FrameInset + 5f)),
             size: new Vector2(HeartSize, HeartSize));
 
-        var heartImg    = heartRT.gameObject.AddComponent<Image>();
-        heartImg.sprite = ExtractSprite(heartIconPrefab);
+        // Heart drop shadow — slightly larger than the heart so it bleeds out around the edges,
+        // offset down-right. Fixed size (not stretch) so it isn't clipped by the container.
+        var heartShadowRT    = MakeRT("HeartShadow", heartRT,
+            anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: new Vector2(6f, -6f), size: new Vector2(HeartSize + 14f, HeartSize + 14f));
+        var heartShadowImg   = heartShadowRT.gameObject.AddComponent<Image>();
+        heartShadowImg.sprite = ExtractSprite(heartIconPrefab);
+        heartShadowImg.preserveAspect = true;
+        heartShadowImg.color = new Color(0f, 0f, 0f, 0.6f);
+
+        // Main heart sprite (on top of shadow)
+        var heartMainRT      = MakeRT("HeartMain", heartRT,
+            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: Vector2.zero, size: Vector2.zero);
+        var heartImg         = heartMainRT.gameObject.AddComponent<Image>();
+        heartImg.sprite      = ExtractSprite(heartIconPrefab);
         heartImg.preserveAspect = true;
 
-        // Health number
+        // Health number drop shadow — dark offset copy, rendered before main text
+        var healthShadowRT   = MakeRT("HealthTextShadow", heartRT,
+            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: new Vector2(4f, -4f), size: Vector2.zero);
+        healthShadowText              = healthShadowRT.gameObject.AddComponent<TextMeshProUGUI>();
+        healthShadowText.font         = alagardFont;
+        healthShadowText.fontSize     = 28f;
+        healthShadowText.fontStyle    = FontStyles.Bold;
+        healthShadowText.alignment    = TextAlignmentOptions.Center;
+        healthShadowText.enableWordWrapping = false;
+        healthShadowText.overflowMode = TextOverflowModes.Overflow;
+        healthShadowText.color        = new Color(0f, 0f, 0f, 0.85f);
+
+        // Health number main text (on top of shadow)
         var healthTextRT = MakeRT("HealthText", heartRT,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
             pos: Vector2.zero, size: Vector2.zero);
-        healthTextRT.offsetMin = healthTextRT.offsetMax = Vector2.zero;
 
         healthText              = healthTextRT.gameObject.AddComponent<TextMeshProUGUI>();
         healthText.font         = alagardFont;
@@ -157,6 +201,15 @@ public class PlayerHUD : MonoBehaviour
         spritePoison = ExtractSprite(poisonIconPrefab);
         spriteBleed  = ExtractSprite(bleedIconPrefab);
         spriteSlow   = ExtractSprite(slowIconPrefab);
+
+        // Full-screen damage flash overlay — rendered last so it sits on top of all HUD elements
+        var flashRT = MakeRT("DamageFlash", canvasGO.transform,
+            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: Vector2.zero, size: Vector2.zero);
+        screenFlashImage               = flashRT.gameObject.AddComponent<Image>();
+        screenFlashImage.color         = new Color(1f, 0f, 0f, 0f);
+        screenFlashImage.raycastTarget = false;
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -166,6 +219,7 @@ public class PlayerHUD : MonoBehaviour
         if (health == null || status == null) return;
         UpdateHeartbeat();
         UpdateHealthText();
+        UpdateScreenFlash();
         SyncStatusSlots();
         AnimateSlots();
     }
@@ -184,11 +238,32 @@ public class PlayerHUD : MonoBehaviour
         heartRT.localScale = new Vector3(pulse, pulse, 1f);
     }
 
+    // ── Screen damage flash ───────────────────────────────────────────────────
+
+    private void UpdateScreenFlash()
+    {
+        if (screenFlashImage == null) return;
+        if (screenFlashTimer > 0f)
+        {
+            screenFlashTimer -= Time.deltaTime;
+            float t = Mathf.Clamp01(screenFlashTimer / ScreenFlashDuration);
+            // Quadratic ease-out: bright spike at hit, fast fade — gives a "beat" feel
+            float alpha = ScreenFlashMaxAlpha * (t * t);
+            screenFlashImage.color = new Color(1f, 0f, 0f, alpha);
+        }
+        else
+        {
+            screenFlashImage.color = new Color(1f, 0f, 0f, 0f);
+        }
+    }
+
     // ── Health text ───────────────────────────────────────────────────────────
 
     private void UpdateHealthText()
     {
-        healthText.text = Mathf.CeilToInt(health.Current).ToString();
+        string hp = Mathf.CeilToInt(health.Current).ToString();
+        healthText.text = hp;
+        if (healthShadowText != null) healthShadowText.text = hp;
 
         if (healthFlashTimer > 0f)
         {
@@ -271,16 +346,32 @@ public class PlayerHUD : MonoBehaviour
     {
         float startX = slots.Count * IconSpacing;
 
+        // Container — no image component; sibling order controls depth: glow → icon → timer
         var rt = MakeRT($"Slot_{type}", statusContainer,
             anchorMin: Vector2.zero, anchorMax: Vector2.zero,
             pivot: Vector2.zero,
             pos: new Vector2(startX, 0f),
             size: new Vector2(IconSize, IconSize));
 
-        var img    = rt.gameObject.AddComponent<Image>();
-        img.sprite = SpriteFor(type);
+        // Glow backdrop — soft radial gradient, element colour, rendered behind icon
+        var glowRT     = MakeRT("Glow", rt,
+            anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
+            pivot: Vector2.one * 0.5f,
+            pos: Vector2.zero, size: new Vector2(IconSize * 1.85f, IconSize * 1.85f));
+        var glowImg    = glowRT.gameObject.AddComponent<RawImage>();
+        glowImg.texture = GetGlowTexture();
+        glowImg.color   = GlowColorFor(type);
+
+        // Icon image on top of glow
+        var iconRT     = MakeRT("Icon", rt,
+            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+            pivot: Vector2.one * 0.5f,
+            pos: Vector2.zero, size: Vector2.zero);
+        var img        = iconRT.gameObject.AddComponent<Image>();
+        img.sprite     = SpriteFor(type);
         img.preserveAspect = true;
 
+        // Timer text on top of everything
         var timerRT = MakeRT("Timer", rt,
             anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
             pivot: new Vector2(0.5f, 0.5f),
@@ -299,11 +390,12 @@ public class PlayerHUD : MonoBehaviour
 
         var slot = new StatusSlot
         {
-            type      = type,
-            rt        = rt,
-            timerText = tmp,
-            targetX   = startX,
-            currentX  = startX,
+            type       = type,
+            rt         = rt,
+            timerText  = tmp,
+            targetX    = startX,
+            currentX   = startX,
+            glowImage  = glowImg,
         };
         slots.Add(slot);
         RecalcTargets();
@@ -329,6 +421,15 @@ public class PlayerHUD : MonoBehaviour
         {
             slot.currentX = slot.targetX;
             slot.rt.anchoredPosition = new Vector2(slot.currentX, 0f);
+
+            // Gently pulse the glow alpha so icons feel alive
+            if (slot.glowImage != null)
+            {
+                float pulse = 0.45f + 0.28f * Mathf.Sin(Time.time * Mathf.PI * 1.5f + (float)slot.type * 0.9f);
+                Color c = slot.glowImage.color;
+                c.a = pulse;
+                slot.glowImage.color = c;
+            }
         }
     }
 
@@ -354,6 +455,36 @@ public class PlayerHUD : MonoBehaviour
 
     private static Sprite ExtractSprite(GameObject prefab) =>
         prefab != null ? prefab.GetComponent<SpriteRenderer>()?.sprite : null;
+
+    // Soft radial gradient texture used as the glow backdrop on status icons.
+    // Generated once and cached — avoids per-slot allocations.
+    private static Texture2D GetGlowTexture()
+    {
+        if (_glowTex != null) return _glowTex;
+        const int size = 32;
+        _glowTex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float r = (size - 1) / 2f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dist = Mathf.Sqrt((x - r) * (x - r) + (y - r) * (y - r)) / r;
+            float a    = Mathf.Clamp01(1f - dist);
+            a          = a * a; // quadratic falloff — bright centre, soft transparent edge
+            _glowTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        _glowTex.Apply();
+        return _glowTex;
+    }
+
+    // Element colour for each status effect glow.
+    private static Color GlowColorFor(EffectType type) => type switch
+    {
+        EffectType.Burn   => new Color(1.0f, 0.38f, 0.0f, 0.7f),  // orange
+        EffectType.Poison => new Color(0.22f, 0.85f, 0.1f, 0.7f), // green
+        EffectType.Bleed  => new Color(0.85f, 0.08f, 0.08f, 0.7f),// red
+        EffectType.Slow   => new Color(0.28f, 0.62f, 1.0f, 0.7f), // ice blue
+        _                 => new Color(1f, 1f, 1f, 0.4f),
+    };
 
     private static RectTransform MakeRT(string name, Transform parent,
         Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,

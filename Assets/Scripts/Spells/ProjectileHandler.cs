@@ -45,6 +45,8 @@ public class ProjectileHandler : MonoBehaviour
         initialized = true;
         isSplitChild = splitChild;
 
+        HitEffectSpawner.AddGlowSprite(transform, ElementToColor(spell.element), 0.35f, 5);
+
         rb.linearVelocity = direction * spell.speed;
         Debug.Log($"[Projectile] Init called. dir={dir} speed={spell.speed} velocity={rb.linearVelocity} rbType={rb.bodyType}");
 
@@ -85,6 +87,7 @@ public class ProjectileHandler : MonoBehaviour
         if (enemyHealth == null || enemyHealth.IsDead) return;
 
         enemyHealth.TakeDamage(spell.damage);
+        HitEffectSpawner.SpawnImpactFlash(transform.position, ElementToColor(spell.element), Color.white);
 
         if (spell.HasTag(SpellTag.LIFESTEAL))
             playerHealth?.Heal(spell.damage * 0.3f);
@@ -250,6 +253,17 @@ public class ProjectileHandler : MonoBehaviour
     }
 
     // --- Helpers ---
+
+    private static Color ElementToColor(string element) => element?.ToLower() switch
+    {
+        "fire"      => new Color(1.0f, 0.4f, 0.1f),
+        "ice"       => new Color(0.5f, 0.85f, 1.0f),
+        "poison"    => new Color(0.3f, 0.9f, 0.2f),
+        "lightning" => new Color(0.9f, 0.85f, 0.2f),
+        "void"      => new Color(0.6f, 0.2f, 1.0f),
+        "shadow"    => new Color(0.4f, 0.1f, 0.6f),
+        _           => new Color(0.6f, 0.8f, 1.0f), // default pale blue
+    };
 
     private Transform FindNearestEnemyTransform()
     {
