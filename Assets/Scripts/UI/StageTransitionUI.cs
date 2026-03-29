@@ -89,6 +89,7 @@ public class StageTransitionUI : MonoBehaviour
         page1.SetActive(true);
         page2.SetActive(false);
         PauseManager.Pause();
+        SFXManager.Instance?.PlayScrollOpen();
         Populate(manifest, prevHp, newHp);
     }
 
@@ -103,6 +104,9 @@ public class StageTransitionUI : MonoBehaviour
 
     private IEnumerator FadeToBlackSequence()
     {
+        // Fade music out alongside the screen
+        MusicManager.Instance?.FadeOut();
+
         // Phase 1: Fade the screen to black (game still running)
         fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
         fadeOverlay.raycastTarget = true; // block input during fade
@@ -121,6 +125,7 @@ public class StageTransitionUI : MonoBehaviour
         // Phase 2: Screen is fully black — pause and show scroll
         PauseManager.Pause();
         page1.SetActive(true);
+        SFXManager.Instance?.PlayScrollOpen();
         page2.SetActive(false);
 
         // Hide text initially for fade-in

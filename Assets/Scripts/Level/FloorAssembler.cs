@@ -176,7 +176,7 @@ public class FloorAssembler : MonoBehaviour
                     gridGraph.collision.use2D = true;
                     gridGraph.collision.collisionCheck = true;
                     gridGraph.collision.mask = LayerMask.GetMask("Walls");
-                    gridGraph.collision.diameter = 0.8f;
+                    gridGraph.collision.diameter = 2.0f;
                     gridGraph.collision.type = Pathfinding.ColliderType.Sphere;
                     gridGraph.cutCorners = false;
                     gridGraph.erodeIterations = 1;
