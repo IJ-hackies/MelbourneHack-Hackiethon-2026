@@ -157,7 +157,7 @@ public class FireballProjectile : MonoBehaviour
         if (other.gameObject.layer != LayerMask.NameToLayer("Hitbox")) return;
         if (playerHealth == null || playerHealth.IsDead) return;
 
-        playerHealth.TakeDamage(damage);
+        EnemyBase.LogDamageToPlayer(playerHealth, damage, "fireball");
         HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
         HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
         playerHitEffect?.PlayHitEffect();

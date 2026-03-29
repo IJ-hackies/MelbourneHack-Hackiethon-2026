@@ -28,7 +28,9 @@
       "Bash(find C:UsersJorvanDocumentsProjectsMelbourneHack-Hackiethon-2026 -type f -name *.py)",
       "Bash(ls \"c:/Users/Jorvan/Documents/Projects/MelbourneHack-Hackiethon-2026/\"*.py)",
       "Bash(python generate_chambers.py)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"

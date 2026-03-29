@@ -20,6 +20,15 @@ public class SpellDTO
     public bool is_merged;
     public string[] merged_from;
 
+    // Visuals — Gemini controls these to make each spell look unique
+    public string projectile_color;  // hex e.g. "#FF4400"
+    public string secondary_color;   // hex for gradient endpoint
+    public float  projectile_scale;  // 0.5–3.0
+    public float  glow_size;         // 0.2–1.5
+    public float  trail_length;      // 0.0–0.5
+    public float  trail_width;       // 0.05–0.5
+    public int    burst_count;       // 1–5
+
     /// <summary>
     /// Creates a runtime SpellData ScriptableObject from this DTO.
     /// The returned instance is not saved to disk — it lives only for this run.
@@ -36,6 +45,15 @@ public class SpellDTO
         data.cooldown = cooldown;
         data.isMerged = is_merged;
         data.mergedFrom = merged_from ?? Array.Empty<string>();
+
+        // Visuals — apply defaults if Gemini omits them
+        data.projectileColor = projectile_color;
+        data.secondaryColor  = secondary_color;
+        data.projectileScale = projectile_scale > 0f ? projectile_scale : 1f;
+        data.glowSize        = glow_size > 0f ? glow_size : 0.35f;
+        data.trailLength     = trail_length;
+        data.trailWidth      = trail_width > 0f ? trail_width : 0.15f;
+        data.burstCount      = burst_count >= 1 ? burst_count : 1;
 
         // Parse string tags → SpellTag enum, skip unknowns gracefully
         if (tags != null)

@@ -148,7 +148,7 @@ public class GhostGooProjectile : MonoBehaviour
     {
         if (playerHealth != null && !playerHealth.IsDead)
         {
-            playerHealth.TakeDamage(damage);
+            EnemyBase.LogDamageToPlayer(playerHealth, damage, "goo_projectile");
             HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
             HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
             playerHitEffect?.PlayHitEffect();

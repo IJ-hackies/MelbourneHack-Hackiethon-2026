@@ -30,6 +30,17 @@ public class OrbitalMotion : MonoBehaviour
     {
         spell = spellData;
         angle = orbitIndex * 120f; // space up to 3 orbitals 120° apart
+
+        // Apply Gemini-controlled visuals
+        Color primary = !string.IsNullOrEmpty(spell.projectileColor)
+            && ColorUtility.TryParseHtmlString(spell.projectileColor.StartsWith("#") ? spell.projectileColor : "#" + spell.projectileColor, out Color pc)
+            ? pc : ProjectileHandler.ElementToColor(spell.element);
+
+        float scale = Mathf.Clamp(spell.projectileScale > 0f ? spell.projectileScale : 1f, 0.3f, 4f);
+        transform.localScale = Vector3.one * scale;
+
+        float glowSize = Mathf.Clamp(spell.glowSize > 0f ? spell.glowSize : 0.35f, 0.1f, 2f);
+        HitEffectSpawner.AddGlowSprite(transform, primary, glowSize, 5);
     }
 
     private void Update()
@@ -56,6 +67,7 @@ public class OrbitalMotion : MonoBehaviour
 
         h.TakeDamage(spell.damage);
         hitCooldowns[enemy] = now;
+        SessionLogger.Instance?.RecordDamageDealt(spell.element, spell.damage);
 
         if (spell.HasTag(SpellTag.LIFESTEAL))
             playerHealth?.Heal(spell.damage * 0.3f);

@@ -496,6 +496,26 @@ public abstract class EnemyBase : MonoBehaviour
         return                                       "south_east";
     }
 
+    /// <summary>
+    /// Deals damage to the player and logs the source for the session log.
+    /// Enemy subclasses and projectiles should call this instead of playerHealth.TakeDamage directly.
+    /// </summary>
+    protected void DealDamageToPlayer(float amount, string sourceOverride = null)
+    {
+        if (playerHealth == null || playerHealth.IsDead) return;
+        playerHealth.TakeDamage(amount);
+        string source = sourceOverride ?? gameObject.name.Replace("(Clone)", "").Trim();
+        SessionLogger.Instance?.RecordDamageTaken(source, amount);
+    }
+
+    /// <summary>Static version for enemy projectiles that don't inherit EnemyBase.</summary>
+    public static void LogDamageToPlayer(Health playerHp, float amount, string source)
+    {
+        if (playerHp == null || playerHp.IsDead) return;
+        playerHp.TakeDamage(amount);
+        SessionLogger.Instance?.RecordDamageTaken(source, amount);
+    }
+
     protected abstract void Attack();
 
     protected virtual void OnDeath()

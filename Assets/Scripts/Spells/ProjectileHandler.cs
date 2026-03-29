@@ -57,9 +57,16 @@ public class ProjectileHandler : MonoBehaviour
             boosted.speed      = spell.speed;
             boosted.cooldown   = spell.cooldown;
             boosted.element    = spell.element;
-            boosted.isMerged   = spell.isMerged;
-            boosted.mergedFrom = spell.mergedFrom;
-            activeSpell        = boosted;
+            boosted.isMerged        = spell.isMerged;
+            boosted.mergedFrom      = spell.mergedFrom;
+            boosted.projectileColor = spell.projectileColor;
+            boosted.secondaryColor  = spell.secondaryColor;
+            boosted.projectileScale = spell.projectileScale;
+            boosted.glowSize        = spell.glowSize;
+            boosted.trailLength     = spell.trailLength;
+            boosted.trailWidth      = spell.trailWidth;
+            boosted.burstCount      = spell.burstCount;
+            activeSpell             = boosted;
         }
 
         ctx = new ProjectileContext(activeSpell, effectiveTags, rb, playerHealth, casterTf, dir, this);
@@ -72,7 +79,7 @@ public class ProjectileHandler : MonoBehaviour
         }
         else
         {
-            HitEffectSpawner.AddGlowSprite(transform, ElementToColor(ctx.Spell.element), 0.35f, 5);
+            ApplyVisuals(activeSpell);
         }
 
         // Set initial velocity
@@ -240,6 +247,8 @@ public class ProjectileHandler : MonoBehaviour
         HitEffectSpawner.SpawnImpactFlash(transform.position,
             ElementToColor(ctx.Spell.element), Color.white);
 
+        SessionLogger.Instance?.RecordDamageDealt(ctx.Spell.element, ctx.Spell.damage);
+
         if (ctx.HasTag(SpellTag.LIFESTEAL))
             ctx.PlayerHealth?.Heal(ctx.Spell.damage * 0.3f);
 
@@ -318,6 +327,45 @@ public class ProjectileHandler : MonoBehaviour
         }
         if (aoePrefab != null)
             Destroy(Instantiate(aoePrefab, center, Quaternion.identity), 1f);
+    }
+
+    // ── Visuals ──────────────────────────────────────────────────────────────
+
+    private void ApplyVisuals(SpellData spell)
+    {
+        // Primary color: use Gemini's hex color, fall back to element default
+        Color primary = !string.IsNullOrEmpty(spell.projectileColor)
+            ? ParseHexColor(spell.projectileColor, ElementToColor(spell.element))
+            : ElementToColor(spell.element);
+
+        // Secondary color: for trail gradients
+        Color secondary = !string.IsNullOrEmpty(spell.secondaryColor)
+            ? ParseHexColor(spell.secondaryColor, primary)
+            : primary;
+
+        // Scale — Gemini controls projectile size
+        float scale = Mathf.Clamp(spell.projectileScale > 0f ? spell.projectileScale : 1f, 0.3f, 4f);
+        transform.localScale = Vector3.one * scale;
+
+        // Glow — Gemini controls glow radius
+        float glowSize = Mathf.Clamp(spell.glowSize > 0f ? spell.glowSize : 0.35f, 0.1f, 2f);
+        HitEffectSpawner.AddGlowSprite(transform, primary, glowSize, 5);
+
+        // Trail — only added if trail_length > 0
+        float trailLen = spell.trailLength;
+        if (trailLen > 0.01f)
+        {
+            float trailW = Mathf.Clamp(spell.trailWidth > 0f ? spell.trailWidth : 0.15f, 0.02f, 0.8f);
+            HitEffectSpawner.AddTrailRenderer(gameObject, primary, secondary,
+                Mathf.Clamp(trailLen, 0.02f, 0.8f), trailW * scale);
+        }
+    }
+
+    private static Color ParseHexColor(string hex, Color fallback)
+    {
+        if (string.IsNullOrEmpty(hex)) return fallback;
+        if (hex[0] != '#') hex = "#" + hex;
+        return ColorUtility.TryParseHtmlString(hex, out Color c) ? c : fallback;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
