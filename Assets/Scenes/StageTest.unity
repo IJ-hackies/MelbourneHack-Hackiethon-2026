@@ -854,15 +854,14 @@ MonoBehaviour:
   boxSprite: {fileID: 7499154508442906066, guid: c99152a44e86aec428665e2439c541a7, type: 3}
   buttonSprite: {fileID: 2530564911472380330, guid: 7e17d0dca40aa0643843dfdb9b2d4b88, type: 3}
   font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
-  bookW: 1050
-  rowH: 42
-  rowGap: 6
-  titleFontSize: 18
-  detailNameFontSize: 22
-  detailBodyFontSize: 12
-  statsFontSize: 14
-  listFontSize: 14
-  loadoutSlotSize: 65
+  bookW: 1200
+  spellBoxSize: 80
+  spellBoxGap: 10
+  titleFontSize: 30
+  detailNameFontSize: 30
+  detailBodyFontSize: 13
+  statsFontSize: 15
+  listFontSize: 15
 --- !u!4 &1750469194
 Transform:
   m_ObjectHideFlags: 0
@@ -1154,3 +1153,4 @@ SceneRoots:
   - {fileID: 1750469194}
   - {fileID: 399761515}
   - {fileID: 593601}
+  - {fileID: 8079050069914805809}

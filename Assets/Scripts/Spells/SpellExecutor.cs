@@ -31,8 +31,13 @@ public class SpellExecutor : MonoBehaviour
 
     private void TryCast()
     {
-        SpellData spell = Grimoire.Instance?.ActiveSpell;
+        Grimoire grimoire = Grimoire.Instance;
+        if (grimoire == null) return;
+
+        SpellData spell = grimoire.ActiveSpell;
         if (spell == null) return;
+
+        int slot = grimoire.ActiveSlot;
         if (!grimoire.IsSlotReady(slot)) return;
 
         grimoire.RecordCast(slot);
