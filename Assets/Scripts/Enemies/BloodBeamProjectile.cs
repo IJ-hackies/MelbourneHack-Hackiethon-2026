@@ -127,7 +127,7 @@ public class BloodBeamProjectile : MonoBehaviour
             foreach (var hit in hits)
             {
                 if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Hitbox")) continue;
-                playerHealth.TakeDamage(damage);
+                EnemyBase.LogDamageToPlayer(playerHealth, damage, "blood_beam");
                 HitEffectSpawner.SpawnHit(hit.point,
                     new Color(0.85f, 0.04f, 0.04f, 1f),
                     new Color(0.30f, 0.00f, 0.00f, 1f));

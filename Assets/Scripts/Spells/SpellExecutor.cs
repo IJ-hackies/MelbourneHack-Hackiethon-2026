@@ -124,10 +124,23 @@ public class SpellExecutor : MonoBehaviour
             return;
         }
 
-        var proj    = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-        var handler = proj.GetComponent<ProjectileHandler>();
-        if (handler != null)
-            handler.Init(spell, dir, isGhost: isGhost, damageMultiplier: damageMultiplier);
+        int count = Mathf.Clamp(spell.burstCount, 1, 5);
+        float spreadAngle = count > 1 ? 30f : 0f; // total spread across all projectiles
+        float step = count > 1 ? spreadAngle / (count - 1) : 0f;
+        float startAngle = -spreadAngle / 2f;
+
+        for (int i = 0; i < count; i++)
+        {
+            float angle = startAngle + step * i;
+            Vector2 shotDir = count > 1
+                ? (Vector2)(Quaternion.Euler(0, 0, angle) * (Vector3)dir)
+                : dir;
+
+            var proj    = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+            var handler = proj.GetComponent<ProjectileHandler>();
+            if (handler != null)
+                handler.Init(spell, shotDir, isGhost: isGhost, damageMultiplier: damageMultiplier);
+        }
     }
 
     private void HandleOrbital(SpellData spell)
@@ -158,6 +171,7 @@ public class SpellExecutor : MonoBehaviour
             if (h == null || h.IsDead) continue;
 
             h.TakeDamage(spell.damage);
+            SessionLogger.Instance?.RecordDamageDealt(spell.element, spell.damage);
 
             if (spell.HasTag(SpellTag.LIFESTEAL))
                 playerHealth?.Heal(spell.damage * 0.3f);

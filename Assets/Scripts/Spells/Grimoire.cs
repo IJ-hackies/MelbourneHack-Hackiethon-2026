@@ -42,7 +42,9 @@ public class Grimoire : MonoBehaviour
         for (int i = 0; i < LoadoutSize; i++)
             lastCastTimes[i] = -999f;
 
-        if (startingSpell != null)
+        // When StageDirector is present, it handles the initial spell via the Stage 1 manifest.
+        // Only add startingSpell if running standalone (e.g. testing without StageDirector).
+        if (startingSpell != null && FindAnyObjectByType<StageDirector>() == null)
             AddSpell(startingSpell);
     }
 
@@ -239,6 +241,15 @@ public class Grimoire : MonoBehaviour
         merged.isMerged = true;
         merged.mergedFrom = Array.ConvertAll(sources, s => s.spellName);
         merged.element = sources[0].element;
+
+        // Inherit visuals from first source, scale up slightly for merged power
+        merged.projectileColor = sources[0].projectileColor;
+        merged.secondaryColor  = sources[0].secondaryColor;
+        merged.projectileScale = Mathf.Min(sources[0].projectileScale * 1.3f, 4f);
+        merged.glowSize        = Mathf.Min(sources[0].glowSize * 1.3f, 2f);
+        merged.trailLength     = Mathf.Min(sources[0].trailLength * 1.2f, 0.8f);
+        merged.trailWidth      = Mathf.Min(sources[0].trailWidth * 1.2f, 0.8f);
+        merged.burstCount      = Mathf.Max(sources[0].burstCount, 1);
 
         // Union all tags (no duplicates)
         var tagSet = new HashSet<SpellTag>();

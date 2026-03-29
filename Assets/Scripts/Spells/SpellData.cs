@@ -17,6 +17,15 @@ public class SpellData : ScriptableObject
     public float speed;
     public float cooldown;
 
+    [Header("Visuals")]
+    public string projectileColor;   // hex e.g. "#FF4400", overrides element default
+    public string secondaryColor;    // hex for trail/glow gradient
+    public float  projectileScale;   // 0.5–3.0, multiplier on transform.localScale
+    public float  glowSize;          // 0.2–1.5, world-unit radius of glow sprite
+    public float  trailLength;       // 0.0–0.5, trail time in seconds (0 = no trail)
+    public float  trailWidth;        // 0.05–0.5, trail start width
+    public int    burstCount;        // 1–5, number of projectiles fired in a spread
+
     [Header("Merge")]
     public bool isMerged;
     public string[] mergedFrom;

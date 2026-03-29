@@ -250,6 +250,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &75030473
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 75030477}
+  - component: {fileID: 75030476}
+  - component: {fileID: 75030475}
+  - component: {fileID: 75030474}
+  m_Layer: 0
+  m_Name: GameDirector
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &75030474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0b0036185bb9dd4db747392ecfd60ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GeminiClient
+  apiKey: AIzaSyCasTQxze-_waLPVAz3oe3RMrP_oUxWT8w
+  model: gemini-3.1-pro-preview
+  timeoutSeconds: 60
+--- !u!114 &75030475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ace88a95a475d24428538c2776aa94ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloorClearDetector
+--- !u!114 &75030476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f45bc27c329395041a6318e058906136, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageDirector
+  floorAssembler: {fileID: 0}
+  enemySpawner: {fileID: 0}
+  transitionUI: {fileID: 0}
+  mergeRitualUI: {fileID: 0}
+  pregenThreshold: 0.5
+--- !u!4 &75030477
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 58.63232, y: 35.50096, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &399761513
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,6 +470,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpellExecutor
   projectilePrefab: {fileID: 7665902609262389764, guid: 2d4fee1863d7f0e448cab913d8e581a8, type: 3}
   orbitalPrefab: {fileID: 0}
+--- !u!114 &1299251236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1299251200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9d5869334f78d24d945ad07c6898550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SessionLogger
 --- !u!1 &1457820985
 GameObject:
   m_ObjectHideFlags: 0
@@ -729,51 +819,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1662301511
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1662301513}
-  - component: {fileID: 1662301512}
-  m_Layer: 0
-  m_Name: Grimoire
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1662301512
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662301511}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d112abddfd821c42aba43409ed39742, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Grimoire
-  startingSpell: {fileID: 0}
---- !u!4 &1662301513
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1662301511}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 44.53824, y: 41.25018, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1713646951
 GameObject:
   m_ObjectHideFlags: 0
@@ -1079,6 +1124,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1299251222}
+    - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1299251236}
   m_SourcePrefab: {fileID: 100100000, guid: ad9bd740773bc4846a638419def8da27, type: 3}
 --- !u!1001 &8079050069914805809
 PrefabInstance:
@@ -1145,7 +1193,6 @@ SceneRoots:
   - {fileID: 69802698}
   - {fileID: 2063898647}
   - {fileID: 1966499903}
-  - {fileID: 1662301513}
   - {fileID: 1713646953}
   - {fileID: 1620219323}
   - {fileID: 1170421379}
@@ -1154,3 +1201,4 @@ SceneRoots:
   - {fileID: 399761515}
   - {fileID: 593601}
   - {fileID: 8079050069914805809}
+  - {fileID: 75030477}

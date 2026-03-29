@@ -101,6 +101,7 @@ public class EnemySpawner : MonoBehaviour
             Vector2 spawnPos = entryPoints[Random.Range(0, entryPoints.Length)];
             var go = Instantiate(prefab, spawnPos, Quaternion.identity);
             ApplyModifiers(go, modifiers);
+            FloorClearDetector.Instance?.RegisterEnemy(go);
             yield return new WaitForSeconds(spawnInterval);
         }
     }

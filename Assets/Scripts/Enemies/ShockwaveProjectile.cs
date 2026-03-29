@@ -102,7 +102,7 @@ public class ShockwaveProjectile : MonoBehaviour
         if (playerHealth == null || playerHealth.IsDead) return;
 
         hit = true;
-        playerHealth.TakeDamage(damage);
+        EnemyBase.LogDamageToPlayer(playerHealth, damage, "shockwave");
         HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
         HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
         playerHitEffect?.PlayHitEffect();

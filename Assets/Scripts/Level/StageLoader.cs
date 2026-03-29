@@ -26,6 +26,8 @@ public class StageLoader : MonoBehaviour
 
     private void Start()
     {
+        // Skip auto-load when StageDirector is present — it drives the game loop.
+        if (StageDirector.Instance != null) return;
         LoadStage();
     }
 

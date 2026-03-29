@@ -36,6 +36,10 @@ public class HudIconBar : MonoBehaviour
     private Image mergeImage;
     private float glowPhase;
 
+    // Enemy counter
+    private TMP_Text enemyCountText;
+    private FloorClearDetector clearDetector;
+
     private void Start()
     {
         // Auto-find overlay UIs if not wired in Inspector
@@ -44,11 +48,17 @@ public class HudIconBar : MonoBehaviour
         if (mergeRitualUI == null)
             mergeRitualUI = FindAnyObjectByType<MergeRitualUI>();
 
+        clearDetector = FindAnyObjectByType<FloorClearDetector>();
+        if (clearDetector != null)
+            clearDetector.OnEnemyCountChanged += OnEnemyCountChanged;
+
         BuildBar();
     }
 
     private void OnDestroy()
     {
+        if (clearDetector != null)
+            clearDetector.OnEnemyCountChanged -= OnEnemyCountChanged;
         if (canvasGO != null) Destroy(canvasGO);
     }
 
@@ -121,6 +131,36 @@ public class HudIconBar : MonoBehaviour
 
         // Grimoire (leftmost)
         MakeIconButton("Grimoire", barRT, x, grimoireIcon, "G", OnGrimoireClick);
+
+        // ── Enemy counter (bottom-center) ──
+        BuildEnemyCounter();
+    }
+
+    private void BuildEnemyCounter()
+    {
+        var counterRT = MakeRT("EnemyCounter", canvasGO.transform,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(0f, Margin), new Vector2(200f, 40f));
+
+        // Background pill
+        var bgImg = counterRT.gameObject.AddComponent<Image>();
+        bgImg.color = new Color(0f, 0f, 0f, 0.45f);
+
+        // Text
+        var textRT = MakeRT("Text", counterRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        textRT.offsetMin = Vector2.zero;
+        textRT.offsetMax = Vector2.zero;
+        enemyCountText = textRT.gameObject.AddComponent<TextMeshProUGUI>();
+        enemyCountText.font = font;
+        enemyCountText.fontSize = 20f;
+        enemyCountText.fontStyle = FontStyles.Bold;
+        enemyCountText.alignment = TextAlignmentOptions.Center;
+        enemyCountText.color = Color.white;
+        enemyCountText.raycastTarget = false;
+
+        UpdateEnemyCountDisplay();
     }
 
     private Image MakeIconButton(string name, RectTransform parent, float xPos,
@@ -183,6 +223,35 @@ public class HudIconBar : MonoBehaviour
     {
         if (mergeRitualUI != null) mergeRitualUI.Toggle();
     }
+
+    // ── Enemy counter ────────────────────────────────────────────────────────
+
+    private void OnEnemyCountChanged(int alive, int total)
+    {
+        UpdateEnemyCountDisplay();
+    }
+
+    private void UpdateEnemyCountDisplay()
+    {
+        if (enemyCountText == null) return;
+
+        if (clearDetector == null || clearDetector.TotalEnemies == 0)
+        {
+            enemyCountText.text = "";
+            return;
+        }
+
+        int alive = clearDetector.AliveEnemies;
+        int total = clearDetector.TotalEnemies;
+
+        if (alive <= 0)
+            enemyCountText.text = "<color=#66CC77>CLEARED</color>";
+        else
+            enemyCountText.text = $"Enemies: {alive} / {total}";
+    }
+
+    /// <summary>Call when a new floor starts to refresh the counter.</summary>
+    public void RefreshEnemyCount() => UpdateEnemyCountDisplay();
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
