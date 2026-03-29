@@ -103,8 +103,8 @@ TextureImporter:
       name: Board_0
       rect:
         serializedVersion: 2
-        x: 45
-        y: 105
+        x: 2
+        y: 0
         width: 310
         height: 212
       alignment: 0

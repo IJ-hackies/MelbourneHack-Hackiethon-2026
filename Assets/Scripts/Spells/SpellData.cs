@@ -6,6 +6,7 @@ public class SpellData : ScriptableObject
     [Header("Identity")]
     public string spellName;
     [TextArea] public string flavor;
+    [TextArea] public string corruptionFlavor;
     public string element;
 
     [Header("Behavior")]

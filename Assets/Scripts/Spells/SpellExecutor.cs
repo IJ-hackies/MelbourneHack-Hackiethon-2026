@@ -12,7 +12,6 @@ public class SpellExecutor : MonoBehaviour
     [Header("Orbital")]
     [SerializeField] private GameObject orbitalPrefab;
 
-    private float lastCastTime = -999f;
     private Health playerHealth;
 
     private void Awake()
@@ -28,12 +27,15 @@ public class SpellExecutor : MonoBehaviour
 
     private void TryCast()
     {
-        SpellData spell = Grimoire.Instance?.ActiveSpell;
-        Debug.Log($"[SpellExecutor] TryCast — spell={(spell == null ? "NULL" : spell.spellName)} grimoire={Grimoire.Instance != null}");
-        if (spell == null) return;
-        if (Time.time - lastCastTime < spell.cooldown) return;
+        var grimoire = Grimoire.Instance;
+        if (grimoire == null) return;
 
-        lastCastTime = Time.time;
+        int slot = grimoire.ActiveSlot;
+        SpellData spell = grimoire.ActiveSpell;
+        if (spell == null) return;
+        if (!grimoire.IsSlotReady(slot)) return;
+
+        grimoire.RecordCast(slot);
         ExecuteSpell(spell);
     }
 

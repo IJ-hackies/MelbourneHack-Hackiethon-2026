@@ -15,15 +15,25 @@ public class StageLoader : MonoBehaviour
 {
     [Header("References")]
     public FloorAssembler floorAssembler;
+    [SerializeField] private StageTransitionUI transitionUI;
 
     [Header("Floor Manifest JSON")]
     [Tooltip("Paste a Floor Manifest JSON here. Leave empty to use the Stage 1 hardcoded manifest.")]
     [TextArea(10, 30)]
     public string manifestJson;
 
+    private FloorManifestDTO lastManifest;
+
     private void Start()
     {
         LoadStage();
+    }
+
+    private void Update()
+    {
+        // F9 = show/hide transition scroll for testing
+        if (Input.GetKeyDown(KeyCode.F9))
+            ShowTransitionScroll();
     }
 
     [ContextMenu("Load Stage (Editor Preview)")]
@@ -44,6 +54,7 @@ public class StageLoader : MonoBehaviour
             return;
         }
 
+        lastManifest = manifest;
         floorAssembler.LoadManifest(manifest);
 
         // Add the new spell to the Grimoire
@@ -56,6 +67,35 @@ public class StageLoader : MonoBehaviour
                 Grimoire.Instance?.ApplyCorruption(corruption);
 
         Debug.Log($"StageLoader: loaded floor \"{manifest.floor_name}\"");
+    }
+
+    [ContextMenu("Show Transition Scroll")]
+    public void ShowTransitionScroll()
+    {
+        if (transitionUI == null)
+        {
+            transitionUI = FindAnyObjectByType<StageTransitionUI>();
+            if (transitionUI == null)
+            {
+                Debug.LogWarning("StageLoader: no StageTransitionUI found.");
+                return;
+            }
+        }
+
+        if (transitionUI.IsOpen)
+        {
+            transitionUI.Hide();
+            return;
+        }
+
+        FloorManifestDTO manifest = lastManifest;
+        if (manifest == null)
+        {
+            string json = string.IsNullOrWhiteSpace(manifestJson) ? Stage1Json : manifestJson;
+            manifest = JsonUtility.FromJson<FloorManifestDTO>(json);
+        }
+
+        transitionUI.Show(manifest, 100f, 105f);
     }
 
     // ---------------------------------------------------------------------------
