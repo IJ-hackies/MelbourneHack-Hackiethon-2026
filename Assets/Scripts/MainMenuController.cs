@@ -13,14 +13,26 @@ public class MainMenuController : MonoBehaviour
 
     private void Start()
     {
+        // Auto-find buttons by name if not wired in Inspector
+        if (playButton == null)
+        {
+            var go = GameObject.Find("PlayButton");
+            if (go != null) playButton = go.GetComponent<Button>();
+        }
+        if (quitButton == null)
+        {
+            var go = GameObject.Find("QuitButton");
+            if (go != null) quitButton = go.GetComponent<Button>();
+        }
+
         if (playButton != null) playButton.onClick.AddListener(OnPlay);
+        else Debug.LogWarning("[MainMenuController] PlayButton not found.");
         if (quitButton != null) quitButton.onClick.AddListener(OnQuit);
     }
 
     private void OnPlay()
     {
-        // TODO: replace "GameScene" with your actual gameplay scene name
-        SceneManager.LoadScene("GameScene");
+        SceneManager.LoadScene("StageTest");
     }
 
     private void OnQuit()

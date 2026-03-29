@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -22,12 +23,17 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private TMP_FontAsset font;
 
     [Header("Layout (tweak in Inspector)")]
-    [SerializeField] private float scrollW = 420f;
-    [SerializeField] private float scrollH = 700f;
-    [SerializeField] private float titleFontSize = 22f;
-    [SerializeField] private float messageFontSize = 16f;
-    [SerializeField] private float spellNameFontSize = 20f;
-    [SerializeField] private float bodyFontSize = 13f;
+    [SerializeField] private float scrollW = 800f;
+    [SerializeField] private float scrollH = 1000f;
+    [SerializeField] private float titleFontSize = 28f;
+    [SerializeField] private float messageFontSize = 20f;
+    [SerializeField] private float spellNameFontSize = 24f;
+    [SerializeField] private float bodyFontSize = 15f;
+
+    [Header("Transition Timing")]
+    [SerializeField] private float fadeToBlackDuration = 0.7f;
+    [SerializeField] private float messageFadeInDuration = 1.2f;
+    [SerializeField] private float messageFadeInDelay = 0.4f;
 
     private GameObject canvasGO;
     private GameObject page1;
@@ -37,6 +43,7 @@ public class StageTransitionUI : MonoBehaviour
     // Page 1 elements
     private TMP_Text titleText;
     private TMP_Text messageText;
+    private TMP_Text attributionText;
 
     // Page 2 elements
     private TMP_Text spellNameText;
@@ -47,9 +54,33 @@ public class StageTransitionUI : MonoBehaviour
     private TMP_Text hpDeltaText;
     private RectTransform corruptionSection;
 
+    // Fade overlay
+    private Image fadeOverlay;
+    private Coroutine fadeCoroutine;
+
     public bool IsOpen => canvasGO != null && canvasGO.activeSelf;
 
-    /// <summary>Show the transition screen. onDone is called when the player clicks Begin.</summary>
+    /// <summary>
+    /// Begin the fade-to-black sequence. Call this when the floor is cleared.
+    /// Once fully black, the scroll will appear and the message fades in.
+    /// </summary>
+    public void FadeToBlackThenShow(FloorManifestDTO manifest, float prevHp, float newHp, Action onDone = null)
+    {
+        onComplete = onDone;
+        if (canvasGO == null) Build();
+
+        // Ensure canvas is active but pages hidden during fade
+        canvasGO.SetActive(true);
+        page1.SetActive(false);
+        page2.SetActive(false);
+
+        Populate(manifest, prevHp, newHp);
+
+        if (fadeCoroutine != null) StopCoroutine(fadeCoroutine);
+        fadeCoroutine = StartCoroutine(FadeToBlackSequence());
+    }
+
+    /// <summary>Show the transition screen immediately (no fade). onDone is called when the player clicks Begin.</summary>
     public void Show(FloorManifestDTO manifest, float prevHp, float newHp, Action onDone = null)
     {
         onComplete = onDone;
@@ -64,9 +95,68 @@ public class StageTransitionUI : MonoBehaviour
     public void Hide()
     {
         if (canvasGO != null) canvasGO.SetActive(false);
+        if (fadeOverlay != null) fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
         PauseManager.Unpause();
         onComplete?.Invoke();
         onComplete = null;
+    }
+
+    private IEnumerator FadeToBlackSequence()
+    {
+        // Phase 1: Fade the screen to black (game still running)
+        fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
+        fadeOverlay.raycastTarget = true; // block input during fade
+        float elapsed = 0f;
+        while (elapsed < fadeToBlackDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / fadeToBlackDuration);
+            // Ease-in curve for a smooth darkening
+            float alpha = t * t;
+            fadeOverlay.color = new Color(0f, 0f, 0f, alpha);
+            yield return null;
+        }
+        fadeOverlay.color = Color.black;
+
+        // Phase 2: Screen is fully black — pause and show scroll
+        PauseManager.Pause();
+        page1.SetActive(true);
+        page2.SetActive(false);
+
+        // Hide text initially for fade-in
+        SetTextAlpha(titleText, 0f);
+        SetTextAlpha(messageText, 0f);
+        SetTextAlpha(attributionText, 0f);
+
+        // Small delay before text appears
+        yield return new WaitForSecondsRealtime(messageFadeInDelay);
+
+        // Phase 3: Fade in the chronicle text
+        elapsed = 0f;
+        while (elapsed < messageFadeInDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / messageFadeInDuration);
+            // Ease-out curve
+            float alpha = 1f - (1f - t) * (1f - t);
+            SetTextAlpha(titleText, alpha);
+            SetTextAlpha(messageText, alpha);
+            SetTextAlpha(attributionText, alpha * 0.7f);
+            yield return null;
+        }
+        SetTextAlpha(titleText, 1f);
+        SetTextAlpha(messageText, 1f);
+        SetTextAlpha(attributionText, 0.7f);
+
+        fadeCoroutine = null;
+    }
+
+    private static void SetTextAlpha(TMP_Text text, float alpha)
+    {
+        if (text == null) return;
+        var c = text.color;
+        c.a = alpha;
+        text.color = c;
     }
 
     // ── Build ────────────────────────────────────────────────────────────────
@@ -85,14 +175,15 @@ public class StageTransitionUI : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Dark backdrop
-        var backdrop = MakeRT("Backdrop", canvasGO.transform,
+        // Full-screen fade overlay (used for fade-to-black transition)
+        var fadeRT = MakeRT("FadeOverlay", canvasGO.transform,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero);
-        backdrop.offsetMin = Vector2.zero;
-        backdrop.offsetMax = Vector2.zero;
-        var bdImg = backdrop.gameObject.AddComponent<Image>();
-        bdImg.color = new Color(0f, 0f, 0f, 0.7f);
+        fadeRT.offsetMin = Vector2.zero;
+        fadeRT.offsetMax = Vector2.zero;
+        fadeOverlay = fadeRT.gameObject.AddComponent<Image>();
+        fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
+        fadeOverlay.raycastTarget = false;
 
         BuildPage1();
         BuildPage2();
@@ -112,40 +203,52 @@ public class StageTransitionUI : MonoBehaviour
             Vector2.zero, new Vector2(scrollW, scrollH));
         var scrollImg = scrollRT.gameObject.AddComponent<Image>();
         scrollImg.sprite = scrollBg;
-        scrollImg.type = Image.Type.Simple;
-        scrollImg.preserveAspect = true;
+        scrollImg.type = Image.Type.Sliced;
 
-        // Title
-        titleText = MakeTMP("Title", scrollRT,
+        // ── Vertically centered content container ──
+        // Anchored to center of scroll, holds title + divider + message
+        var contentRT = MakeRT("Content", scrollRT,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 20f), new Vector2(scrollW - 120f, 400f));
+
+        // Title — top of content block
+        titleText = MakeTMP("Title", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -80f), new Vector2(scrollW - 100f, 60f),
+            new Vector2(0f, 0f), new Vector2(scrollW - 120f, 70f),
             "", titleFontSize, Color.white, TextAlignmentOptions.Center);
 
         // Divider
-        var divRT = MakeRT("Divider", scrollRT,
+        var divRT = MakeRT("Divider", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -145f), new Vector2(scrollW - 140f, 2f));
+            new Vector2(0f, -75f), new Vector2(scrollW - 200f, 2f));
         var divImg = divRT.gameObject.AddComponent<Image>();
         divImg.color = new Color(0.58f, 0.42f, 0.18f, 0.5f);
 
-        // Chronicle message
-        messageText = MakeTMP("Message", scrollRT,
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -170f), new Vector2(scrollW - 120f, 350f),
+        // Chronicle message — vertically centered text
+        messageText = MakeTMP("Message", contentRT,
+            new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, -50f), Vector2.zero,
             "", messageFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         messageText.fontStyle = FontStyles.Italic;
         messageText.enableWordWrapping = true;
+        // Stretch to fill remaining content area below divider
+        var msgRT = messageText.GetComponent<RectTransform>();
+        msgRT.anchorMin = new Vector2(0.05f, 0f);
+        msgRT.anchorMax = new Vector2(0.95f, 0.78f);
+        msgRT.offsetMin = Vector2.zero;
+        msgRT.offsetMax = Vector2.zero;
+        msgRT.anchoredPosition = Vector2.zero;
 
-        // Attribution
-        MakeTMP("Attribution", scrollRT,
+        // Attribution — near bottom of scroll
+        attributionText = MakeTMP("Attribution", scrollRT,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 130f), new Vector2(scrollW - 100f, 25f),
-            "— The Chronicle", 14f, new Color(0.53f, 0.18f, 0.61f, 0.7f), TextAlignmentOptions.Center);
+            new Vector2(0f, 150f), new Vector2(scrollW - 100f, 30f),
+            "— The Chronicle", 16f, new Color(0.53f, 0.18f, 0.61f, 0.7f), TextAlignmentOptions.Center);
 
         // Next page button
         var nextRT = MakeRT("NextBtn", scrollRT,
             new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(-40f, 70f), new Vector2(50f, 50f));
+            new Vector2(-55f, 100f), new Vector2(60f, 60f));
         var nextImg = nextRT.gameObject.AddComponent<Image>();
         nextImg.sprite = nextPageArrow;
         nextImg.preserveAspect = true;
@@ -168,22 +271,27 @@ public class StageTransitionUI : MonoBehaviour
             Vector2.zero, new Vector2(scrollW, scrollH));
         var scrollImg = scrollRT.gameObject.AddComponent<Image>();
         scrollImg.sprite = scrollBg;
-        scrollImg.type = Image.Type.Simple;
-        scrollImg.preserveAspect = true;
+        scrollImg.type = Image.Type.Sliced;
 
-        float yOffset = -80f;
+        // ── Vertically centered content container for page 2 ──
+        // Estimate total content height: header(40) + card(220) + corruption(130) + stats(65) + spacing = ~520
+        var contentRT = MakeRT("Content", scrollRT,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 20f), new Vector2(scrollW - 80f, 520f));
+
+        float yOffset = 0f;
 
         // "~ New Spell ~" header
-        MakeTMP("NewSpellHeader", scrollRT,
+        MakeTMP("NewSpellHeader", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 30f),
-            "~ New Spell ~", 20f, Color.white, TextAlignmentOptions.Center);
-        yOffset -= 40f;
+            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 40f),
+            "~ New Spell ~", 24f, Color.white, TextAlignmentOptions.Center);
+        yOffset -= 50f;
 
         // Spell card
-        var cardRT = MakeRT("SpellCard", scrollRT,
+        var cardRT = MakeRT("SpellCard", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(scrollW - 100f, 180f));
+            new Vector2(0f, yOffset), new Vector2(scrollW - 100f, 220f));
         var cardImg = cardRT.gameObject.AddComponent<Image>();
         cardImg.sprite = boxSprite;
         cardImg.type = Image.Type.Sliced;
@@ -191,62 +299,62 @@ public class StageTransitionUI : MonoBehaviour
 
         spellNameText = MakeTMP("SpellName", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -12f), new Vector2(280f, 30f),
-            "", 20f, Color.white, TextAlignmentOptions.Center);
+            new Vector2(0f, -15f), new Vector2(scrollW - 140f, 35f),
+            "", spellNameFontSize, Color.white, TextAlignmentOptions.Center);
 
         spellFlavorText = MakeTMP("SpellFlavor", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -45f), new Vector2(280f, 45f),
-            "", 12f, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
+            new Vector2(0f, -55f), new Vector2(scrollW - 140f, 55f),
+            "", bodyFontSize, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
         spellFlavorText.fontStyle = FontStyles.Italic;
         spellFlavorText.enableWordWrapping = true;
 
         spellTagsText = MakeTMP("SpellTags", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -100f), new Vector2(280f, 25f),
-            "", 12f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
+            new Vector2(0f, -120f), new Vector2(scrollW - 140f, 30f),
+            "", bodyFontSize, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
 
         spellStatsText = MakeTMP("SpellStats", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -130f), new Vector2(280f, 25f),
-            "", 13f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+            new Vector2(0f, -160f), new Vector2(scrollW - 140f, 30f),
+            "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
 
-        yOffset -= 195f;
+        yOffset -= 240f;
 
         // Corruption section
-        corruptionSection = MakeRT("CorruptionSection", scrollRT,
+        corruptionSection = MakeRT("CorruptionSection", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 110f));
+            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 130f));
 
         MakeTMP("CorruptHeader", corruptionSection,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, 0f), new Vector2(scrollW - 80f, 25f),
-            "~ Corrupted Spells ~", 16f, new Color(0.79f, 0.17f, 0.17f), TextAlignmentOptions.Center);
+            new Vector2(0f, 0f), new Vector2(scrollW - 80f, 30f),
+            "~ Corrupted Spells ~", 20f, new Color(0.79f, 0.17f, 0.17f), TextAlignmentOptions.Center);
 
         corruptionText = MakeTMP("CorruptBody", corruptionSection,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -30f), new Vector2(scrollW - 100f, 70f),
-            "", 13f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+            new Vector2(0f, -35f), new Vector2(scrollW - 100f, 85f),
+            "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         corruptionText.enableWordWrapping = true;
 
-        yOffset -= 120f;
+        yOffset -= 145f;
 
         // HP delta
-        MakeTMP("StatsHeader", scrollRT,
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 25f),
-            "~ Your Stats ~", 16f, Color.white, TextAlignmentOptions.Center);
-        yOffset -= 30f;
-
-        hpDeltaText = MakeTMP("HPDelta", scrollRT,
+        MakeTMP("StatsHeader", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 30f),
-            "", 16f, new Color(0.18f, 0.62f, 0.27f), TextAlignmentOptions.Center);
+            "~ Your Stats ~", 20f, Color.white, TextAlignmentOptions.Center);
+        yOffset -= 35f;
 
-        // Begin button
+        hpDeltaText = MakeTMP("HPDelta", contentRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, yOffset), new Vector2(scrollW - 80f, 35f),
+            "", 18f, new Color(0.18f, 0.62f, 0.27f), TextAlignmentOptions.Center);
+
+        // Begin button — anchored to bottom of scroll
         var beginRT = MakeRT("BeginBtn", scrollRT,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 70f), new Vector2(140f, 50f));
+            new Vector2(0f, 100f), new Vector2(180f, 58f));
         var beginImg = beginRT.gameObject.AddComponent<Image>();
         beginImg.sprite = buttonSprite;
         beginImg.type = Image.Type.Sliced;
@@ -258,7 +366,7 @@ public class StageTransitionUI : MonoBehaviour
         MakeTMP("BeginText", beginRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero,
-            "BEGIN", 22f, Color.white, TextAlignmentOptions.Center);
+            "BEGIN", 24f, Color.white, TextAlignmentOptions.Center);
     }
 
     // ── Populate ─────────────────────────────────────────────────────────────

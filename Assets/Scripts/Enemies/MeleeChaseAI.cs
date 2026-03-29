@@ -169,7 +169,7 @@ public class MeleeChaseAI : EnemyBase
         if (playerHealth == null || playerHealth.IsDead) return;
         if (DistanceToPlayer() > AttackRange * 1.3f) return;
 
-        playerHealth.TakeDamage(AttackDamage);
+        DealDamageToPlayer(AttackDamage);
         if (applyBleed)
             playerStatusEffects?.ApplyBleed(AttackDamage * bleedDamageMultiplier, bleedDuration);
         StartCoroutine(DelayedHitEffects());

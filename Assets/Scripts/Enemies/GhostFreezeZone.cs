@@ -67,7 +67,7 @@ public class GhostFreezeZone : MonoBehaviour
             dotTimer = 0f;
             if (playerHealth != null && !playerHealth.IsDead)
             {
-                playerHealth.TakeDamage(attackDamage * 0.1f);
+                EnemyBase.LogDamageToPlayer(playerHealth, attackDamage * 0.1f, "freeze_zone");
                 HitEffectSpawner.SpawnFrostBurst(playerTransform.position);
                 playerHitEffect?.PlayHitEffect();
             }
