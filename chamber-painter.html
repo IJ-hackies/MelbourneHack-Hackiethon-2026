@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chamber Painter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+
+  .sidebar { width: 280px; background: #16213e; padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; border-right: 2px solid #0f3460; }
+  .sidebar h2 { font-size: 18px; color: #e94560; }
+  .sidebar h3 { font-size: 12px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+  hr { border: none; border-top: 1px solid #333; }
+
+  /* Spritesheet loader */
+  .load-area { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .load-area label { font-size: 11px; color: #aaa; }
+
+  /* Palette: 4x4 grid of sprite tiles */
+  .palette { display: grid; grid-template-columns: repeat(4, 56px); gap: 4px; }
+  .palette-btn {
+    width: 56px; height: 56px; border: 3px solid #333; border-radius: 4px; cursor: pointer;
+    position: relative; image-rendering: pixelated; background-color: #222;
+    background-size: cover; transition: border-color 0.1s;
+  }
+  .palette-btn:hover { border-color: #888; }
+  .palette-btn.active { border-color: #e94560; box-shadow: 0 0 6px #e94560; }
+  .palette-btn .idx { position: absolute; bottom: 1px; right: 2px; font-size: 9px; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+  .palette-btn .type-indicator {
+    position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5); pointer-events: none;
+  }
+  .type-floor { background: #4caf50; }
+  .type-wall { background: #f44336; }
+  .type-detail { background: #2196f3; }
+
+  /* Void button */
+  .void-btn {
+    width: 56px; height: 56px; border: 3px solid #333; border-radius: 4px; cursor: pointer;
+    background: #0a0a0a; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: bold; color: #555; transition: border-color 0.1s;
+  }
+  .void-btn:hover { border-color: #888; }
+  .void-btn.active { border-color: #e94560; box-shadow: 0 0 6px #e94560; }
+
+  .palette-legend { font-size: 10px; color: #666; line-height: 1.6; }
+  .palette-legend span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 2px; }
+
+  /* Tabs */
+  .tabs { display: flex; flex-wrap: wrap; gap: 3px; }
+  .tab-btn {
+    padding: 4px 7px; background: #1a1a2e; border: 1px solid #444; border-radius: 4px;
+    color: #ccc; cursor: pointer; font-size: 10px; transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: #e94560; }
+  .tab-btn.active { background: #e94560; color: #fff; border-color: #e94560; }
+  .tab-btn.valid { border-color: #4caf50; }
+  .tab-btn.invalid { border-color: #f44336; }
+
+  /* Validation & stats */
+  .validation { font-size: 11px; padding: 6px; border-radius: 4px; line-height: 1.4; }
+  .validation.pass { background: #1b3a1b; color: #4caf50; }
+  .validation.fail { background: #3a1b1b; color: #f44336; }
+  .stats { font-size: 10px; line-height: 1.5; color: #aaa; }
+  .stats .ok { color: #4caf50; }
+  .stats .bad { color: #f44336; }
+
+  /* Buttons */
+  .btn { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .btn-primary { background: #e94560; color: #fff; }
+  .btn-primary:hover { background: #c73652; }
+  .btn-secondary { background: #0f3460; color: #ddd; }
+  .btn-secondary:hover { background: #1a4a80; }
+  .btn-danger { background: #6b1b1b; color: #ddd; }
+  .btn-danger:hover { background: #8b2b2b; }
+  .btn-group { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* Main grid area */
+  .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; }
+  .grid {
+    display: grid; grid-template-columns: repeat(20, 32px); grid-template-rows: repeat(20, 32px);
+    gap: 1px; background: #000; border: 2px solid #0f3460; border-radius: 4px; padding: 1px;
+    user-select: none;
+  }
+  .cell {
+    width: 32px; height: 32px; cursor: pointer; position: relative;
+    image-rendering: pixelated; background-color: #222; background-size: cover;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: bold; color: rgba(255,255,255,0.7);
+    text-shadow: 0 0 2px #000;
+  }
+  .cell:hover { outline: 2px solid rgba(233,69,96,0.6); outline-offset: -2px; z-index: 1; }
+  .cell.entry-marker::after {
+    content: ''; position: absolute; top: 1px; right: 1px;
+    width: 5px; height: 5px; background: #e94560; border-radius: 50%; pointer-events: none;
+  }
+
+  .grid-wrapper { display: flex; gap: 4px; }
+  .row-labels { display: flex; flex-direction: column; gap: 1px; padding: 1px 0; }
+  .row-labels span { height: 32px; display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; font-size: 9px; color: #555; width: 14px; }
+  .col-labels { display: flex; gap: 1px; padding: 0 1px; margin-left: 18px; }
+  .col-labels span { width: 32px; text-align: center; font-size: 9px; color: #555; }
+
+  .instructions { font-size: 10px; color: #555; margin-top: 8px; text-align: center; max-width: 660px; line-height: 1.5; }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; padding: 10px 18px;
+    background: #4caf50; color: #fff; border-radius: 8px; font-weight: 600; font-size: 13px;
+    transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Floor base selector */
+  .floor-base-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .floor-base-row select { background: #1a1a2e; color: #ddd; border: 1px solid #444; border-radius: 3px; padding: 2px 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Chamber Painter</h2>
+
+  <div>
+    <h3>Spritesheet Preview</h3>
+    <div class="load-area">
+      <button class="btn btn-secondary" onclick="document.getElementById('sheetInput').click()">Load PNG</button>
+      <label id="sheetLabel">No spritesheet loaded</label>
+      <input type="file" id="sheetInput" accept="image/png" style="display:none" onchange="loadSpritesheet(event)">
+    </div>
+  </div>
+
+  <div>
+    <h3>Tile Brush</h3>
+    <div class="palette" id="palette"></div>
+    <div style="display:flex;gap:4px;margin-top:4px;align-items:start;">
+      <div class="void-btn" id="voidBtn" onclick="selectTile(-1)">X</div>
+      <div class="palette-legend" style="margin-top:4px;">
+        <span class="type-floor"></span> Floor (walkable)<br>
+        <span class="type-wall"></span> Wall (blocking)<br>
+        <span class="type-detail"></span> Detail (overlay)<br>
+        Right-click tile to cycle type
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3>Chamber</h3>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div>
+    <h3>Validation</h3>
+    <div class="validation" id="validation">Load a spritesheet to begin</div>
+  </div>
+
+  <div>
+    <h3>Tile Counts</h3>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Settings</h3>
+    <div class="floor-base-row">
+      Floor base tile: <select id="floorBaseSelect" onchange="setFloorBase(+this.value)"></select>
+    </div>
+    <p style="font-size:10px;color:#666;margin-top:2px;">Painted under walls & details</p>
+  </div>
+
+  <div class="btn-group" style="margin-top:2px;">
+    <button class="btn btn-secondary" onclick="fillFloor()">Fill Floor</button>
+    <button class="btn btn-danger" onclick="clearInterior()">Clear</button>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Export / Import</h3>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="exportAll()">Export All Tilesets</button>
+      <button class="btn btn-secondary" onclick="exportTemplate()">Export Template</button>
+      <button class="btn btn-secondary" onclick="importTemplate()">Import</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)">
+  </div>
+</div>
+
+<div class="main">
+  <div class="col-labels" id="colLabels"></div>
+  <div class="grid-wrapper">
+    <div class="row-labels" id="rowLabels"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="instructions">
+    Left-click: paint selected tile. Right-click: erase to floor base. Click+drag to paint continuously.<br>
+    Red dots = entry openings (locked). Borders locked to wall. Right-click palette tile to cycle Floor/Wall/Detail.<br>
+    Keys 0-9/A-F = select tile, 1-8 = switch chamber, X = void.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- Constants ----
+const SIZE = 20;
+const TILESETS = ['dungeon','acid','bubblegum','flames','forest','frozen','honey','ocean','rocky','techy'];
+const HAZARD_THEME = {
+  dungeon:'pits', acid:'acid', bubblegum:null, flames:'lava', forest:null,
+  frozen:'ice', honey:null, ocean:'water', rocky:'chasms', techy:'energy',
+};
+const ARCHETYPES = [
+  { key:'open_arena',      num:'01', tags:['open','ranged_favored','symmetric'], desc:'Wide open arena, minimal obstacles.' },
+  { key:'center_block',    num:'02', tags:['flanking','cover_heavy','symmetric'], desc:'Solid center block, ring corridor.' },
+  { key:'four_pillars',    num:'03', tags:['scattered_pillars','symmetric','melee_favored'], desc:'Four pillar blocks, one per quadrant.' },
+  { key:'scattered_cover', num:'04', tags:['cover_heavy','low_visibility'], desc:'Scattered irregular wall clusters.' },
+  { key:'hazard_field',    num:'05', tags:['chokepoint','ranged_favored'], desc:'Hazard zones with safe path network.' },
+  { key:'diagonal_split',  num:'06', tags:['symmetric','flanking','chokepoint'], desc:'Diagonal walls from opposite corners.' },
+  { key:'grid_pillars',    num:'07', tags:['scattered_pillars','low_visibility','cover_heavy'], desc:'Regular grid of small pillars.' },
+  { key:'divided_rooms',   num:'08', tags:['chokepoint','melee_favored','low_visibility','divided_rooms'], desc:'Sub-areas connected by doorways.' },
+];
+
+// Tile classifications per tileset (for export only -- painting is index-based)
+let TILE_CLASSIFICATIONS = {};
+TILESETS.forEach(t => {
+  TILE_CLASSIFICATIONS[t] = { wall_indices:[0,8,12,13,15], detail_indices:[], floor_base:6 };
+});
+
+// ---- State ----
+let spriteDataUrl = null;      // data URL of loaded spritesheet
+let tileCanvases = [];         // 16 canvas elements, one per tile
+let chambers = [];             // 8 arrays of [20][20] = tile index (0-15) or -1 (void)
+let currentChamber = 0;
+let currentTile = 0;           // 0-15 or -1 for void
+let tileTypes = [];            // 16 entries: 'floor', 'wall', 'detail'
+let floorBase = 6;
+let isPainting = false;
+
+// Entry & border positions
+const ENTRIES = new Set();
+[[0,9],[0,10],[19,9],[19,10],[9,0],[10,0],[9,19],[10,19]].forEach(([r,c]) => ENTRIES.add(r+','+c));
+const BORDERS = new Set();
+for (let c=0;c<20;c++) { BORDERS.add('0,'+c); BORDERS.add('19,'+c); }
+for (let r=0;r<20;r++) { BORDERS.add(r+',0'); BORDERS.add(r+',19'); }
+function isLocked(r,c) { return ENTRIES.has(r+','+c) || BORDERS.has(r+','+c); }
+function isEntry(r,c) { return ENTRIES.has(r+','+c); }
+function isBorder(r,c) { return BORDERS.has(r+','+c); }
+function getFirstWall() { return 12; } // tile C = border wall
+function isWalkable(idx) { return idx >= 0 && tileTypes[idx] !== 'wall'; }
+function isBlocking(idx) { return idx < 0 || tileTypes[idx] === 'wall'; }
+
+// ---- Init ----
+function init() {
+  // Default tile types
+  tileTypes = new Array(16).fill('floor');
+  [0,8,12,13,15].forEach(i => tileTypes[i] = 'wall');
+
+  // Empty chambers
+  for (let i=0;i<8;i++) chambers.push(makeEmpty());
+
+  // Load saved state
+  const saved = localStorage.getItem('chamber-painter-v4');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.chambers?.length === 8) chambers = s.chambers;
+      if (s.tileTypes?.length === 16) tileTypes = s.tileTypes;
+      if (typeof s.floorBase === 'number') floorBase = s.floorBase;
+      if (s.classifications) TILE_CLASSIFICATIONS = s.classifications;
+      if (s.spriteDataUrl) { spriteDataUrl = s.spriteDataUrl; sliceSpritesheet(); }
+    } catch(e) {}
+  }
+
+  buildPalette();
+  buildTabs();
+  buildGrid();
+  buildLabels();
+  buildFloorBaseSelect();
+  renderGrid();
+  validate();
+}
+
+function makeEmpty() {
+  const g = [];
+  const wb = getFirstWall();
+  for (let r=0;r<20;r++) {
+    const row = [];
+    for (let c=0;c<20;c++) {
+      if (isEntry(r,c)) row.push(floorBase);
+      else if (isBorder(r,c)) row.push(wb);
+      else row.push(floorBase);
+    }
+    g.push(row);
+  }
+  return g;
+}
+
+// ---- Spritesheet ----
+function loadSpritesheet(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    spriteDataUrl = e.target.result;
+    sliceSpritesheet();
+    renderPalette();
+    renderGrid();
+    saveState();
+    document.getElementById('sheetLabel').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function sliceSpritesheet() {
+  tileCanvases = [];
+  const img = new Image();
+  img.onload = () => {
+    const tw = img.width / 4, th = img.height / 4;
+    for (let i=0;i<16;i++) {
+      const c = document.createElement('canvas');
+      c.width = tw; c.height = th;
+      const ctx = c.getContext('2d');
+      const col = i % 4, row = Math.floor(i / 4);
+      ctx.drawImage(img, col*tw, row*th, tw, th, 0, 0, tw, th);
+      tileCanvases.push(c);
+    }
+    renderPalette();
+    renderGrid();
+  };
+  img.src = spriteDataUrl;
+}
+
+function getTileDataUrl(idx) {
+  if (idx < 0 || idx >= 16 || !tileCanvases[idx]) return null;
+  return tileCanvases[idx].toDataURL();
+}
+
+// ---- Fallback colors (when no spritesheet) ----
+const FALLBACK_COLORS = [
+  '#2a2a3a','#3a3a4a','#4a3a3a','#3a3a5a',  // 0-3
+  '#5a4a3a','#6b5b4b','#7b6b5b','#5b5b3b',  // 4-7
+  '#4a5a4a','#7a6a4a','#8a7a5a','#6a6a3a',  // 8-11
+  '#5a5a6a','#9a8a3a','#6a7a6a','#8a8a7a',  // 12-15
+];
+
+// ---- Palette ----
+function buildPalette() {
+  const pal = document.getElementById('palette');
+  pal.innerHTML = '';
+  for (let i=0;i<16;i++) {
+    const btn = document.createElement('div');
+    btn.className = 'palette-btn' + (i === currentTile ? ' active' : '');
+    btn.dataset.idx = i;
+    btn.onclick = () => selectTile(i);
+    btn.oncontextmenu = (e) => { e.preventDefault(); cycleTileType(i); };
+
+    // Type indicator
+    const dot = document.createElement('div');
+    dot.className = 'type-indicator type-' + tileTypes[i];
+    btn.appendChild(dot);
+
+    // Index label
+    const lbl = document.createElement('div');
+    lbl.className = 'idx';
+    lbl.textContent = i.toString(16).toUpperCase();
+    btn.appendChild(lbl);
+
+    pal.appendChild(btn);
+  }
+  renderPalette();
+}
+
+function renderPalette() {
+  document.querySelectorAll('.palette-btn').forEach(btn => {
+    const i = parseInt(btn.dataset.idx);
+    const url = getTileDataUrl(i);
+    if (url) {
+      btn.style.backgroundImage = 'url(' + url + ')';
+      btn.style.backgroundColor = 'transparent';
+    } else {
+      btn.style.backgroundImage = 'none';
+      btn.style.backgroundColor = FALLBACK_COLORS[i];
+    }
+    // Update type indicator
+    const dot = btn.querySelector('.type-indicator');
+    dot.className = 'type-indicator type-' + tileTypes[i];
+    // Active state
+    btn.classList.toggle('active', i === currentTile);
+  });
+  // Void button
+  document.getElementById('voidBtn').classList.toggle('active', currentTile === -1);
+}
+
+function selectTile(idx) {
+  currentTile = idx;
+  renderPalette();
+}
+
+function cycleTileType(idx) {
+  const cycle = { floor:'wall', wall:'detail', detail:'floor' };
+  tileTypes[idx] = cycle[tileTypes[idx]];
+  // Update classifications for export
+  updateClassificationsFromTypes();
+  renderPalette();
+  validate();
+  saveState();
+}
+
+function updateClassificationsFromTypes() {
+  const walls = [], details = [];
+  tileTypes.forEach((t,i) => { if (t==='wall') walls.push(i); if (t==='detail') details.push(i); });
+  TILESETS.forEach(ts => {
+    TILE_CLASSIFICATIONS[ts] = { wall_indices: [...walls], detail_indices: [...details], floor_base: floorBase };
+  });
+}
+
+// ---- Floor base ----
+function buildFloorBaseSelect() {
+  const sel = document.getElementById('floorBaseSelect');
+  sel.innerHTML = '';
+  for (let i=0;i<16;i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i.toString(16).toUpperCase() + (tileTypes[i]==='floor' ? '' : ' (!)');
+    if (i === floorBase) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function setFloorBase(idx) {
+  floorBase = idx;
+  updateClassificationsFromTypes();
+  saveState();
+}
+
+// ---- Tabs ----
+function buildTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  ARCHETYPES.forEach((a,i) => {
+    const btn = document.createElement('div');
+    btn.className = 'tab-btn' + (i===0?' active':'');
+    btn.textContent = (i+1) + '. ' + a.key.replace(/_/g,' ');
+    btn.title = a.desc;
+    btn.dataset.index = i;
+    btn.onclick = () => { currentChamber = i; document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active',j===i)); renderGrid(); validate(); };
+    tabs.appendChild(btn);
+  });
+}
+
+// ---- Grid ----
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let r=0;r<20;r++) {
+    for (let c=0;c<20;c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (isEntry(r,c)) cell.classList.add('entry-marker');
+      cell.onmousedown = (e) => { e.preventDefault(); isPainting=true; paintCell(r,c,e.button); };
+      cell.onmouseenter = () => { if (isPainting) paintCell(r,c,0); };
+      cell.oncontextmenu = (e) => { e.preventDefault(); paintCell(r,c,2); };
+      grid.appendChild(cell);
+    }
+  }
+  document.addEventListener('mouseup', () => isPainting=false);
+}
+
+function buildLabels() {
+  const cl = document.getElementById('colLabels');
+  for (let c=0;c<20;c++) { const s=document.createElement('span'); s.textContent=c; cl.appendChild(s); }
+  const rl = document.getElementById('rowLabels');
+  for (let r=0;r<20;r++) { const s=document.createElement('span'); s.textContent=r; rl.appendChild(s); }
+}
+
+function renderGrid() {
+  const cells = document.getElementById('grid').children;
+  for (let r=0;r<20;r++) for (let c=0;c<20;c++) renderCell(r,c,cells[r*20+c]);
+}
+
+function renderCell(r, c, cell) {
+  if (!cell) cell = document.getElementById('grid').children[r*20+c];
+  const idx = chambers[currentChamber][r][c];
+  if (idx < 0) {
+    cell.style.backgroundImage = 'none';
+    cell.style.backgroundColor = '#0a0a0a';
+    cell.textContent = 'X';
+    cell.style.color = 'rgba(255,255,255,0.3)';
+  } else {
+    const url = getTileDataUrl(idx);
+    if (url) {
+      cell.style.backgroundImage = 'url(' + url + ')';
+      cell.style.backgroundColor = 'transparent';
+      cell.textContent = '';
+    } else {
+      cell.style.backgroundImage = 'none';
+      cell.style.backgroundColor = FALLBACK_COLORS[idx] || '#333';
+      cell.textContent = idx.toString(16).toUpperCase();
+      cell.style.color = 'rgba(255,255,255,0.6)';
+    }
+  }
+}
+
+// ---- Painting ----
+function paintCell(r, c, button) {
+  if (isLocked(r,c)) return;
+  const tile = button === 2 ? floorBase : currentTile;
+  chambers[currentChamber][r][c] = tile;
+  renderCell(r, c);
+  validate();
+  saveState();
+}
+
+// ---- Actions ----
+function fillFloor() {
+  for (let r=1;r<19;r++) for (let c=1;c<19;c++) chambers[currentChamber][r][c] = floorBase;
+  renderGrid(); validate(); saveState();
+}
+function clearInterior() { fillFloor(); }
+
+// ---- Validation ----
+function validate() {
+  const layout = chambers[currentChamber];
+  const arch = ARCHETYPES[currentChamber];
+  const useVoid = arch.key === 'hazard_field';
+  const errors = [];
+
+  // Entries must be walkable
+  [[0,9],[0,10],[19,9],[19,10],[9,0],[10,0],[9,19],[10,19]].forEach(([r,c]) => {
+    if (!isWalkable(layout[r][c])) errors.push('Entry ('+r+','+c+') must be walkable');
+  });
+
+  // Borders must be walls
+  for (let c=0;c<20;c++) {
+    if (!isEntry(0,c) && !isBlocking(layout[0][c])) errors.push('Border (0,'+c+') must be wall');
+    if (!isEntry(19,c) && !isBlocking(layout[19][c])) errors.push('Border (19,'+c+') must be wall');
+  }
+  for (let r=1;r<19;r++) {
+    if (!isEntry(r,0) && !isBlocking(layout[r][0])) errors.push('Border ('+r+',0) must be wall');
+    if (!isEntry(r,19) && !isBlocking(layout[r][19])) errors.push('Border ('+r+',19) must be wall');
+  }
+
+  // Void only in hazard_field
+  if (!useVoid) {
+    for (let r=0;r<20;r++) for (let c=0;c<20;c++)
+      if (layout[r][c] === -1) errors.push('Void at ('+r+','+c+') only allowed in hazard_field');
+  }
+
+  // BFS connectivity
+  const walkable = new Set();
+  for (let r=0;r<20;r++) for (let c=0;c<20;c++)
+    if (isWalkable(layout[r][c])) walkable.add(r+','+c);
+  if (walkable.size > 0) {
+    const visited = new Set(); const q = ['0,9']; visited.add('0,9');
+    while (q.length) {
+      const [cr,cc] = q.shift().split(',').map(Number);
+      for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        const k = (cr+dr)+','+(cc+dc);
+        if (cr+dr>=0&&cr+dr<20&&cc+dc>=0&&cc+dc<20&&!visited.has(k)&&walkable.has(k)) { visited.add(k); q.push(k); }
+      }
+    }
+    const iso = walkable.size - visited.size;
+    if (iso > 0) errors.push(iso + ' unreachable walkable tiles');
+  }
+
+  // 1-wide squeezes
+  for (let r=1;r<19;r++) for (let c=1;c<19;c++) {
+    if (isWalkable(layout[r][c])) {
+      if (isBlocking(layout[r][c-1])&&isBlocking(layout[r][c+1])) errors.push('H-squeeze at ('+r+','+c+')');
+      if (isBlocking(layout[r-1][c])&&isBlocking(layout[r+1][c])) errors.push('V-squeeze at ('+r+','+c+')');
+    }
+  }
+
+  // Wall density
+  let blocks = 0;
+  for (let r=0;r<20;r++) for (let c=0;c<20;c++) if (isBlocking(layout[r][c])) blocks++;
+  if (blocks > 160) errors.push('Blocking ' + blocks + '/400 > 160 max');
+
+  // Unique tile count (variety check -- at least 4 distinct tile indices used)
+  const used = new Set();
+  for (let r=0;r<20;r++) for (let c=0;c<20;c++) if (layout[r][c]>=0) used.add(layout[r][c]);
+  if (used.size < 4) errors.push('Only ' + used.size + ' tile types used, need at least 4 for variety');
+
+  // UI
+  const valDiv = document.getElementById('validation');
+  const ok = errors.length === 0;
+  valDiv.className = 'validation ' + (ok ? 'pass' : 'fail');
+  valDiv.innerHTML = ok ? 'PASS' : errors.slice(0,5).join('<br>') + (errors.length>5 ? '<br>...+' + (errors.length-5) + ' more' : '');
+
+  const tab = document.querySelectorAll('.tab-btn')[currentChamber];
+  tab.classList.remove('valid','invalid');
+  tab.classList.add(ok ? 'valid' : 'invalid');
+
+  // Stats
+  const counts = {};
+  for (let r=0;r<20;r++) for (let c=0;c<20;c++) {
+    const v = layout[r][c];
+    counts[v] = (counts[v]||0) + 1;
+  }
+  const statsDiv = document.getElementById('stats');
+  const lines = [];
+  for (let i=0;i<16;i++) {
+    if (counts[i]) lines.push(i.toString(16).toUpperCase() + ' (' + tileTypes[i] + '): ' + counts[i]);
+  }
+  if (counts[-1]) lines.push('X (void): ' + counts[-1]);
+  lines.push('Blocking: <span class="' + (blocks<=160?'ok':'bad') + '">' + blocks + '/160</span>');
+  statsDiv.innerHTML = lines.join('<br>');
+
+  return ok;
+}
+
+// ---- Export / Import ----
+function toHexString(row) { return row.map(v => v < 0 ? 'x' : v.toString(16)).join(''); }
+function fromHexString(s) { return s.split('').map(c => c==='x' ? -1 : parseInt(c,16)); }
+
+function exportTemplate() {
+  const t = {
+    _comment: "Chamber template. Index-based (hex). x=void.",
+    format: "hex",
+    tileTypes: tileTypes,
+    floorBase: floorBase,
+    chambers: ARCHETYPES.map((a,i) => ({
+      key: a.key, num: a.num, description: a.desc, tags: a.tags,
+      layout: chambers[i].map(toHexString),
+    }))
+  };
+  downloadJSON(t, 'chamber-template.json');
+  showToast('Template exported');
+}
+
+function exportAll() {
+  const orig = currentChamber;
+  let allOk = true;
+  for (let i=0;i<8;i++) { currentChamber=i; if (!validate()) allOk=false; }
+  currentChamber = orig; renderGrid(); validate();
+  if (!allOk && !confirm('Some chambers have errors. Export anyway?')) return;
+
+  for (const ts of TILESETS) {
+    const tc = TILE_CLASSIFICATIONS[ts];
+    const manifest = {
+      tileset_id: ts,
+      format: "hex",
+      tile_classification: tc,
+      chambers: ARCHETYPES.map((a,i) => ({
+        id: ts + '_' + a.key + '_' + a.num,
+        description: a.desc, tags: [...a.tags],
+        layout: chambers[i].map(toHexString),
+      }))
+    };
+    downloadJSON(manifest, ts + '_chambers.json');
+  }
+  showToast('Exported ' + TILESETS.length + ' files');
+}
+
+function importTemplate() { document.getElementById('fileInput').click(); }
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.chambers?.length) { showToast('Invalid format'); return; }
+
+      const isHex = data.format === 'hex';
+      for (let i=0; i<Math.min(data.chambers.length, 8); i++) {
+        const lay = data.chambers[i].layout;
+        if (lay?.length === 20) {
+          chambers[i] = isHex
+            ? lay.map(fromHexString)
+            : lay.map(s => s.split('').map(c => {
+                // Legacy letter format -> index mapping
+                const map = {F:5,W:0,A:6,B:3,D:9,E:10,G:13,H:14,O:-1};
+                return map[c] !== undefined ? map[c] : 5;
+              }));
+        }
+      }
+      if (data.tileTypes?.length === 16) tileTypes = data.tileTypes;
+      if (typeof data.floorBase === 'number') floorBase = data.floorBase;
+
+      buildPalette(); buildFloorBaseSelect(); renderGrid(); validate(); saveState();
+      showToast('Imported ' + data.chambers.length + ' chambers');
+    } catch(err) { showToast('Parse error: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function downloadJSON(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- Persistence ----
+function saveState() {
+  localStorage.setItem('chamber-painter-v4', JSON.stringify({
+    chambers, tileTypes, floorBase, classifications: TILE_CLASSIFICATIONS,
+    spriteDataUrl,
+  }));
+}
+
+// ---- Keyboard ----
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT') return;
+  const hex = '0123456789abcdef';
+  const ki = hex.indexOf(e.key.toLowerCase());
+  if (ki >= 0) { selectTile(ki); e.preventDefault(); return; }
+  if (e.key.toLowerCase() === 'x') { selectTile(-1); e.preventDefault(); return; }
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 8) {
+    currentChamber = num-1;
+    document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active',j===num-1));
+    renderGrid(); validate(); e.preventDefault();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
