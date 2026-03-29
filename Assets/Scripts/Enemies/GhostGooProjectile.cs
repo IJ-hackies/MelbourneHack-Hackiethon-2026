@@ -150,6 +150,7 @@ public class GhostGooProjectile : MonoBehaviour
         {
             playerHealth.TakeDamage(damage);
             HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
+            HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
             playerHitEffect?.PlayHitEffect();
         }
         Destroy(gameObject); // no zone on direct hit
@@ -197,6 +198,9 @@ public class GhostGooProjectile : MonoBehaviour
         // 210 PPU → 64px = ~0.3 world units diameter
         var sprite          = Sprite.Create(tex, new Rect(0, 0, texSize, texSize),
                                             new Vector2(0.5f, 0.5f), pixelsPerUnit: 210f);
+        // Glow behind the ball — additive soft circle makes it look lit from within
+        HitEffectSpawner.AddGlowSprite(visualChild, colorA, 0.55f, 95);
+
         var sr              = visualGO.AddComponent<SpriteRenderer>();
         sr.sprite           = sprite;
         sr.sortingLayerName = "Entities";
@@ -209,10 +213,8 @@ public class GhostGooProjectile : MonoBehaviour
         var ps = dripGO.AddComponent<ParticleSystem>();
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        Shader urp      = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        Shader fallback = Shader.Find("Sprites/Default");
         var psr              = dripGO.GetComponent<ParticleSystemRenderer>();
-        psr.material         = new Material(urp != null ? urp : fallback);
+        psr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
         psr.sortingLayerName = "Entities";
         psr.sortingOrder     = 99; // just behind the ball
 

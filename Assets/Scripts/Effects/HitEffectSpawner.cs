@@ -12,6 +12,133 @@ public static class HitEffectSpawner
         return new Material(urp != null ? urp : fallback);
     }
 
+    // Additive-blended particle material — overlapping particles add together, simulating glow.
+    public static Material GetAdditiveParticleMaterial()
+    {
+        Shader urp      = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        Shader fallback = Shader.Find("Sprites/Default");
+        var mat = new Material(urp != null ? urp : fallback);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        return mat;
+    }
+
+    // Short bright burst — call this when a projectile makes contact.
+    // Starts white (flash) then fades through the projectile's colours.
+    public static void SpawnImpactFlash(Vector3 position, Color colorA, Color colorB)
+    {
+        var go = new GameObject("FX_ImpactFlash");
+        go.transform.position = position;
+
+        var ps  = go.AddComponent<ParticleSystem>();
+        var psr = go.GetComponent<ParticleSystemRenderer>();
+        psr.material         = GetAdditiveParticleMaterial();
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 200;
+
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main = ps.main;
+        main.duration        = 0.1f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.1f, 0.25f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(5f, 12f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.08f, 0.25f);
+        main.startColor      = Color.white;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = ps.emission;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 8, 14) });
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius    = 0.05f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(colorA, 0.35f), new GradientColorKey(colorB, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.5f, 0.4f), new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0f));
+
+        ps.Play();
+        Object.Destroy(go, 0.5f);
+    }
+
+    // Adds a soft radial glow sprite as a child of `parent` — simulates bloom without post-processing.
+    // Uses additive blending so it brightens whatever is underneath.
+    public static void AddGlowSprite(Transform parent, Color color, float size = 0.6f, int sortOrder = 98)
+    {
+        const int texSize = 32;
+        var tex = new Texture2D(texSize, texSize, TextureFormat.RGBA32, false);
+        float r = (texSize - 1) / 2f;
+        for (int y = 0; y < texSize; y++)
+        for (int x = 0; x < texSize; x++)
+        {
+            float dist  = Mathf.Sqrt((x - r) * (x - r) + (y - r) * (y - r)) / r;
+            float alpha = Mathf.Clamp01(1f - dist);
+            alpha       = alpha * alpha; // quadratic falloff — bright centre, soft edge
+            tex.SetPixel(x, y, new Color(color.r, color.g, color.b, alpha));
+        }
+        tex.Apply();
+
+        var glowGO = new GameObject("FX_GlowCore");
+        glowGO.transform.SetParent(parent, false);
+        glowGO.transform.localPosition = Vector3.zero;
+        glowGO.transform.localScale    = Vector3.one;
+
+        float ppu    = texSize / size; // so the sprite renders at `size` world units wide
+        var sprite   = Sprite.Create(tex, new Rect(0, 0, texSize, texSize), Vector2.one * 0.5f, ppu);
+
+        Shader sh = Shader.Find("Sprites/Default")
+                 ?? Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        var mat   = new Material(sh);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        mat.renderQueue = 3000;
+
+        var sr              = glowGO.AddComponent<SpriteRenderer>();
+        sr.sprite           = sprite;
+        sr.material         = mat;
+        sr.sortingLayerName = "Entities";
+        sr.sortingOrder     = sortOrder;
+    }
+
+    // Adds a TrailRenderer to `go` — produces a motion-streak behind fast-moving projectiles.
+    public static void AddTrailRenderer(GameObject go, Color colorA, Color colorB,
+                                        float trailTime = 0.12f, float startWidth = 0.2f)
+    {
+        var tr = go.AddComponent<TrailRenderer>();
+        tr.time              = trailTime;
+        tr.startWidth        = startWidth;
+        tr.endWidth          = 0f;
+        tr.minVertexDistance = 0.05f;
+        tr.autodestruct      = false;
+
+        Shader sh = Shader.Find("Sprites/Default")
+                 ?? Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        var mat = new Material(sh);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        tr.material = mat;
+
+        var g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(colorA, 0.4f), new GradientColorKey(colorB, 1f) },
+            new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0.3f, 0.6f), new GradientAlphaKey(0f, 1f) }
+        );
+        tr.colorGradient = g;
+        tr.sortingLayerName = "Entities";
+        tr.sortingOrder     = 101;
+    }
+
     // Generic hit burst — pass the two colours for the effect
     public static void SpawnHit(Vector3 position, Color colorA, Color colorB)
     {

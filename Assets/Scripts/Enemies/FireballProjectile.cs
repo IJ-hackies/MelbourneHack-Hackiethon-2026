@@ -25,6 +25,8 @@ public class FireballProjectile : MonoBehaviour
     private bool                homingLocked;
     private float               age;
 
+    private const int WallLayerMask = 1 << 9; // Walls layer
+
     public static void Spawn(Vector3 from, Vector2 dir, float damage,
                              Color colorA, Color colorB,
                              Health playerHealth, PlayerHitEffect playerHitEffect,
@@ -65,12 +67,22 @@ public class FireballProjectile : MonoBehaviour
         proj.stopHomingRadius    = stopHomingRadius;
 
         proj.SetupParticles(colorA, colorB);
+        HitEffectSpawner.AddGlowSprite(go.transform, colorA, 0.3f, 99);
+        HitEffectSpawner.AddTrailRenderer(go, colorA, colorB, trailTime: 0.15f, startWidth: 0.22f);
         Destroy(go, maxLife);
     }
 
     private void FixedUpdate()
     {
         age += Time.fixedDeltaTime;
+
+        Vector2 nextPos = rb.position + rb.linearVelocity * Time.fixedDeltaTime * 2f;
+        if (Physics2D.Linecast(rb.position, nextPos, WallLayerMask).collider != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (homingLocked || playerTransform == null) return;
 
         float dist = Vector2.Distance(rb.position, (Vector2)playerTransform.position);
@@ -98,10 +110,8 @@ public class FireballProjectile : MonoBehaviour
         var ps = child.AddComponent<ParticleSystem>();
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        Shader urp      = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        Shader fallback = Shader.Find("Sprites/Default");
         var psr      = child.GetComponent<ParticleSystemRenderer>();
-        psr.material = new Material(urp != null ? urp : fallback);
+        psr.material = HitEffectSpawner.GetAdditiveParticleMaterial();
 
         var main = ps.main;
         main.loop            = true;
@@ -143,6 +153,7 @@ public class FireballProjectile : MonoBehaviour
 
         playerHealth.TakeDamage(damage);
         HitEffectSpawner.SpawnHit(transform.position, colorA, colorB);
+        HitEffectSpawner.SpawnImpactFlash(transform.position, colorA, colorB);
         playerHitEffect?.PlayHitEffect();
 
         var statusEffects = other.GetComponentInParent<PlayerStatusEffects>();

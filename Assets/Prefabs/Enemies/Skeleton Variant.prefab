@@ -213,11 +213,12 @@ MonoBehaviour:
   - {fileID: -1505471383403432660, guid: 16034bfaf870046b4b04b64860587ecb, type: 3}
   - {fileID: 3373983171478037719, guid: 3e19ac249e77d44deae8b9f480951d41, type: 3}
   - {fileID: 539946027851580950, guid: 516deca97a45a4b6ea4d758c12e703e6, type: 3}
+  barColor: {r: 0.8, g: 0.8, b: 0.6, a: 0.8}
   exclamationIconPrefab: {fileID: 5933793536968017698, guid: 307cd9b78da8e4653b7437a29465a4da, type: 3}
   questionIconPrefab: {fileID: 7342490303512646446, guid: 32a2fc9a5b25649e0b11706b94e007dd, type: 3}
   iconHeightOffset: 1.8
   separationRadius: 1.2
-  separationWeight: 0.8
+  separationWeight: 0.79940003
   attackAnimDuration: 0.7
   damageHitFrame: 0.35
   hitEffectDelay: 0.25
