@@ -9,7 +9,7 @@ public class MenuSnow : MonoBehaviour
     [Header("Snow Settings")]
     [SerializeField] private float emissionRate  = 50f;
     [SerializeField] private float lifetime      = 6f;
-    [SerializeField] private float fallSpeed     = 1.2f;
+    [SerializeField] private float fallSpeed     = 2.5f;
     [SerializeField] private float sizeMin       = 0.04f;
     [SerializeField] private float sizeMax       = 0.12f;
     [SerializeField] private float driftStrength = 0.3f;
@@ -29,6 +29,11 @@ public class MenuSnow : MonoBehaviour
         ConfigureRenderer();
 
         _ps.Play();
+
+        // Pre-warm: simulate a full lifetime's worth so flakes are already
+        // spread across the screen when the menu first appears.
+        _ps.Simulate(lifetime, true, false);
+        _ps.Play();
     }
 
     private void PositionAboveCamera()
@@ -39,7 +44,6 @@ public class MenuSnow : MonoBehaviour
         float camHalfH = cam.orthographicSize;
         float camHalfW = camHalfH * cam.aspect;
 
-        // Centre the emitter box at the top edge of the camera view
         Vector3 camPos = cam.transform.position;
         transform.position = new Vector3(camPos.x, camPos.y + camHalfH + 0.5f, camPos.z + 1f);
 
@@ -80,6 +84,8 @@ public class MenuSnow : MonoBehaviour
         vol.enabled = true;
         vol.space   = ParticleSystemSimulationSpace.World;
         vol.x       = new ParticleSystem.MinMaxCurve(-driftStrength, driftStrength);
+        vol.y       = new ParticleSystem.MinMaxCurve(0f, 0f);
+        vol.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         // ── Size over Lifetime (slight shrink at end for fade-out feel) ────────
         var sol = _ps.sizeOverLifetime;

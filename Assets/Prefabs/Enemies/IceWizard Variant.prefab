@@ -222,6 +222,7 @@ MonoBehaviour:
   projectileColorA: {r: 0, g: 0.96346426, b: 1, a: 1}
   projectileColorB: {r: 0.10196078, g: 0.5224983, b: 1, a: 1}
   projectileSpeed: 5
+  projectileStyle: 1
   slowMultiplier: 0.65
   slowDuration: 2
   homingStrength: 2.5

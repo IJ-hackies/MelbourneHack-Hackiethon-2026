@@ -9,7 +9,11 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Buttons")]
     [SerializeField] private Button playButton;
+    [SerializeField] private Button settingsButton;
     [SerializeField] private Button quitButton;
+
+    [Header("Settings")]
+    [SerializeField] private SettingsUI settingsUI;
 
     private void Start()
     {
@@ -19,16 +23,26 @@ public class MainMenuController : MonoBehaviour
             var go = GameObject.Find("PlayButton");
             if (go != null) playButton = go.GetComponent<Button>();
         }
+        if (settingsButton == null)
+        {
+            var go = GameObject.Find("SettingsButton");
+            if (go != null) settingsButton = go.GetComponent<Button>();
+        }
         if (quitButton == null)
         {
             var go = GameObject.Find("QuitButton");
             if (go != null) quitButton = go.GetComponent<Button>();
         }
+        if (settingsUI == null)
+            settingsUI = FindAnyObjectByType<SettingsUI>();
 
-        if (playButton != null) playButton.onClick.AddListener(OnPlay);
+        if (playButton != null)     playButton.onClick.AddListener(OnPlay);
         else Debug.LogWarning("[MainMenuController] PlayButton not found.");
-        if (quitButton != null) quitButton.onClick.AddListener(OnQuit);
+        if (settingsButton != null) settingsButton.onClick.AddListener(OnSettings);
+        if (quitButton != null)     quitButton.onClick.AddListener(OnQuit);
     }
+
+    private void OnSettings() => settingsUI?.Open(false);
 
     private void OnPlay()
     {

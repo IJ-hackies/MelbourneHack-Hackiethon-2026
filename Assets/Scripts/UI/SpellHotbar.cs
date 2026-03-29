@@ -20,7 +20,7 @@ public class SpellHotbar : MonoBehaviour
     [Header("Layout (tweak in Inspector)")]
     [SerializeField] private float slotSize    = 80f;
     [SerializeField] private float slotGap     = 8f;
-    [SerializeField] private float bottomPad   = 20f;
+    private float bottomPad = 68f;
     [SerializeField] private float keyLabelY   = 8f;
     [SerializeField] private float nameFontSize = 12f;
     [SerializeField] private float keyFontSize  = 14f;
@@ -43,6 +43,7 @@ public class SpellHotbar : MonoBehaviour
         BuildHotbar();
         if (Grimoire.Instance != null)
             Grimoire.Instance.OnLoadoutChanged += Refresh;
+        SettingsData.OnBindingsChanged += RefreshKeyLabels;
         Refresh();
     }
 
@@ -50,6 +51,7 @@ public class SpellHotbar : MonoBehaviour
     {
         if (Grimoire.Instance != null)
             Grimoire.Instance.OnLoadoutChanged -= Refresh;
+        SettingsData.OnBindingsChanged -= RefreshKeyLabels;
         if (canvasGO != null) Destroy(canvasGO);
     }
 
@@ -121,11 +123,11 @@ public class SpellHotbar : MonoBehaviour
             slot.cooldownOverlay.fillOrigin = 0; // bottom-up
             slot.cooldownOverlay.fillAmount = 0f;
 
-            // Key label above slot
+            // Key label above slot — shows current binding from SettingsData
             slot.keyText = MakeText($"Key_{i}", slot.root,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f),
                 new Vector2(0f, keyLabelY), new Vector2(slotSize, 20f),
-                (i + 1).ToString(), keyFontSize, Color.white, TextAlignmentOptions.Center);
+                SettingsData.KeyLabel(GetSlotKey(i)), keyFontSize, Color.white, TextAlignmentOptions.Center);
 
             // Spell name below slot
             slot.nameText = MakeText($"Name_{i}", slot.root,
@@ -181,7 +183,6 @@ public class SpellHotbar : MonoBehaviour
         var grimoire = Grimoire.Instance;
         if (grimoire == null || slots == null) return;
 
-        bool changed = false;
         for (int i = 0; i < Grimoire.LoadoutSize; i++)
         {
             SpellData spell = grimoire.Loadout[i];
@@ -204,7 +205,6 @@ public class SpellHotbar : MonoBehaviour
             bool isActive = i == currentActive;
             if ((slots[i].bg.sprite == slotSelectedSprite) != isActive)
             {
-                changed = true;
                 slots[i].bg.sprite = isActive ? slotSelectedSprite : slotSprite;
                 slots[i].keyText.color = isActive
                     ? new Color(1f, 0.85f, 0.3f)
@@ -212,6 +212,23 @@ public class SpellHotbar : MonoBehaviour
             }
         }
     }
+
+    // ── Key label refresh ────────────────────────────────────────────────────
+
+    private void RefreshKeyLabels()
+    {
+        if (slots == null) return;
+        for (int i = 0; i < Grimoire.LoadoutSize; i++)
+            slots[i].keyText.text = SettingsData.KeyLabel(GetSlotKey(i));
+    }
+
+    private static KeyCode GetSlotKey(int slotIndex) => slotIndex switch
+    {
+        0 => SettingsData.Slot1,
+        1 => SettingsData.Slot2,
+        2 => SettingsData.Slot3,
+        _ => KeyCode.None,
+    };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -226,7 +243,7 @@ public class SpellHotbar : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = align;
-        tmp.enableWordWrapping = false;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Overflow;
         tmp.color = color;
         tmp.outlineWidth = 0.25f;

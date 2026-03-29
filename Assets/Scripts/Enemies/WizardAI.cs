@@ -6,9 +6,10 @@ using UnityEngine;
 public class WizardAI : MeleeChaseAI
 {
     [Header("Projectile")]
-    [SerializeField] private Color projectileColorA = new Color(1.0f, 0.35f, 0.0f, 1f);
-    [SerializeField] private Color projectileColorB = new Color(1.0f, 0.85f, 0.1f, 1f);
-    [SerializeField] private float projectileSpeed  = 7f;
+    [SerializeField] private Color          projectileColorA = new Color(1.0f, 0.35f, 0.0f, 1f);
+    [SerializeField] private Color          projectileColorB = new Color(1.0f, 0.85f, 0.1f, 1f);
+    [SerializeField] private float          projectileSpeed  = 7f;
+    [SerializeField] private ProjectileStyle projectileStyle  = ProjectileStyle.Fire;
 
     [Header("Slow on Hit (0 = disabled)")]
     [SerializeField] private float slowMultiplier = 0f;
@@ -52,6 +53,7 @@ public class WizardAI : MeleeChaseAI
                                  homingStrength: homingStrength, stopHomingRadius: stopHomingRadius,
                                  burnDamagePerTick: AttackDamage * burnDamagePercent,
                                  burnDuration: burnDuration,
-                                 pierceWalls: true);
+                                 pierceWalls: true,
+                                 style: projectileStyle);
     }
 }

@@ -23,8 +23,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        moveInput.x = Input.GetAxisRaw("Horizontal");
-        moveInput.y = Input.GetAxisRaw("Vertical");
+        moveInput.x = (Input.GetKey(SettingsData.MoveRight) ? 1f : 0f)
+                    - (Input.GetKey(SettingsData.MoveLeft)  ? 1f : 0f);
+        moveInput.y = (Input.GetKey(SettingsData.MoveUp)    ? 1f : 0f)
+                    - (Input.GetKey(SettingsData.MoveDown)  ? 1f : 0f);
         moveInput.Normalize();
 
         if (moveInput != Vector2.zero)

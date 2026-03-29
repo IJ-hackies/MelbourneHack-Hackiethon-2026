@@ -426,8 +426,8 @@ public class GrimoireUI : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = align;
-        tmp.enableWordWrapping = true;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.Normal;
+        tmp.overflowMode = TextOverflowModes.Truncate;
         tmp.color = color;
         tmp.outlineWidth = 0.2f;
         tmp.outlineColor = new Color32(0, 0, 0, 180);

@@ -214,7 +214,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VampireAI
   moveSpeed: 2.5
-  attackRange: 35
+  attackRange: 20
   attackDamage: 10
   attackCooldown: 1.5
   detectionRange: 200
@@ -250,6 +250,7 @@ MonoBehaviour:
   projectileColorB: {r: 0.4528302, g: 0.022140464, b: 0.010679956, a: 1}
   hitColorA: {r: 0.6981132, g: 0.10828113, b: 0.02963687, a: 1}
   hitColorB: {r: 0.49056602, g: 0.016197944, b: 0.056580774, a: 1}
+  pathRefreshInterval: 0.3
 --- !u!4 &5117284884370984755 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3611333143417076938, guid: dd01355de122744e0bab8f3fb4271f7c, type: 3}

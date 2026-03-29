@@ -19,14 +19,17 @@ public class WallBounceBehavior : ProjectileBehaviorBase
         RaycastHit2D hit   = Physics2D.Linecast(ctx.Rb.position, nextPos, WallLayer);
         if (hit.collider == null) return;
 
+        Color spellColor = ProjectileHandler.GetSpellColor(ctx.Spell);
         bool unlimited = ctx.HasTag(SpellTag.REFLECTING);
         if (unlimited || bounceCount < MaxBounces)
         {
             bounceCount++;
             ctx.Rb.linearVelocity = Vector2.Reflect(ctx.Rb.linearVelocity, hit.normal);
+            HitEffectSpawner.SpawnWallDeflect(hit.point, hit.normal, spellColor);
         }
         else
         {
+            HitEffectSpawner.SpawnWallBlock(hit.point, hit.normal, spellColor);
             ctx.Handler.RequestDestroy();
         }
     }

@@ -36,6 +36,7 @@ public class StageDirector : MonoBehaviour
     // ── State ────────────────────────────────────────────────────────────────
     private int               stageNumber = 1;
     private FloorManifestDTO  nextManifest;
+    private SpellData         nextSpellData;  // pre-created with icon generation already in flight
     private bool              pregenStarted;
     private bool              pregenComplete;
     private bool              floorCleared;
@@ -127,17 +128,20 @@ public class StageDirector : MonoBehaviour
         // Add new spell to Grimoire
         if (manifest.new_spell != null && !string.IsNullOrEmpty(manifest.new_spell.name))
         {
-            SpellData newSpell = manifest.new_spell.ToSpellData();
+            // Use the pre-created SpellData (icon generation already in flight) if available.
+            // Fall back to creating fresh if pre-generation didn't run (e.g. Stage 1, fallback manifest).
+            SpellData newSpell = nextSpellData ?? manifest.new_spell.ToSpellData();
+            nextSpellData = null; // consume — don't reuse on next LoadStage
 
-            // Assign icon: starter sprite for Stage 1, Nano Banana for generated spells
             if (stageNumber == 1 && starterSpellIcon != null)
+            {
                 newSpell.icon = starterSpellIcon;
-            else if (nanoBananaClient != null)
-                nanoBananaClient.GenerateIcon(newSpell, icon =>
-                {
-                    newSpell.icon = icon;
-                    Grimoire.Instance?.NotifyLoadoutChanged();
-                });
+            }
+            else if (newSpell.icon == null)
+            {
+                // Fallback: generate procedurally if pre-generation didn't run
+                newSpell.icon = ProceduralSpellIconGenerator.Generate(newSpell);
+            }
 
             Grimoire.Instance?.AddSpell(newSpell);
         }
@@ -187,6 +191,14 @@ public class StageDirector : MonoBehaviour
             {
                 nextManifest = manifest;
                 Debug.Log($"[StageDirector] Pre-generation complete: \"{manifest.floor_name}\"");
+
+                // Pre-create the SpellData and generate its icon immediately.
+                if (manifest.new_spell != null && !string.IsNullOrEmpty(manifest.new_spell.name))
+                {
+                    nextSpellData = manifest.new_spell.ToSpellData();
+                    nextSpellData.icon = ProceduralSpellIconGenerator.Generate(nextSpellData);
+                    Grimoire.Instance?.NotifyLoadoutChanged();
+                }
             }
             else
             {
@@ -247,6 +259,9 @@ public class StageDirector : MonoBehaviour
 
         if (transitionUI != null)
         {
+            // Give the scroll a direct reference to the pre-created SpellData so it can
+            // show a loading indicator while the icon is still generating.
+            transitionUI.SetPendingSpellData(nextSpellData);
             transitionUI.FadeToBlackThenShow(nextManifest, playerHpBeforeStage, newHp, () =>
             {
                 // After player clicks "BEGIN" on the transition scroll

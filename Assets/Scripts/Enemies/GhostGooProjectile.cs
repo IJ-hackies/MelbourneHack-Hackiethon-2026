@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 // Goo projectile conjured and thrown by GhostAI. Two phases:
 //
@@ -38,6 +39,8 @@ public class GhostGooProjectile : MonoBehaviour
     private float zoneDuration;
     private float zoneRadius;
 
+    private Light2D projLight;
+
     // ── Factory ───────────────────────────────────────────────────────────────
 
     public static GhostGooProjectile Conjure(Vector3 pos, float damage,
@@ -52,7 +55,7 @@ public class GhostGooProjectile : MonoBehaviour
 
         var rb                    = go.AddComponent<Rigidbody2D>();
         rb.gravityScale           = 0f;
-        rb.isKinematic            = true;
+        rb.bodyType               = RigidbodyType2D.Kinematic;
 
         var proj                  = go.AddComponent<GhostGooProjectile>();
         proj.rb                   = rb;
@@ -114,7 +117,6 @@ public class GhostGooProjectile : MonoBehaviour
         Vector2 groundPos = Vector2.Lerp(startPos, targetPos, progress);
         rb.MovePosition(groundPos);
 
-        // Direct hit: player is within hitRadius of the ground position.
         if (playerTransform != null &&
             Vector2.Distance(groundPos, (Vector2)playerTransform.position) < hitRadius)
         {
@@ -142,6 +144,10 @@ public class GhostGooProjectile : MonoBehaviour
             baseScale * (1f + wobble),
             baseScale * (1f - wobble),
             1f);
+
+        // Pulsing ghost light — gentle slow throb
+        if (projLight != null)
+            projLight.intensity = 1.1f + Mathf.Sin(Time.time * 4.2f) * 0.35f;
     }
 
     private void DirectHit()
@@ -182,69 +188,124 @@ public class GhostGooProjectile : MonoBehaviour
             float dx    = x - r;
             float dy    = y - r;
             float dist  = Mathf.Sqrt(dx * dx + dy * dy);
-            // Sharp edge — hard fill inside, 1.5px anti-alias only at the boundary
             float alpha = Mathf.Clamp01((r - 1f - dist) / 1.5f + 1f);
             alpha       = Mathf.Clamp01(alpha);
-            // Small specular highlight: bright white offset toward top-left
+            // Specular highlight offset toward top-left
             float hx    = dx + r * 0.25f;
             float hy    = dy - r * 0.25f;
             float hDist = Mathf.Sqrt(hx * hx + hy * hy);
             float spec  = Mathf.Clamp01(1f - hDist / (r * 0.45f));
-            Color c     = Color.Lerp(colorA, Color.white, spec * 0.6f);
+            Color c     = Color.Lerp(colorA, Color.white, spec * 0.7f);
             tex.SetPixel(x, y, new Color(c.r, c.g, c.b, alpha));
         }
         tex.Apply();
 
         // 210 PPU → 64px = ~0.3 world units diameter
-        var sprite          = Sprite.Create(tex, new Rect(0, 0, texSize, texSize),
-                                            new Vector2(0.5f, 0.5f), pixelsPerUnit: 210f);
-        // Glow behind the ball — additive soft circle makes it look lit from within
-        HitEffectSpawner.AddGlowSprite(visualChild, colorA, 0.55f, 95);
+        var sprite = Sprite.Create(tex, new Rect(0, 0, texSize, texSize),
+                                   new Vector2(0.5f, 0.5f), pixelsPerUnit: 210f);
+
+        // Large soft ghostly glow behind the ball
+        HitEffectSpawner.AddGlowSprite(visualChild, colorA,                          0.65f, 95);
+        HitEffectSpawner.AddGlowSprite(visualChild, new Color(1f, 1f, 1f, 1f),       0.28f, 96); // bright core shimmer
 
         var sr              = visualGO.AddComponent<SpriteRenderer>();
         sr.sprite           = sprite;
         sr.sortingLayerName = "Entities";
         sr.sortingOrder     = 100;
 
-        // --- Drip particles — slow, fall downward, suggest viscous goo ---
-        var dripGO              = new GameObject("Drips");
-        dripGO.transform.SetParent(visualGO.transform, false);
+        // --- Wispy trail on the visual child ---
+        SetupWispyTrail(visualGO, colorA, colorB);
 
-        var ps = dripGO.AddComponent<ParticleSystem>();
+        // --- Wisp particles — large, slow, ethereal upward drift ---
+        SetupWispParticles(visualGO, colorA, colorB);
+
+        // --- Dynamic ghost light ---
+        try
+        {
+            var light                   = gameObject.AddComponent<Light2D>();
+            light.lightType             = Light2D.LightType.Point;
+            light.color                 = colorA;
+            light.intensity             = 1.1f;
+            light.pointLightOuterRadius = 1.6f;
+            light.pointLightInnerRadius = 0.4f;
+            projLight                   = light;
+        }
+        catch { /* Light2D unavailable */ }
+    }
+
+    private void SetupWispyTrail(GameObject go, Color colorA, Color colorB)
+    {
+        var tr = go.AddComponent<TrailRenderer>();
+        tr.time              = 0.45f;
+        tr.startWidth        = 0.28f;
+        tr.endWidth          = 0f;
+        tr.minVertexDistance = 0.04f;
+        tr.autodestruct      = false;
+
+        Shader sh = Shader.Find("Sprites/Default")
+                 ?? Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        var mat = new Material(sh);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        tr.material = mat;
+
+        var g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(colorA, 0.3f),
+                    new GradientColorKey(colorB, 1f) },
+            new[] { new GradientAlphaKey(0.75f, 0f),
+                    new GradientAlphaKey(0.30f, 0.5f),
+                    new GradientAlphaKey(0f,    1f) }
+        );
+        tr.colorGradient    = g;
+        tr.sortingLayerName = "Entities";
+        tr.sortingOrder     = 99;
+    }
+
+    private void SetupWispParticles(GameObject go, Color colorA, Color colorB)
+    {
+        var wispGO = new GameObject("Wisps");
+        wispGO.transform.SetParent(go.transform, false);
+
+        var ps  = wispGO.AddComponent<ParticleSystem>();
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        var psr              = dripGO.GetComponent<ParticleSystemRenderer>();
+        var psr              = wispGO.GetComponent<ParticleSystemRenderer>();
         psr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
         psr.sortingLayerName = "Entities";
-        psr.sortingOrder     = 99; // just behind the ball
+        psr.sortingOrder     = 98;
 
         var main = ps.main;
         main.loop            = true;
-        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
-        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.1f, 0.3f);
-        main.startSize       = new ParticleSystem.MinMaxCurve(0.04f, 0.09f);
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.35f, 0.75f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.10f, 0.45f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.12f, 0.28f);
         main.startColor      = new ParticleSystem.MinMaxGradient(colorA, colorB);
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.gravityModifier = 0.4f; // drips fall down
+        main.gravityModifier = -0.20f; // wisp upward drift
 
-        var emission = ps.emission;
-        emission.rateOverTime = 12f;
+        var wispEmission = ps.emission;
+        wispEmission.rateOverTime = 16f;
 
         var shape = ps.shape;
         shape.enabled   = true;
         shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius    = 0.12f;
+        shape.radius    = 0.14f;
 
         var col = ps.colorOverLifetime;
         col.enabled = true;
         Gradient g = new Gradient();
         g.SetKeys(
-            new[] { new GradientColorKey(colorA, 0f), new GradientColorKey(colorB, 1f) },
-            new[] { new GradientAlphaKey(0.85f, 0f),  new GradientAlphaKey(0f, 1f) }
+            new[] { new GradientColorKey(colorA, 0f),
+                    new GradientColorKey(new Color(1f, 1f, 1f, 1f), 0.3f),
+                    new GradientColorKey(colorB, 1f) },
+            new[] { new GradientAlphaKey(0.80f, 0f),
+                    new GradientAlphaKey(0.50f, 0.4f),
+                    new GradientAlphaKey(0f,    1f) }
         );
         col.color = new ParticleSystem.MinMaxGradient(g);
 
         ps.Play();
     }
-
 }

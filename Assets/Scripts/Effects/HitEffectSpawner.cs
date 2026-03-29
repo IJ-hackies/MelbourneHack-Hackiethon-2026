@@ -327,6 +327,117 @@ public static class HitEffectSpawner
         Object.Destroy(go, 1f);
     }
 
+    // Quick spark pop at a wall ricochet point — small burst, fades to spell colour.
+    public static void SpawnWallDeflect(Vector3 position, Vector2 wallNormal, Color spellColor)
+    {
+        var go = new GameObject("FX_WallDeflect");
+        go.transform.position = position;
+
+        var ps  = go.AddComponent<ParticleSystem>();
+        var psr = go.GetComponent<ParticleSystemRenderer>();
+        psr.material         = GetAdditiveParticleMaterial();
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 200;
+
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main = ps.main;
+        main.duration        = 0.05f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.12f, 0.22f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(3f, 8f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.05f, 0.15f);
+        main.startColor      = Color.white;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = ps.emission;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 5, 8) });
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Circle;
+        shape.radius    = 0.05f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        var g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(spellColor, 0.4f), new GradientColorKey(spellColor, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.6f, 0.4f), new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0f));
+
+        ps.Play();
+        Object.Destroy(go, 0.4f);
+    }
+
+    // Spread-and-vanish when a projectile is stopped by a wall.
+    // Particles fan outward along the wall surface then dissolve — the spell smears across the wall.
+    public static void SpawnWallBlock(Vector3 position, Vector2 wallNormal, Color spellColor)
+    {
+        var go = new GameObject("FX_WallBlock");
+        go.transform.position = position;
+
+        var ps  = go.AddComponent<ParticleSystem>();
+        var psr = go.GetComponent<ParticleSystemRenderer>();
+        psr.material         = GetAdditiveParticleMaterial();
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 200;
+
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var main = ps.main;
+        main.duration        = 0.05f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(1.5f, 4.5f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.12f, 0.3f);
+        main.startColor      = Color.white;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+        var emission = ps.emission;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 14, 20) });
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Circle;
+        shape.radius    = 0.1f;
+
+        // Additional velocity along the wall tangent so particles smear across the surface
+        Vector3 tangent = new Vector3(-wallNormal.y, wallNormal.x, 0f);
+        const float tangentSpread = 3f;
+        var vol = ps.velocityOverLifetime;
+        vol.enabled = true;
+        vol.space   = ParticleSystemSimulationSpace.World;
+        vol.x = new ParticleSystem.MinMaxCurve(-tangent.x * tangentSpread, tangent.x * tangentSpread);
+        vol.y = new ParticleSystem.MinMaxCurve(-tangent.y * tangentSpread, tangent.y * tangentSpread);
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        var g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(spellColor, 0.3f), new GradientColorKey(spellColor, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.7f, 0.3f), new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        // Blooms briefly then shrinks — reads as "impact spread dissolving"
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+            new Keyframe(0f, 0.5f),
+            new Keyframe(0.2f, 1f),
+            new Keyframe(1f, 0f)
+        ));
+
+        ps.Play();
+        Object.Destroy(go, 0.7f);
+    }
+
     // Subtle blood — plays on the player when hit
     public static void SpawnBlood(Vector3 position)
     {

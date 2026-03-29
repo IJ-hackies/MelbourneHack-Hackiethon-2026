@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
@@ -8,37 +9,65 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Fully scripted intro cutscene — no Timeline required.
-/// Attach to an empty GameObject in the cutscene scene.
-/// Uses existing player/enemy prefabs, URP 2D lighting, Cinemachine, and particle effects.
+///
+/// SEQUENCE:
+///   1. Title card fades in/out on black
+///   2. World fades in — Grimoire glows purple in the distance
+///   3. Player walks north; chronicle text typewriters in; Grimoire glows brighter as player approaches
+///   4. Player stops in front of Grimoire; it floats upward
+///   5. Mid-float: 8 enemies spawn at screen edges from all compass directions
+///   6. Camera zooms out to reveal the ring closing in
+///   7. Enemies walk to a surrounding ring, brief standoff
+///   8. Camera zooms in; all enemies charge simultaneously
+///   9. Slow freeze-frame → white flash → black → load gameplay scene
 ///
 /// SETUP:
-///   1. Create a new scene "IntroCutscene"
-///   2. Add an empty GameObject, attach this script
-///   3. Wire the prefab fields in the Inspector (Player, 3–4 enemy prefabs, lamp prefabs)
-///   4. Wire the UI fields (canvas, text, fade image)
-///   5. Set gameplaySceneName to "StageTest"
-///   6. Hit Play — the cutscene runs automatically
+///   1. Create scene "IntroCutscene"
+///   2. Add empty GameObject, attach this script
+///   3. Assign playerPrefab, enemyPrefabs[8] (N NE E SE S SW W NW), grimoireSprite in Inspector
+///   4. Set gameplaySceneName to your game scene (default "StageTest")
+///   5. enemyAnimPrefixes defaults are already set for the expected enemy order
 /// </summary>
 public class IntroCutscene : MonoBehaviour
 {
     // ── Prefab References ────────────────────────────────────────────────────
     [Header("Character Prefabs")]
     [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private GameObject[] enemyPrefabs;   // 3–4 enemy prefabs
 
-    [Header("Lighting Prefabs")]
+    [Tooltip("8 slots — N, NE, E, SE, S, SW, W, NW. Expected: DragonNewt, Vampire, IceWizard, Zombie, Skeleton, Ghost, FireWizard, EvilPaladin")]
+    [SerializeField] private GameObject[] enemyPrefabs = new GameObject[8];
+
+    [Header("Enemy Walk Animation Prefixes")]
+    [Tooltip("One prefix per enemyPrefabs slot. Standard enemies: 'walk'. DragonNewt: 'dn_walk'. EvilPaladin: 'ep_walk'.")]
+    [SerializeField] private string[] enemyAnimPrefixes = {
+        "dn_walk",  // N  — DragonNewt
+        "walk",     // NE — Vampire
+        "walk",     // E  — IceWizard
+        "walk",     // SE — Zombie
+        "walk",     // S  — Skeleton
+        "walk",     // SW — Ghost
+        "walk",     // W  — FireWizard
+        "ep_walk",  // NW — EvilPaladin
+    };
+
+    [Header("Grimoire")]
+    [Tooltip("Drag Assets/Art/Sprites/Spell/StarterSpell here")]
+    [SerializeField] private Sprite grimoireSprite;
+
+    [Header("Lighting")]
     [SerializeField] private GameObject globalLightPrefab;
-    [SerializeField] private GameObject lampPrefab;        // warm torch lamp
 
     [Header("Camera")]
     [SerializeField] private float baseCameraSize = 5f;
 
     [Header("UI")]
-    [SerializeField] private Canvas cutsceneCanvas;
-    [SerializeField] private Image  fadeImage;              // full-screen black Image for fades
-    [SerializeField] private Text   chronicleText;          // or use TextMeshProUGUI
-    [SerializeField] private Text   titleText;
-    [SerializeField] private Text   skipText;
+    [SerializeField] private TMP_FontAsset         uiFont;
+    [SerializeField] private Canvas                cutsceneCanvas;
+    [SerializeField] private Image                 fadeImage;
+    [SerializeField] private TMP_Text              chronicleText;
+    [SerializeField] private TMP_Text              titleText;
+    [SerializeField] private UnityEngine.UI.Button skipButton;
+    [SerializeField] private TMP_Text              skipText;
 
     [Header("Narrative")]
     [SerializeField] [TextArea(3, 6)]
@@ -49,17 +78,23 @@ public class IntroCutscene : MonoBehaviour
     [Header("Scene Transition")]
     [SerializeField] private string gameplaySceneName = "StageTest";
 
-    // ── Runtime References ───────────────────────────────────────────────────
-    private Camera           mainCam;
-    private CinemachineBrain cinemachineBrain;
-    private GameObject       playerObj;
-    private Animator         playerAnimator;
-    private List<GameObject> spawnedEnemies = new List<GameObject>();
-    private Light2D          globalLight;
-    private List<Light2D>    sceneLights = new List<Light2D>();
-    private bool             skipping;
+    // ── Runtime state ────────────────────────────────────────────────────────
+    private Camera                mainCam;
+    private CinemachineBrain      cinemachineBrain;
+    private GameObject            playerObj;
+    private List<GameObject>      spawnedEnemies = new();
+    private Light2D               globalLight;
+    private bool                  skipping;
+
+    private GameObject            grimoireObj;
+    private Light2D               grimoireLight;
+    private ParticleSystem        grimoireParticles;
+
+    private const float GrimoireGlowStartDist = 5.5f;
+    private const float RingRadius            = 7.5f;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
+
     private void Start()
     {
         SetupCamera();
@@ -68,14 +103,7 @@ public class IntroCutscene : MonoBehaviour
         StartCoroutine(RunCutscene());
     }
 
-    private void Update()
-    {
-        if (!skipping && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)
-                          || Input.GetMouseButtonDown(0)))
-        {
-            skipping = true;
-        }
-    }
+    private void Update() { } // skip is button-only
 
     // ═════════════════════════════════════════════════════════════════════════
     //  SETUP
@@ -83,34 +111,26 @@ public class IntroCutscene : MonoBehaviour
 
     private void SetupCamera()
     {
-        // Create camera from scratch so we don't depend on a prefab
         var camObj = new GameObject("CutsceneCamera");
         mainCam = camObj.AddComponent<Camera>();
-        mainCam.orthographic = true;
+        mainCam.orthographic     = true;
         mainCam.orthographicSize = baseCameraSize;
-        mainCam.backgroundColor = Color.black;
-        mainCam.clearFlags = CameraClearFlags.SolidColor;
+        mainCam.backgroundColor  = Color.black;
+        mainCam.clearFlags       = CameraClearFlags.SolidColor;
         mainCam.transform.position = new Vector3(0f, 0f, -10f);
-
-        // Tag as main camera
         camObj.tag = "MainCamera";
-
-        // Add audio listener
         camObj.AddComponent<AudioListener>();
 
-        // Cinemachine brain for smooth camera work
         cinemachineBrain = camObj.AddComponent<CinemachineBrain>();
         cinemachineBrain.m_DefaultBlend = new CinemachineBlendDefinition(
-            CinemachineBlendDefinition.Style.EaseInOut, 1.5f);
+            CinemachineBlendDefinition.Style.EaseInOut, 1.2f);
     }
 
     private void SetupLighting()
     {
-        // Start in near-total darkness
         if (globalLightPrefab != null)
         {
-            var go = Instantiate(globalLightPrefab);
-            globalLight = go.GetComponent<Light2D>();
+            globalLight = Instantiate(globalLightPrefab).GetComponent<Light2D>();
         }
         else
         {
@@ -118,88 +138,97 @@ public class IntroCutscene : MonoBehaviour
             globalLight = go.AddComponent<Light2D>();
             globalLight.lightType = Light2D.LightType.Global;
         }
-        globalLight.intensity = 0f; // pitch black at start
+        globalLight.intensity = 0f;
     }
 
     private void SetupUI()
     {
-        // Create canvas if not provided
         if (cutsceneCanvas == null)
         {
-            var canvasObj = new GameObject("CutsceneCanvas");
-            cutsceneCanvas = canvasObj.AddComponent<Canvas>();
-            cutsceneCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var cGO = new GameObject("CutsceneCanvas");
+            cutsceneCanvas = cGO.AddComponent<Canvas>();
+            cutsceneCanvas.renderMode  = RenderMode.ScreenSpaceOverlay;
             cutsceneCanvas.sortingOrder = 100;
-            canvasObj.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            canvasObj.AddComponent<GraphicRaycaster>();
-
-            var scaler = canvasObj.GetComponent<CanvasScaler>();
+            var scaler = cGO.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight  = 0.5f;
+            cGO.AddComponent<GraphicRaycaster>();
         }
 
-        // Fade overlay
         if (fadeImage == null)
         {
-            var fadeObj = new GameObject("FadeOverlay");
-            fadeObj.transform.SetParent(cutsceneCanvas.transform, false);
-            fadeImage = fadeObj.AddComponent<Image>();
-            fadeImage.color = Color.black;
+            var go = new GameObject("FadeOverlay");
+            go.transform.SetParent(cutsceneCanvas.transform, false);
+            fadeImage = go.AddComponent<Image>();
             fadeImage.raycastTarget = false;
             var rt = fadeImage.rectTransform;
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
         }
-        fadeImage.color = Color.black; // start fully black
+        fadeImage.color = Color.black;
 
-        // Chronicle text
         if (chronicleText == null)
-        {
-            chronicleText = CreateUIText("ChronicleText", 28, TextAnchor.MiddleCenter,
-                new Vector2(0.1f, 0.15f), new Vector2(0.9f, 0.55f));
-            chronicleText.fontStyle = FontStyle.Italic;
-        }
-        chronicleText.text = "";
-        chronicleText.color = new Color(0.85f, 0.75f, 0.55f, 0f); // gold, invisible
+            chronicleText = MakeUIText("ChronicleText", 28, FontStyles.Italic,
+                new Vector2(0.1f, 0.08f), new Vector2(0.9f, 0.48f));
+        chronicleText.text  = "";
+        chronicleText.color = new Color(0.85f, 0.75f, 0.55f, 0f);
 
-        // Title text
         if (titleText == null)
-        {
-            titleText = CreateUIText("TitleText", 52, TextAnchor.MiddleCenter,
+            titleText = MakeUIText("TitleText", 52, FontStyles.Bold,
                 new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.65f));
-            titleText.fontStyle = FontStyle.Bold;
-        }
-        titleText.text = "";
+        titleText.text  = "";
         titleText.color = new Color(1f, 0.9f, 0.6f, 0f);
 
-        // Skip prompt
-        if (skipText == null)
+        // Skip button — top-right corner
+        if (skipButton == null)
         {
-            skipText = CreateUIText("SkipText", 16, TextAnchor.LowerRight,
-                new Vector2(0.75f, 0.02f), new Vector2(0.98f, 0.06f));
+            var btnGO = new GameObject("SkipButton");
+            btnGO.transform.SetParent(cutsceneCanvas.transform, false);
+
+            var btnRT              = btnGO.AddComponent<RectTransform>();
+            btnRT.anchorMin        = new Vector2(1f, 1f);
+            btnRT.anchorMax        = new Vector2(1f, 1f);
+            btnRT.pivot            = new Vector2(1f, 1f);
+            btnRT.anchoredPosition = new Vector2(-20f, -20f);
+            btnRT.sizeDelta        = new Vector2(120f, 40f);
+
+            var btnImg             = btnGO.AddComponent<Image>();
+            btnImg.color           = new Color(0.1f, 0.1f, 0.1f, 0.7f);
+
+            skipButton             = btnGO.AddComponent<UnityEngine.UI.Button>();
+            skipButton.targetGraphic = btnImg;
+            skipButton.onClick.AddListener(() => skipping = true);
+
+            skipText = MakeUIText("SkipLabel", 18, FontStyles.Normal, Vector2.zero, Vector2.one);
+            skipText.transform.SetParent(btnGO.transform, false);
+            var labelRT       = skipText.GetComponent<RectTransform>();
+            labelRT.anchorMin = Vector2.zero;
+            labelRT.anchorMax = Vector2.one;
+            labelRT.offsetMin = Vector2.zero;
+            labelRT.offsetMax = Vector2.zero;
         }
-        skipText.text = "Press any key to skip";
-        skipText.color = new Color(1f, 1f, 1f, 0f);
+
+        skipText.text  = "SKIP";
+        skipText.color = Color.white;
     }
 
-    private Text CreateUIText(string name, int fontSize, TextAnchor anchor, Vector2 anchorMin, Vector2 anchorMax)
+    private TMP_Text MakeUIText(string name, float size, FontStyles style, Vector2 aMin, Vector2 aMax)
     {
-        var obj = new GameObject(name);
-        obj.transform.SetParent(cutsceneCanvas.transform, false);
-        var text = obj.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        text.fontSize = fontSize;
-        text.alignment = anchor;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        var rt = text.rectTransform;
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        return text;
+        var go  = new GameObject(name);
+        go.transform.SetParent(cutsceneCanvas.transform, false);
+        var t   = go.AddComponent<TextMeshProUGUI>();
+        t.font  = uiFont;
+        t.fontSize          = size;
+        t.fontStyle         = style;
+        t.alignment         = TextAlignmentOptions.Center;
+        t.textWrappingMode  = TextWrappingModes.Normal;
+        t.overflowMode      = TextOverflowModes.Overflow;
+        t.raycastTarget     = false;
+        var rt  = t.GetComponent<RectTransform>();
+        rt.anchorMin = aMin; rt.anchorMax = aMax;
+        rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+        return t;
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -208,149 +237,288 @@ public class IntroCutscene : MonoBehaviour
 
     private IEnumerator RunCutscene()
     {
-        // Show skip hint after a beat
-        yield return Wait(0.5f);
-        yield return FadeTextAlpha(skipText, 0f, 0.35f, 0.5f);
+        yield return new WaitForSeconds(0.3f);
 
-        // ── ACT 1: Darkness — Title Card ────────────────────────────────────
-        yield return Wait(0.3f);
-        yield return FadeTextAlpha(titleText, 0f, 1f, 1.5f);
-        titleText.text = titleMessage;
+        // ── ACT 1: Title card ────────────────────────────────────────────────
+        // Start empty at full alpha so TypewriterReveal builds up with no pre-flash
+        titleText.text  = "";
+        titleText.color = new Color(titleText.color.r, titleText.color.g, titleText.color.b, 1f);
         yield return TypewriterReveal(titleText, titleMessage, 0.07f);
         yield return Wait(1.5f);
-        yield return FadeTextAlpha(titleText, 1f, 0f, 1f);
+        yield return FadeTextAlpha(titleText, 1f, 0f, 1.0f);
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
-        // ── ACT 2: The Player Emerges ───────────────────────────────────────
-        // Spawn player off-screen bottom
-        SpawnPlayer(new Vector3(0f, -8f, 0f));
+        // ── ACT 2: World fades in — Grimoire glows purple in the distance ────
+        SpawnGrimoire(new Vector3(0f, 0.2f, 0f));
+        SpawnPlayer(new Vector3(0f, -4f, 0f));
+        var playerVcam = CreateVcam("PlayerCam", playerObj.transform, baseCameraSize);
 
-        // Create a vcam following the player
-        var playerVcam = CreateVcam("PlayerCam", playerObj.transform, baseCameraSize + 1f);
-
-        // Slow fade from black, ambient light rises
-        yield return FadeOverlay(1f, 0f, 2f);
-        yield return AnimateGlobalLight(0f, 0.04f, 2f); // still very dim
-
-        // Spawn ambient torches — dim, flickering
-        SpawnTorch(new Vector3(-3f, -4f, 0f), TorchLight.ColorPreset.WarmTorch, 0.3f, 3f);
-        SpawnTorch(new Vector3(3f, -2f, 0f), TorchLight.ColorPreset.WarmTorch, 0.25f, 2.5f);
-
-        // Player walks north slowly
-        yield return MoveCharacter(playerObj, new Vector3(0f, -8f), new Vector3(0f, -2f), 3f, "walk_north");
+        yield return FadeOverlay(1f, 0f, 1.5f);
+        yield return AnimateGlobalLight(0f, 0.06f, 1.5f);
+        yield return Wait(0.4f);
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
-        // ── ACT 3: Chronicle Speaks ─────────────────────────────────────────
-        // Dramatic zoom in on player
-        yield return AnimateCameraSize(playerVcam, baseCameraSize + 1f, 3.5f, 1.5f);
+        // ── ACT 3: Player walks north; chronicle narrates; glow intensifies ──
+        Coroutine glowRoutine = StartCoroutine(UpdateGrimoireGlow(playerObj));
 
-        // Spotlight on player — warm point light blooms
-        var playerSpotlight = SpawnPointLight(playerObj.transform.position + Vector3.up * 0.3f,
-            new Color(1f, 0.85f, 0.5f), 1.2f, 4f);
-        yield return AnimateLightIntensity(playerSpotlight, 0f, 1.2f, 1f);
+        // Start empty at full alpha — typewriter reveals with no pre-flash
+        chronicleText.text  = "";
+        chronicleText.color = new Color(chronicleText.color.r, chronicleText.color.g, chronicleText.color.b, 1f);
 
-        // Player stops, faces south (toward camera)
-        PlayAnimation(playerObj, "idle_south");
+        // Walk and typewriter run concurrently — walk pace tuned to match text reveal
+        Coroutine typeRoutine = StartCoroutine(TypewriterReveal(chronicleText, chronicleMessage, 0.065f));
+        yield return MoveCharacter(playerObj, new Vector3(0f, -4f), new Vector3(0f, -1.2f), 8f, "walk_north");
+        // Player arrives — idle while remaining text finishes typewriting
+        PlayAnimation(playerObj, "idle_north");
+        yield return typeRoutine;
+
+        StopCoroutine(glowRoutine);
+        // Lock glow at max
+        if (grimoireLight != null) grimoireLight.intensity = 1.8f;
+
+        if (skipping) { yield return SkipToGameplay(); yield break; }
+
+        // ── ACT 4: Chronicle fades; Grimoire floats up ───────────────────────
         yield return Wait(0.5f);
+        yield return FadeTextAlpha(chronicleText, 1f, 0f, 0.7f);
 
-        // Chronicle text types in
-        yield return FadeTextAlpha(chronicleText, 0f, 1f, 0.5f);
-        yield return TypewriterReveal(chronicleText, chronicleMessage, 0.04f);
-        yield return Wait(2f);
+        Coroutine floatRoutine = StartCoroutine(AnimateGrimoireFloat());
+
+        // Mid-float pause before enemies appear
+        yield return new WaitForSeconds(0.85f);
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
-        // Text fades, lights dim as danger approaches
-        yield return FadeTextAlpha(chronicleText, 1f, 0f, 0.8f);
-        yield return AnimateLightIntensity(playerSpotlight, 1.2f, 0.4f, 0.8f);
+        // ── ACT 5: 8 enemies spawn just outside camera edges ─────────────────
+        float halfH = baseCameraSize + 1.8f;
+        float halfW = baseCameraSize * (mainCam != null ? mainCam.aspect : 1.78f) + 1.8f;
+        Vector3 pPos = playerObj.transform.position;
 
-        // ── ACT 4: Enemies Appear ───────────────────────────────────────────
-        // Camera pulls back to reveal the room
-        yield return AnimateCameraSize(playerVcam, 3.5f, baseCameraSize + 2f, 2f);
-
-        // Ambient light shifts to ominous
-        yield return AnimateGlobalLight(0.04f, 0.08f, 1f);
-
-        // Spawn enemies at edges with dramatic red lights
-        Vector3[] enemyPositions = {
-            new Vector3(-6f, 3f),
-            new Vector3(6f, 2f),
-            new Vector3(-4f, 5f),
-            new Vector3(5f, 5f),
+        // Compass order: N NE E SE S SW W NW  (matches enemyPrefabs slots)
+        Vector3[] offsets = {
+            new( 0,      halfH,  0),   // N
+            new( halfW,  halfH,  0),   // NE
+            new( halfW,  0,      0),   // E
+            new( halfW, -halfH,  0),   // SE
+            new( 0,     -halfH,  0),   // S
+            new(-halfW, -halfH,  0),   // SW
+            new(-halfW,  0,      0),   // W
+            new(-halfW,  halfH,  0),   // NW
         };
 
-        for (int i = 0; i < Mathf.Min(enemyPrefabs.Length, enemyPositions.Length); i++)
+        spawnedEnemies.Clear();
+        int count = Mathf.Min(enemyPrefabs != null ? enemyPrefabs.Length : 0, 8);
+        for (int i = 0; i < count; i++)
         {
-            var enemy = SpawnEnemy(enemyPrefabs[i], enemyPositions[i]);
-            spawnedEnemies.Add(enemy);
-
-            // Dramatic red light per enemy
-            var enemyLight = SpawnPointLight(enemyPositions[i],
-                new Color(0.9f, 0.15f, 0.1f), 0f, 3f);
-            yield return AnimateLightIntensity(enemyLight, 0f, 0.8f, 0.3f);
-
-            // Stagger enemy reveals
-            yield return Wait(0.35f);
+            if (enemyPrefabs[i] == null) continue;
+            spawnedEnemies.Add(SpawnEnemy(enemyPrefabs[i], pPos + offsets[i]));
         }
+
+        // Camera zooms out to reveal all directions
+        yield return AnimateCameraSize(playerVcam, baseCameraSize, baseCameraSize + 3.5f, 1.6f);
+        yield return floatRoutine;
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
-        // Enemies walk toward player menacingly
-        var enemyMoveRoutines = new List<Coroutine>();
+        // ── ACT 6: All enemies walk in to surrounding ring ───────────────────
+        var ringRoutines = new List<Coroutine>();
         for (int i = 0; i < spawnedEnemies.Count; i++)
         {
-            Vector3 target = Vector3.Lerp(spawnedEnemies[i].transform.position,
-                playerObj.transform.position, 0.4f);
-            string dir = GetWalkDirection(spawnedEnemies[i].transform.position, playerObj.transform.position);
-            enemyMoveRoutines.Add(StartCoroutine(
-                MoveCharacter(spawnedEnemies[i], spawnedEnemies[i].transform.position, target, 2f, dir)));
+            var enemy = spawnedEnemies[i];
+            if (enemy == null) continue;
+
+            Vector3 from    = enemy.transform.position;
+            Vector3 toDir   = (pPos - from).normalized;
+            Vector3 ringPos = pPos - toDir * RingRadius;  // stop RingRadius units AWAY from player
+
+            string prefix  = GetAnimPrefix(enemy);
+            string dir     = GetWalkDirection(from, pPos);
+            ringRoutines.Add(StartCoroutine(MoveCharacter(enemy, from, ringPos, 4.0f, prefix + "_" + dir)));
         }
-
-        // While enemies approach, zoom camera slightly
-        yield return AnimateCameraSize(playerVcam, baseCameraSize + 2f, baseCameraSize + 0.5f, 2f);
-
-        // Wait for enemy movement to finish
-        foreach (var c in enemyMoveRoutines)
-            yield return c;
+        foreach (var r in ringRoutines) yield return r;
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
-        // ── ACT 5: Standoff & Flash ─────────────────────────────────────────
-        // Player turns to face the nearest enemy
-        PlayAnimation(playerObj, "idle_north");
-        yield return Wait(0.8f);
+        // Brief standoff — enemies face the player
+        yield return Wait(0.55f);
 
-        // Dramatic flash — screen goes white briefly
-        yield return ScreenFlash(new Color(1f, 0.95f, 0.8f), 0.15f, 0.6f);
+        // ── ACT 7: Camera zooms in; all enemies charge simultaneously ────────
+        StartCoroutine(AnimateCameraSize(
+            playerVcam, baseCameraSize + 3.5f, baseCameraSize - 0.5f, 1.1f));
 
-        // All lights surge
-        yield return AnimateGlobalLight(0.08f, 0.5f, 0.3f);
-        yield return Wait(0.3f);
+        for (int i = 0; i < spawnedEnemies.Count; i++)
+        {
+            var enemy = spawnedEnemies[i];
+            if (enemy == null) continue;
 
-        // Camera shake
-        yield return CameraShake(0.3f, 0.15f);
+            Vector3 from      = enemy.transform.position;
+            Vector3 toDir     = (pPos - from).normalized;
+            Vector3 chargeEnd = pPos - toDir * 3.5f;  // stop 3.5 units short of player
+            string prefix  = GetAnimPrefix(enemy);
+            string dir     = GetWalkDirection(from, pPos);
+            StartCoroutine(MoveCharacter(enemy, from, chargeEnd, 2.2f, prefix + "_" + dir));
+        }
 
-        // ── ACT 6: Transition to Gameplay ───────────────────────────────────
-        // Quick zoom back to normal + light settles
-        yield return AnimateGlobalLight(0.5f, 0.15f, 0.5f);
-        yield return AnimateCameraSize(playerVcam, baseCameraSize + 0.5f, baseCameraSize, 0.8f);
+        // Wait until enemies are mid-charge (~40 % through) then trigger slow-mo
+        yield return new WaitForSeconds(0.9f);
 
-        yield return Wait(0.3f);
-
-        // Fade to black
-        yield return FadeOverlay(0f, 1f, 1.5f);
-        yield return Wait(0.5f);
-
-        // Load gameplay
+        // ── ACT 8: Slow freeze → white flash → black → gameplay ──────────────
+        yield return SlowFreezeAndFlash();
         SceneManager.LoadScene(gameplaySceneName);
     }
 
     private IEnumerator SkipToGameplay()
     {
-        yield return FadeOverlay(fadeImage.color.a, 1f, 0.5f);
+        Time.timeScale = 1f;
+        yield return FadeOverlayUnscaled(fadeImage.color.a, 1f, Color.black, 0.4f);
         SceneManager.LoadScene(gameplaySceneName);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  GRIMOIRE
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private void SpawnGrimoire(Vector3 position)
+    {
+        grimoireObj = new GameObject("Grimoire");
+        grimoireObj.transform.position = position;
+
+        if (grimoireSprite != null)
+        {
+            var sr              = grimoireObj.AddComponent<SpriteRenderer>();
+            sr.sprite           = grimoireSprite;
+            sr.sortingLayerName = "Entities";
+            sr.sortingOrder     = 50;
+            grimoireObj.transform.localScale = Vector3.one * 0.5f;
+        }
+
+        // Purple point light — dim at first, intensifies as player approaches
+        grimoireLight                       = grimoireObj.AddComponent<Light2D>();
+        grimoireLight.lightType             = Light2D.LightType.Point;
+        grimoireLight.color                 = new Color(0.55f, 0.15f, 1f);
+        grimoireLight.intensity             = 0.25f;
+        grimoireLight.pointLightOuterRadius = 2.0f;
+        grimoireLight.pointLightInnerRadius = 0.4f;
+
+        // Purple aura particles — sparse at first
+        var psGO              = new GameObject("GrimoireAura");
+        psGO.transform.SetParent(grimoireObj.transform, false);
+        grimoireParticles     = psGO.AddComponent<ParticleSystem>();
+        grimoireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var psr              = psGO.GetComponent<ParticleSystemRenderer>();
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 51;
+        ApplyParticleMaterial(psr);
+
+        var main             = grimoireParticles.main;
+        main.loop            = true;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.5f, 1.1f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.1f, 0.4f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.02f, 0.06f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(
+                                   new Color(0.7f, 0.2f, 1f, 0.9f),
+                                   new Color(0.95f, 0.45f, 1f, 0.6f));
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.gravityModifier = -0.2f;  // drift upward
+        main.maxParticles    = 60;
+
+        var emission         = grimoireParticles.emission;
+        emission.rateOverTime = 2f;
+
+        var shape            = grimoireParticles.shape;
+        shape.enabled        = true;
+        shape.shapeType      = ParticleSystemShapeType.Sphere;
+        shape.radius         = 0.2f;
+
+        var col              = grimoireParticles.colorOverLifetime;
+        col.enabled          = true;
+        var g                = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(new Color(0.8f, 0.3f, 1f), 0f),
+                    new GradientColorKey(new Color(0.5f, 0.1f, 0.8f), 1f) },
+            new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) });
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        grimoireParticles.Play();
+    }
+
+    /// <summary>Runs each frame; ramps glow + particle density as player closes in.</summary>
+    private IEnumerator UpdateGrimoireGlow(GameObject player)
+    {
+        while (player != null && grimoireObj != null)
+        {
+            float dist = Vector3.Distance(player.transform.position, grimoireObj.transform.position);
+            float t    = 1f - Mathf.Clamp01(dist / GrimoireGlowStartDist);
+
+            if (grimoireLight != null)
+            {
+                grimoireLight.intensity             = Mathf.Lerp(0.25f, 1.8f, t);
+                grimoireLight.pointLightOuterRadius = Mathf.Lerp(2.0f, 4.5f, t);
+            }
+
+            if (grimoireParticles != null)
+            {
+                var em = grimoireParticles.emission;
+                em.rateOverTime = Mathf.Lerp(2f, 20f, t);
+            }
+
+            yield return null;
+        }
+    }
+
+    private IEnumerator AnimateGrimoireFloat()
+    {
+        if (grimoireObj == null) yield break;
+
+        Vector3 start    = grimoireObj.transform.position;
+        Vector3 end      = start + new Vector3(0f, 2.2f, 0f);
+        float   duration = 2.6f, elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (skipping) { grimoireObj.transform.position = end; yield break; }
+            elapsed += Time.deltaTime;
+            float t = EaseInOutCubic(Mathf.Clamp01(elapsed / duration));
+            grimoireObj.transform.position = Vector3.Lerp(start, end, t);
+
+            // Pulse the glow while floating
+            if (grimoireLight != null)
+                grimoireLight.intensity = 1.8f + Mathf.Sin(elapsed * 5f) * 0.3f;
+
+            yield return null;
+        }
+        grimoireObj.transform.position = end;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  FREEZE FRAME
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private IEnumerator SlowFreezeAndFlash()
+    {
+        // Gradually slow time to a freeze over a long, dramatic ramp
+        float elapsed = 0f, duration = 2.5f;
+        while (elapsed < duration)
+        {
+            elapsed    += Time.unscaledDeltaTime;
+            Time.timeScale = Mathf.Lerp(1f, 0f, EaseInOutCubic(Mathf.Clamp01(elapsed / duration)));
+            yield return null;
+        }
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(0.3f);  // brief freeze before flash
+
+        // White flash — snappy
+        yield return FadeOverlayUnscaled(0f, 1f, Color.white, 0.18f);
+        yield return new WaitForSecondsRealtime(0.4f);
+
+        // Bleed into black
+        yield return FadeOverlayUnscaled(1f, 1f, Color.black, 0.55f);
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        Time.timeScale = 1f;
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -359,108 +527,58 @@ public class IntroCutscene : MonoBehaviour
 
     private void SpawnPlayer(Vector3 position)
     {
-        if (playerPrefab == null)
-        {
-            Debug.LogError("[IntroCutscene] Player prefab not assigned!");
-            return;
-        }
+        if (playerPrefab == null) { Debug.LogError("[IntroCutscene] playerPrefab not assigned."); return; }
 
         playerObj = Instantiate(playerPrefab, position, Quaternion.identity);
         playerObj.name = "CutscenePlayer";
 
-        // Disable gameplay components — we drive movement manually
-        DisableComponent<PlayerMovement>(playerObj);
-        DisableComponent<Health>(playerObj);
-        DisableComponent<PlayerHitEffect>(playerObj);
-        DisableComponent<PlayerStatusEffects>(playerObj);
-        DisableRigidbody(playerObj);
+        DisableComp<PlayerMovement>(playerObj);
+        DisableComp<Health>(playerObj);
+        DisableComp<PlayerHitEffect>(playerObj);
+        DisableComp<PlayerStatusEffects>(playerObj);
+        DisableRB(playerObj);
 
-        // Disable any existing spell systems
-        foreach (var exec in playerObj.GetComponentsInChildren<SpellExecutor>())
-            exec.enabled = false;
+        foreach (var e in playerObj.GetComponentsInChildren<SpellExecutor>())
+            e.enabled = false;
 
-        playerAnimator = playerObj.GetComponentInChildren<Animator>();
-
-        // Disable PlayerAnimator (we drive clips directly)
         var pa = playerObj.GetComponentInChildren<PlayerAnimator>();
         if (pa != null) pa.enabled = false;
     }
 
     private GameObject SpawnEnemy(GameObject prefab, Vector3 position)
     {
-        var enemy = Instantiate(prefab, position, Quaternion.identity);
-        enemy.name = prefab.name.Replace("Variant", "").Trim() + "_Cutscene";
+        var go   = Instantiate(prefab, position, Quaternion.identity);
+        go.name  = prefab.name.Replace("Variant", "").Trim() + "_Cutscene";
 
-        // Disable all gameplay components
-        DisableComponent<EnemyBase>(enemy);
-        DisableComponent<Health>(enemy);
-        DisableRigidbody(enemy);
-        DisableComponent<Pathfinding.Seeker>(enemy);
-        DisableComponent<EnemyHealthBar>(enemy);
-        DisableComponent<EnemyRegen>(enemy);
+        DisableComp<EnemyBase>(go);
+        DisableComp<Health>(go);
+        DisableComp<EnemyHealthBar>(go);
+        DisableComp<EnemyRegen>(go);
+        DisableComp<Pathfinding.Seeker>(go);
+        DisableRB(go);
 
-        // Keep Animator alive — we need it for walk animations
-        var animator = enemy.GetComponent<Animator>();
-        if (animator != null) animator.enabled = true;
+        // Keep Animator alive for walk clips
+        var anim = go.GetComponentInChildren<Animator>();
+        if (anim != null) anim.enabled = true;
 
-        return enemy;
+        return go;
     }
 
-    private void DisableComponent<T>(GameObject obj) where T : Behaviour
+    private static void DisableComp<T>(GameObject obj) where T : Behaviour
     {
-        var comp = obj.GetComponentInChildren<T>();
-        if (comp != null) comp.enabled = false;
+        var c = obj.GetComponentInChildren<T>();
+        if (c != null) c.enabled = false;
     }
 
-    private void DisableRigidbody(GameObject obj)
+    private static void DisableRB(GameObject obj)
     {
         var rb = obj.GetComponentInChildren<Rigidbody2D>();
         if (rb != null) rb.simulated = false;
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  LIGHTING
+    //  LIGHTING HELPERS
     // ═════════════════════════════════════════════════════════════════════════
-
-    private Light2D SpawnPointLight(Vector3 position, Color color, float intensity, float radius)
-    {
-        var go = new GameObject("PointLight");
-        go.transform.position = position;
-        var light = go.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Point;
-        light.color = color;
-        light.intensity = intensity;
-        light.pointLightOuterRadius = radius;
-        light.pointLightInnerRadius = radius * 0.3f;
-        return light;
-    }
-
-    private void SpawnTorch(Vector3 position, TorchLight.ColorPreset preset, float intensity, float radius)
-    {
-        if (lampPrefab != null)
-        {
-            var lamp = Instantiate(lampPrefab, position, Quaternion.identity);
-            var torch = lamp.GetComponent<TorchLight>();
-            if (torch != null)
-            {
-                torch.preset = preset;
-                torch.baseIntensity = intensity;
-            }
-            return;
-        }
-
-        // Fallback: create a point light with flicker
-        var go = new GameObject("Torch");
-        go.transform.position = position;
-        var light = go.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Point;
-        light.pointLightOuterRadius = radius;
-        light.pointLightInnerRadius = radius * 0.2f;
-        light.intensity = intensity;
-        var torchComp = go.AddComponent<TorchLight>();
-        torchComp.preset = preset;
-        torchComp.baseIntensity = intensity;
-    }
 
     private IEnumerator AnimateGlobalLight(float from, float to, float duration)
     {
@@ -476,41 +594,23 @@ public class IntroCutscene : MonoBehaviour
         globalLight.intensity = to;
     }
 
-    private IEnumerator AnimateLightIntensity(Light2D light, float from, float to, float duration)
-    {
-        if (light == null) yield break;
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            if (skipping) { light.intensity = to; yield break; }
-            elapsed += Time.deltaTime;
-            light.intensity = Mathf.SmoothStep(from, to, elapsed / duration);
-            yield return null;
-        }
-        light.intensity = to;
-    }
-
     // ═════════════════════════════════════════════════════════════════════════
     //  CAMERA
     // ═════════════════════════════════════════════════════════════════════════
 
     private CinemachineVirtualCamera CreateVcam(string name, Transform follow, float size)
     {
-        var go = new GameObject(name);
+        var go   = new GameObject(name);
         var vcam = go.AddComponent<CinemachineVirtualCamera>();
         vcam.Follow = follow;
         vcam.m_Lens.OrthographicSize = size;
-        vcam.m_Lens.NearClipPlane = -10f;
+        vcam.m_Lens.NearClipPlane    = -10f;
 
-        // Framing transposer for smooth follow
-        var body = vcam.AddCinemachineComponent<CinemachineFramingTransposer>();
-        body.m_TrackedObjectOffset = Vector3.zero;
+        var body             = vcam.AddCinemachineComponent<CinemachineFramingTransposer>();
         body.m_LookaheadTime = 0f;
-        body.m_XDamping = 1.5f;
-        body.m_YDamping = 1.5f;
-        body.m_DeadZoneWidth = 0f;
-        body.m_DeadZoneHeight = 0f;
-
+        body.m_XDamping      = 1.2f;
+        body.m_YDamping      = 1.2f;
+        body.m_DeadZoneWidth = body.m_DeadZoneHeight = 0f;
         return vcam;
     }
 
@@ -521,81 +621,73 @@ public class IntroCutscene : MonoBehaviour
         {
             if (skipping) { vcam.m_Lens.OrthographicSize = to; yield break; }
             elapsed += Time.deltaTime;
-            float t = EaseInOutCubic(elapsed / duration);
-            vcam.m_Lens.OrthographicSize = Mathf.Lerp(from, to, t);
+            vcam.m_Lens.OrthographicSize = Mathf.Lerp(from, to, EaseInOutCubic(elapsed / duration));
             yield return null;
         }
         vcam.m_Lens.OrthographicSize = to;
-    }
-
-    private IEnumerator CameraShake(float duration, float magnitude)
-    {
-        if (mainCam == null) yield break;
-        Vector3 originalPos = mainCam.transform.localPosition;
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            if (skipping) break;
-            elapsed += Time.deltaTime;
-            float dampening = 1f - (elapsed / duration);
-            float x = Random.Range(-1f, 1f) * magnitude * dampening;
-            float y = Random.Range(-1f, 1f) * magnitude * dampening;
-            mainCam.transform.localPosition = originalPos + new Vector3(x, y, 0f);
-            yield return null;
-        }
-        mainCam.transform.localPosition = originalPos;
     }
 
     // ═════════════════════════════════════════════════════════════════════════
     //  CHARACTER MOVEMENT & ANIMATION
     // ═════════════════════════════════════════════════════════════════════════
 
-    private IEnumerator MoveCharacter(GameObject character, Vector3 from, Vector3 to, float duration, string walkClip)
+    private IEnumerator MoveCharacter(GameObject character, Vector3 from, Vector3 to,
+                                      float duration, string walkClip)
     {
         if (character == null) yield break;
 
-        var animator = character.GetComponentInChildren<Animator>();
-        if (animator != null)
-            animator.Play(walkClip);
+        var anim = character.GetComponentInChildren<Animator>();
+        if (anim != null) anim.Play(walkClip);
 
         float elapsed = 0f;
         while (elapsed < duration)
         {
             if (skipping || character == null) yield break;
             elapsed += Time.deltaTime;
-            float t = EaseInOutCubic(elapsed / duration);
-            character.transform.position = Vector3.Lerp(from, to, t);
+            character.transform.position = Vector3.Lerp(from, to,
+                EaseInOutCubic(Mathf.Clamp01(elapsed / duration)));
             yield return null;
         }
-        if (character != null)
-            character.transform.position = to;
+        if (character != null) character.transform.position = to;
     }
 
-    private void PlayAnimation(GameObject character, string clip)
+    private static void PlayAnimation(GameObject character, string clip)
     {
         if (character == null) return;
-        var animator = character.GetComponentInChildren<Animator>();
-        if (animator != null)
-            animator.Play(clip);
+        var anim = character.GetComponentInChildren<Animator>();
+        if (anim != null) anim.Play(clip);
     }
 
-    private string GetWalkDirection(Vector3 from, Vector3 to)
+    /// <summary>Derives the walk animation prefix from the enemy GameObject name.</summary>
+    private static string GetAnimPrefix(GameObject enemy)
     {
-        Vector2 dir = ((Vector2)(to - from)).normalized;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        string n = enemy.name.ToLower();
+        if (n.Contains("dragonnewt")) return "dn_walk";
+        if (n.Contains("evilpaladin")) return "ep_walk";
+        if (n.Contains("firewizard"))  return "fw_walk";
+        if (n.Contains("icewizard"))   return "iw_walk";
+        if (n.Contains("vampire"))     return "vampire_walk";
+        if (n.Contains("zombie"))      return "zombie_walk";
+        if (n.Contains("skeleton"))    return "skeleton_walk";
+        if (n.Contains("ghost"))       return "ghost_walk";
+        return "walk";
+    }
+
+    /// <summary>Returns an 8-direction string (e.g. "south_west") from a world-space vector.</summary>
+    private static string GetWalkDirection(Vector3 from, Vector3 to)
+    {
+        Vector2 dir   = ((Vector2)(to - from)).normalized;
+        float   angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (angle < 0) angle += 360f;
 
-        string dirKey;
-        if (angle >= 337.5f || angle < 22.5f)  dirKey = "east";
-        else if (angle < 67.5f)                 dirKey = "north_east";
-        else if (angle < 112.5f)                dirKey = "north";
-        else if (angle < 157.5f)                dirKey = "north_west";
-        else if (angle < 202.5f)                dirKey = "west";
-        else if (angle < 247.5f)                dirKey = "south_west";
-        else if (angle < 292.5f)                dirKey = "south";
-        else                                    dirKey = "south_east";
-
-        return "walk_" + dirKey;
+        if (angle >= 337.5f || angle < 22.5f) return "east";
+        if (angle < 67.5f)                    return "north_east";
+        if (angle < 112.5f)                   return "north";
+        if (angle < 157.5f)                   return "north_west";
+        if (angle < 202.5f)                   return "west";
+        if (angle < 247.5f)                   return "south_west";
+        if (angle < 292.5f)                   return "south";
+        return "south_east";
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -619,56 +711,43 @@ public class IntroCutscene : MonoBehaviour
         fadeImage.color = c;
     }
 
-    private IEnumerator ScreenFlash(Color flashColor, float peakDuration, float fadeDuration)
+    /// <summary>Unscaled-time fade — used during timeScale=0 freeze frame.</summary>
+    private IEnumerator FadeOverlayUnscaled(float fromAlpha, float toAlpha, Color targetColor, float duration)
     {
         if (fadeImage == null) yield break;
-
-        // Flash to color
-        fadeImage.color = flashColor;
-        yield return Wait(peakDuration);
-
-        // Fade back to transparent
+        fadeImage.color = new Color(targetColor.r, targetColor.g, targetColor.b, fromAlpha);
         float elapsed = 0f;
-        while (elapsed < fadeDuration)
+        while (elapsed < duration)
         {
-            if (skipping) { fadeImage.color = new Color(0, 0, 0, 0); yield break; }
-            elapsed += Time.deltaTime;
-            Color c = Color.Lerp(flashColor, new Color(flashColor.r, flashColor.g, flashColor.b, 0f),
-                EaseOutCubic(elapsed / fadeDuration));
-            fadeImage.color = c;
+            elapsed += Time.unscaledDeltaTime;
+            float a = Mathf.Lerp(fromAlpha, toAlpha, elapsed / duration);
+            fadeImage.color = new Color(targetColor.r, targetColor.g, targetColor.b, a);
             yield return null;
         }
-        fadeImage.color = new Color(0, 0, 0, 0);
+        fadeImage.color = new Color(targetColor.r, targetColor.g, targetColor.b, toAlpha);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
     //  TEXT EFFECTS
     // ═════════════════════════════════════════════════════════════════════════
 
-    private IEnumerator TypewriterReveal(Text textComp, string fullText, float charDelay)
+    private IEnumerator TypewriterReveal(TMP_Text textComp, string fullText, float charDelay)
     {
         textComp.text = "";
         for (int i = 0; i < fullText.Length; i++)
         {
-            if (skipping)
-            {
-                textComp.text = fullText;
-                yield break;
-            }
+            if (skipping) { textComp.text = fullText; yield break; }
             textComp.text = fullText.Substring(0, i + 1);
-
-            // Slightly longer pause on punctuation for dramatic pacing
             float delay = charDelay;
             char ch = fullText[i];
             if (ch == '.' || ch == '!' || ch == '?') delay *= 6f;
-            else if (ch == ',') delay *= 3f;
-            else if (ch == '\n') delay *= 4f;
-
+            else if (ch == ',')                       delay *= 3f;
+            else if (ch == '\n')                      delay *= 4f;
             yield return new WaitForSeconds(delay);
         }
     }
 
-    private IEnumerator FadeTextAlpha(Text textComp, float from, float to, float duration)
+    private IEnumerator FadeTextAlpha(TMP_Text textComp, float from, float to, float duration)
     {
         if (textComp == null) yield break;
         float elapsed = 0f;
@@ -686,78 +765,56 @@ public class IntroCutscene : MonoBehaviour
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  PARTICLES — Ambient Dust
+    //  AMBIENT DUST (public — call from Inspector event or another script)
     // ═════════════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Call once during setup to add atmospheric floating dust particles to the scene.
-    /// </summary>
     public void SpawnAmbientDust()
     {
         var go = new GameObject("AmbientDust");
         var ps = go.AddComponent<ParticleSystem>();
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        var main = ps.main;
-        main.loop = true;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(4f, 8f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.15f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.02f, 0.06f);
-        main.startColor = new ParticleSystem.MinMaxGradient(
-            new Color(1f, 0.9f, 0.7f, 0.15f),
-            new Color(1f, 1f, 1f, 0.25f));
+        var main             = ps.main;
+        main.loop            = true;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(4f, 8f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.15f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.02f, 0.06f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(
+                                   new Color(1f, 0.9f, 0.7f, 0.15f),
+                                   new Color(1f, 1f,   1f,   0.25f));
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles = 80;
-        main.gravityModifier = -0.01f; // slight upward drift
+        main.maxParticles    = 80;
+        main.gravityModifier = -0.01f;
 
-        var emission = ps.emission;
+        var emission         = ps.emission;
         emission.rateOverTime = 15f;
 
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(18f, 12f, 0.1f);
-        shape.position = Vector3.zero;
+        var shape            = ps.shape;
+        shape.shapeType      = ParticleSystemShapeType.Box;
+        shape.scale          = new Vector3(18f, 12f, 0.1f);
 
         var vol = ps.velocityOverLifetime;
         vol.enabled = true;
-        vol.x = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
+        vol.x = new ParticleSystem.MinMaxCurve(-0.1f,  0.1f);
         vol.y = new ParticleSystem.MinMaxCurve(-0.05f, 0.08f);
+        vol.z = new ParticleSystem.MinMaxCurve( 0f,    0f);
 
-        var sol = ps.sizeOverLifetime;
+        var sol     = ps.sizeOverLifetime;
         sol.enabled = true;
-        sol.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+        sol.size    = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
             new Keyframe(0f, 0f), new Keyframe(0.2f, 1f),
             new Keyframe(0.8f, 1f), new Keyframe(1f, 0f)));
 
-        var col = ps.colorOverLifetime;
+        var col     = ps.colorOverLifetime;
         col.enabled = true;
-        Gradient g = new Gradient();
+        var g       = new Gradient();
         g.SetKeys(
             new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
             new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f),
                     new GradientAlphaKey(1f, 0.8f), new GradientAlphaKey(0f, 1f) });
         col.color = g;
 
-        // Renderer
-        var rend = ps.GetComponent<ParticleSystemRenderer>();
-        var shaderNames = new[] {
-            "Universal Render Pipeline/Particles/Unlit",
-            "Particles/Standard Unlit",
-            "Sprites/Default"
-        };
-        Shader shader = null;
-        foreach (var s in shaderNames) { shader = Shader.Find(s); if (shader != null) break; }
-        if (shader != null)
-        {
-            var mat = new Material(shader);
-            mat.color = Color.white;
-            Sprite knob = Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd");
-            if (knob != null) mat.mainTexture = knob.texture;
-            rend.material = mat;
-        }
-        rend.sortingLayerName = "Default";
-        rend.sortingOrder = 5;
-
+        ApplyParticleMaterial(ps.GetComponent<ParticleSystemRenderer>());
         ps.Play();
     }
 
@@ -765,19 +822,34 @@ public class IntroCutscene : MonoBehaviour
     //  UTILITY
     // ═════════════════════════════════════════════════════════════════════════
 
+    private static void ApplyParticleMaterial(ParticleSystemRenderer psr)
+    {
+        string[] candidates = {
+            "Universal Render Pipeline/Particles/Unlit",
+            "Particles/Standard Unlit",
+            "Legacy Shaders/Particles/Alpha Blended Premultiply",
+            "Sprites/Default",
+        };
+        Shader shader = null;
+        foreach (var s in candidates) { shader = Shader.Find(s); if (shader != null) break; }
+        if (shader == null) return;
+
+        var mat = new Material(shader) { color = Color.white };
+        var knob = Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd");
+        if (knob != null) mat.mainTexture = knob.texture;
+
+        psr.material   = mat;
+        psr.renderMode = ParticleSystemRenderMode.Billboard;
+    }
+
     private IEnumerator Wait(float seconds)
     {
         if (skipping) yield break;
         yield return new WaitForSeconds(seconds);
     }
 
-    private static float EaseInOutCubic(float t)
-    {
-        return t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
-    }
+    private static float EaseInOutCubic(float t) =>
+        t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
 
-    private static float EaseOutCubic(float t)
-    {
-        return 1f - Mathf.Pow(1f - t, 3f);
-    }
+    private static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);
 }

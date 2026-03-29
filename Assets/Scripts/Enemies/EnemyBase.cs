@@ -585,7 +585,7 @@ public abstract class EnemyBase : MonoBehaviour
     protected Vector2 GetSeparationForce()
     {
         Vector2 force = Vector2.zero;
-        int count = Physics2D.OverlapCircleNonAlloc(rb.position, separationRadius, SeparationBuffer);
+        int count = Physics2D.OverlapCircle(rb.position, separationRadius, ContactFilter2D.noFilter, SeparationBuffer);
         for (int i = 0; i < count; i++)
         {
             if (SeparationBuffer[i].gameObject == gameObject) continue;

@@ -51,7 +51,10 @@ public class StageTransitionUI : MonoBehaviour
     private TMP_Text attributionText;
 
     // Page 2 elements
-    private Image spellIconImage;
+    private Image    spellIconImage;
+    private TMP_Text brewingText;
+    private Coroutine brewingCoroutine;
+    private SpellData pendingSpellData;
     private TMP_Text spellNameText;
     private TMP_Text spellFlavorText;
     private TMP_Text spellTagsText;
@@ -102,6 +105,11 @@ public class StageTransitionUI : MonoBehaviour
 
     public void Hide()
     {
+        if (Grimoire.Instance != null)
+            Grimoire.Instance.OnLoadoutChanged -= RefreshSpellIcon;
+        if (brewingCoroutine != null) { StopCoroutine(brewingCoroutine); brewingCoroutine = null; }
+        pendingSpellData = null;
+
         if (canvasGO != null) canvasGO.SetActive(false);
         if (fadeOverlay != null) fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
         PauseManager.Unpause();
@@ -284,7 +292,7 @@ public class StageTransitionUI : MonoBehaviour
             Vector2.zero, Vector2.zero,
             "", messageFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         messageText.fontStyle = FontStyles.Italic;
-        messageText.enableWordWrapping = true;
+        messageText.textWrappingMode = TMPro.TextWrappingModes.Normal;
         messageText.GetComponent<RectTransform>().offsetMin = Vector2.zero;
         messageText.GetComponent<RectTransform>().offsetMax = Vector2.zero;
 
@@ -364,6 +372,14 @@ public class StageTransitionUI : MonoBehaviour
         spellIconImage.raycastTarget = false;
         spellIconImage.enabled = false;
 
+        // Loading indicator — shown while icon is generating
+        brewingText = MakeTMP("BrewingText", cardRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -42f), new Vector2(200f, 24f),
+            "Brewing spell...", bodyFontSize * 0.85f, new Color(0.55f, 0.4f, 0.7f), TextAlignmentOptions.Center);
+        brewingText.fontStyle = FontStyles.Italic;
+        brewingText.gameObject.SetActive(false);
+
         spellNameText = MakeTMP("SpellName", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -80f), new Vector2(350f, 35f),
@@ -374,7 +390,7 @@ public class StageTransitionUI : MonoBehaviour
             new Vector2(0f, -115f), new Vector2(350f, 55f),
             "", bodyFontSize, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
         spellFlavorText.fontStyle = FontStyles.Italic;
-        spellFlavorText.enableWordWrapping = true;
+        spellFlavorText.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
         spellTagsText = MakeTMP("SpellTags", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
@@ -402,7 +418,7 @@ public class StageTransitionUI : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -35f), new Vector2(380f, 85f),
             "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
-        corruptionText.enableWordWrapping = true;
+        corruptionText.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
         yOffset -= 145f;
 
@@ -505,12 +521,57 @@ public class StageTransitionUI : MonoBehaviour
         hpDeltaText.text = $"HP: {Mathf.CeilToInt(prevHp)} → {Mathf.CeilToInt(newHp)}";
     }
 
+    // ── Pending spell icon ────────────────────────────────────────────────────
+
+    /// <summary>Call before FadeToBlackThenShow so the scroll knows which spell to watch.</summary>
+    public void SetPendingSpellData(SpellData spell)
+    {
+        pendingSpellData = spell;
+    }
+
+    private void RefreshSpellIcon()
+    {
+        if (spellIconImage == null || brewingText == null) return;
+
+        if (pendingSpellData?.icon != null)
+        {
+            spellIconImage.sprite  = pendingSpellData.icon;
+            spellIconImage.enabled = true;
+            brewingText.gameObject.SetActive(false);
+            if (brewingCoroutine != null) { StopCoroutine(brewingCoroutine); brewingCoroutine = null; }
+        }
+        else
+        {
+            spellIconImage.enabled = false;
+            // Only show the brewing indicator when the player is actually on page 2
+            bool onPage2 = page2 != null && page2.activeSelf;
+            brewingText.gameObject.SetActive(onPage2 && pendingSpellData != null);
+            if (onPage2 && pendingSpellData != null && brewingCoroutine == null)
+                brewingCoroutine = StartCoroutine(AnimateBrewing());
+        }
+    }
+
+    private IEnumerator AnimateBrewing()
+    {
+        string[] states = { "Brewing spell.", "Brewing spell..", "Brewing spell..." };
+        int i = 0;
+        while (true)
+        {
+            if (brewingText != null) brewingText.text = states[i % states.Length];
+            i++;
+            yield return new WaitForSecondsRealtime(0.45f);
+        }
+    }
+
     // ── Navigation ───────────────────────────────────────────────────────────
 
     private void GoToPage2()
     {
         page1.SetActive(false);
         page2.SetActive(true);
+        if (Grimoire.Instance != null)
+            Grimoire.Instance.OnLoadoutChanged += RefreshSpellIcon;
+        RefreshSpellIcon();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -526,8 +587,8 @@ public class StageTransitionUI : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = align;
-        tmp.enableWordWrapping = true;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.Normal;
+        tmp.overflowMode = TextOverflowModes.Truncate;
         tmp.color = color;
         tmp.outlineWidth = 0.2f;
         tmp.outlineColor = new Color32(0, 0, 0, 180);

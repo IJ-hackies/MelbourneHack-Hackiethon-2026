@@ -12,6 +12,9 @@ using TMPro;
 /// </summary>
 public class MergeRitualUI : MonoBehaviour
 {
+    [Header("Cutscene")]
+    [SerializeField] private MergeCutscene mergeCutscene;
+
     [Header("Sprites")]
     [SerializeField] private Sprite boxSprite;     // box.png
     [SerializeField] private Sprite buttonSprite;  // button.png
@@ -21,7 +24,9 @@ public class MergeRitualUI : MonoBehaviour
 
     [Header("Layout (tweak in Inspector)")]
     [SerializeField] private float panelW = 900f;
+#pragma warning disable CS0414
     [SerializeField] private float panelH = 560f;
+#pragma warning restore CS0414
     [SerializeField] private float rowH   = 48f;
     [SerializeField] private float rowGap = 6f;
 
@@ -161,21 +166,21 @@ public class MergeRitualUI : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, py), new Vector2(350f, 50f),
             "", 12f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
-        previewTags.enableWordWrapping = true;
+        previewTags.textWrappingMode = TMPro.TextWrappingModes.Normal;
         py -= 55f;
 
         previewStats = MakeTMP("PStats", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, py), new Vector2(350f, 60f),
             "", 12f, Color.white, TextAlignmentOptions.Center);
-        previewStats.enableWordWrapping = true;
+        previewStats.textWrappingMode = TMPro.TextWrappingModes.Normal;
         py -= 65f;
 
         previewWarning = MakeTMP("PWarn", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, py), new Vector2(350f, 35f),
             "", 12f, new Color(0.79f, 0.17f, 0.17f, 0.8f), TextAlignmentOptions.Center);
-        previewWarning.enableWordWrapping = true;
+        previewWarning.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
         // Bottom buttons
         var mergeBtnRT = MakeRT("MergeBtn", canvasGO.transform,
@@ -271,7 +276,7 @@ public class MergeRitualUI : MonoBehaviour
                 $"{label}\n<size=10>{tagStr.TrimEnd()}</size>",
                 13f, canMerge ? new Color(0.12f, 0.12f, 0.12f) : new Color(0.5f, 0.5f, 0.5f),
                 TextAlignmentOptions.MidlineLeft);
-            row.nameText.enableWordWrapping = false;
+            row.nameText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
             row.nameText.richText = true;
             row.nameText.rectTransform.offsetMax = new Vector2(-10f, 0f);
 
@@ -365,16 +370,44 @@ public class MergeRitualUI : MonoBehaviour
         var grimoire = Grimoire.Instance;
         if (grimoire == null) return;
 
-        // For now, generate a placeholder name. Gemini integration will replace this.
-        string placeholderName = "Merged: " + string.Join(" & ", selected.ConvertAll(s => s.spellName));
+        // Capture source spells BEFORE merge consumes them (icons are needed for cutscene)
+        SpellData[] sources = selected.ToArray();
+
+        string placeholderName   = "Merged: " + string.Join(" & ", selected.ConvertAll(s => s.spellName));
         string placeholderFlavor = "Two powers, one vessel.";
 
-        grimoire.MergeSpells(selected.ToArray(), placeholderName, placeholderFlavor);
-        SFXManager.Instance?.PlayMergeSpell();
+        SpellData merged = grimoire.MergeSpells(sources, placeholderName, placeholderFlavor);
         selected.Clear();
 
-        RefreshList();
-        UpdatePreview();
+        // Generate icon immediately — procedural generation is instant.
+        merged.icon = ProceduralSpellIconGenerator.Generate(merged);
+        Grimoire.Instance?.NotifyLoadoutChanged();
+        bool iconReady = true;
+
+        // Hide this UI and hand off to the cutscene
+        if (canvasGO != null) canvasGO.SetActive(false);
+
+        MergeCutscene cutscene = mergeCutscene != null
+            ? mergeCutscene
+            : FindAnyObjectByType<MergeCutscene>();
+
+        if (cutscene != null)
+        {
+            cutscene.Play(sources, merged, () => iconReady, () =>
+            {
+                if (canvasGO != null) canvasGO.SetActive(true);
+                RefreshList();
+                UpdatePreview();
+            });
+        }
+        else
+        {
+            // Fallback: no cutscene in scene — behave as before
+            SFXManager.Instance?.PlayMergeSpell();
+            if (canvasGO != null) canvasGO.SetActive(true);
+            RefreshList();
+            UpdatePreview();
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -390,7 +423,7 @@ public class MergeRitualUI : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = align;
-        tmp.enableWordWrapping = false;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Overflow;
         tmp.color = color;
         tmp.outlineWidth = 0.2f;
@@ -411,7 +444,7 @@ public class MergeRitualUI : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = align;
-        tmp.enableWordWrapping = false;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Overflow;
         tmp.color = color;
         tmp.outlineWidth = 0.2f;

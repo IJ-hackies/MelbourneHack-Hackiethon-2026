@@ -14,7 +14,9 @@ public class SpellExecutor : MonoBehaviour
     [Header("Orbital")]
     [SerializeField] private GameObject orbitalPrefab;
 
+#pragma warning disable CS0414
     private float    lastCastTime = -999f;
+#pragma warning restore CS0414
     private Health   playerHealth;
     private Coroutine echoRoutine;
 
@@ -25,7 +27,7 @@ public class SpellExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(SettingsData.Attack))
             TryCast();
     }
 

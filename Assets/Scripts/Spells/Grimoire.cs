@@ -53,10 +53,10 @@ public class Grimoire : MonoBehaviour
 
     private void Update()
     {
-        // 1/2/3 key switching
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SetActiveSlot(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SetActiveSlot(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SetActiveSlot(2);
+        // Slot switching — keys from SettingsData (rebindable)
+        if (Input.GetKeyDown(SettingsData.Slot1)) SetActiveSlot(0);
+        if (Input.GetKeyDown(SettingsData.Slot2)) SetActiveSlot(1);
+        if (Input.GetKeyDown(SettingsData.Slot3)) SetActiveSlot(2);
     }
 
     // --- Active spell (reads from loadout) ---

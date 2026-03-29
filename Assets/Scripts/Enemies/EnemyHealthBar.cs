@@ -7,44 +7,44 @@ using UnityEngine;
 /// Bar theming is configured via the "Bar Color" field on the EnemyBase component.
 /// Leave it at (0,0,0,0) to use the default green→yellow→red health gradient.
 /// Set it to a tinted colour (with alpha > 0) for elemental / special enemies.
+///
+/// The fill shrinks right-to-left with HP. Custom-colored bars brighten at full
+/// HP and darken toward a muted shade as health drops.
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 [RequireComponent(typeof(Health))]
 public class EnemyHealthBar : MonoBehaviour
 {
     // ── Layout (world units) ──────────────────────────────────────────────────
-    private const float BarWidth      = 0.72f;
-    private const float BarHeight     = 0.07f;
-    private const float SegGap        = 0.02f;
-    private const int   SegCount      = 3;
-    private const float BgPadX        = 0.03f;
-    private const float BgPadY        = 0.025f;
-    private const float HeadOffset    = 0.1f;   // above sprite top
+    private const float BarWidth    = 0.80f;
+    private const float BarHeight   = 0.12f;
+    private const float BgPadX      = 0.03f;
+    private const float BgPadY      = 0.025f;
+    private const float HeadOffset  = 0.12f;
 
     // ── Timing ────────────────────────────────────────────────────────────────
     private const float ShowDuration   = 2.0f;
     private const float FadeOutTime    = 0.5f;
     private const float FlashDuration  = 0.28f;
     private const float BounceDuration = 0.25f;
-    private const float BounceAmount   = 0.12f;  // 12% scale overshoot
+    private const float BounceAmount   = 0.12f;
 
-    // ── Default palette ───────────────────────────────────────────────────────
-    private static readonly Color HealthHigh   = new Color(0.27f, 0.82f, 0.27f, 1f); // green
-    private static readonly Color HealthMid    = new Color(0.90f, 0.75f, 0.13f, 1f); // yellow
-    private static readonly Color HealthLow    = new Color(0.87f, 0.15f, 0.15f, 1f); // red
-    private static readonly Color EmptyCol     = new Color(0.14f, 0.14f, 0.14f, 1f);
-    private static readonly Color BgCol        = new Color(0.05f, 0.05f, 0.05f, 1f);
-    private static readonly Color FlashDmgCol  = new Color(0.95f, 0.12f, 0.12f, 1f);
-    private static readonly Color FlashHealCol = new Color(0.20f, 0.95f, 0.20f, 1f);
+    // ── Default health-gradient palette (brighter than before) ───────────────
+    private static readonly Color HealthHigh   = new Color(0.30f, 1.00f, 0.30f, 1f); // vivid green
+    private static readonly Color HealthMid    = new Color(1.00f, 0.95f, 0.20f, 1f); // vivid yellow
+    private static readonly Color HealthLow    = new Color(1.00f, 0.25f, 0.25f, 1f); // vivid red
+    private static readonly Color BgCol        = new Color(0.28f, 0.28f, 0.28f, 1f);
+    private static readonly Color FlashDmgCol  = new Color(1.00f, 0.12f, 0.12f, 1f);
+    private static readonly Color FlashHealCol = new Color(0.20f, 1.00f, 0.20f, 1f);
 
-    // ── Runtime refs ─────────────────────────────────────────────────────────
+    // ── Runtime refs ──────────────────────────────────────────────────────────
     private Health         _health;
     private SpriteRenderer _sourceSR;
-    private Color          _barColor;   // copied from EnemyBase.BarColor at Awake
+    private Color          _barColor;
 
     private Transform      _root;
     private SpriteRenderer _bgSR;
-    private SpriteRenderer[] _segSRs = new SpriteRenderer[SegCount];
+    private SpriteRenderer _fillSR;   // single continuous fill, shrinks right-to-left
 
     // ── State ─────────────────────────────────────────────────────────────────
     private float _prevHp;
@@ -64,7 +64,6 @@ public class EnemyHealthBar : MonoBehaviour
     {
         _health   = GetComponent<Health>();
         _sourceSR = GetComponent<SpriteRenderer>();
-        // _barColor is set by EnemyBase immediately after AddComponent via SetThemeColor()
         BuildBar();
         _prevHp = _health.Max;
         SetFadeAlpha(0f);
@@ -80,7 +79,6 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void OnDestroy()
     {
-        // barRoot is a child, destroyed with the enemy — this is just belt-and-suspenders
         if (_root != null) Destroy(_root.gameObject);
     }
 
@@ -102,7 +100,6 @@ public class EnemyHealthBar : MonoBehaviour
             return;
         }
 
-        // ── Detect HP changes (damage & regen heals) ─────────────────────────
         float curr = _health.Current;
         if (curr < _prevHp - 0.01f)
             Activate(DamageFlash());
@@ -110,7 +107,6 @@ public class EnemyHealthBar : MonoBehaviour
             Activate(HealFlash());
         _prevHp = curr;
 
-        // ── Timers ────────────────────────────────────────────────────────────
         _flashTimer  = Mathf.Max(0f, _flashTimer  - Time.deltaTime);
         _bounceTimer = Mathf.Max(0f, _bounceTimer - Time.deltaTime);
 
@@ -148,7 +144,6 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void UpdateTransform()
     {
-        // World position: top of sprite bounds + small gap
         float worldTop = _sourceSR.sprite != null
             ? _sourceSR.bounds.max.y
             : transform.position.y + 0.5f;
@@ -158,12 +153,10 @@ public class EnemyHealthBar : MonoBehaviour
             worldTop + HeadOffset,
             transform.position.z - 0.01f);
 
-        // Cancel parent scale so the bar is always the same world size
         Vector3 ls = transform.lossyScale;
         float sx = ls.x != 0f ? 1f / ls.x : 1f;
         float sy = ls.y != 0f ? 1f / ls.y : 1f;
 
-        // Bounce: sin arc peaks at mid-duration
         float bounce = 0f;
         if (_bounceTimer > 0f)
         {
@@ -173,11 +166,9 @@ public class EnemyHealthBar : MonoBehaviour
         float boost = 1f + bounce;
         _root.localScale = new Vector3(sx * boost, sy * boost, 1f);
 
-        // Keep sorting above the animated sprite (YSorter updates sourceSR each LateUpdate)
         int baseOrder = _sourceSR.sortingOrder + 3;
-        _bgSR.sortingOrder = baseOrder;
-        for (int i = 0; i < SegCount; i++)
-            _segSRs[i].sortingOrder = baseOrder + 1;
+        _bgSR.sortingOrder   = baseOrder;
+        _fillSR.sortingOrder = baseOrder + 1;
     }
 
     // ── Colours ───────────────────────────────────────────────────────────────
@@ -185,21 +176,22 @@ public class EnemyHealthBar : MonoBehaviour
     private void ApplyColors()
     {
         float ratio  = _health.Max > 0f ? Mathf.Clamp01(_health.Current / _health.Max) : 0f;
-        float baseA  = UseCustomColor ? _barColor.a : 1f;
-        float alpha  = baseA * _fadeAlpha;
-        // Subtle whole-bar tint — capped at 20% blend so it reads as a hint, not a blast
-        float flashT = (_flashTimer / FlashDuration) * 0.20f;
+        float alpha  = _fadeAlpha;
+        float flashT = (_flashTimer / FlashDuration) * 0.25f;
 
-        for (int i = 0; i < SegCount; i++)
-        {
-            bool  filled = ratio > (float)i / SegCount;
-            Color baseC  = filled ? SegmentColor(i) : EmptyCol;
-            Color c      = Color.Lerp(baseC, _flashColor, flashT);
-            c.a = alpha;
-            _segSRs[i].color = c;
-        }
+        // ── Fill: shrink right-to-left ────────────────────────────────────────
+        // Left edge stays fixed at -BarWidth/2; right edge tracks ratio
+        float fillW = Mathf.Max(ratio * BarWidth, 0.001f);
+        float fillX = -BarWidth * 0.5f + fillW * 0.5f;
+        _fillSR.transform.localPosition = new Vector3(fillX, 0f, 0f);
+        _fillSR.transform.localScale    = new Vector3(fillW, BarHeight, 1f);
 
-        Color bg = Color.Lerp(BgCol, _flashColor, flashT);
+        Color fillBase = FillColor(ratio);
+        Color fill     = Color.Lerp(fillBase, _flashColor, flashT);
+        fill.a = alpha;
+        _fillSR.color = fill;
+
+        Color bg = Color.Lerp(BgCol, _flashColor, flashT * 0.5f);
         bg.a = alpha;
         _bgSR.color = bg;
     }
@@ -208,42 +200,36 @@ public class EnemyHealthBar : MonoBehaviour
     {
         _fadeAlpha = a;
         bool on = a > 0.01f;
-        if (_bgSR != null) _bgSR.enabled = on;
-        for (int i = 0; i < SegCount; i++)
-            if (_segSRs[i] != null) _segSRs[i].enabled = on;
+        if (_bgSR   != null) _bgSR.enabled   = on;
+        if (_fillSR != null) _fillSR.enabled  = on;
     }
 
     // ── Theme helpers ─────────────────────────────────────────────────────────
 
     private bool UseCustomColor => _barColor.a > 0.01f;
 
-    // Each segment has its own permanent shade.
-    // i=0 (leftmost, last to empty) = darkest/most critical
-    // i=1 (middle)                  = base colour
-    // i=2 (rightmost, first to empty) = brightest/healthiest
-    private Color SegmentColor(int i)
+    /// Returns the fill color at a given HP ratio (0=empty, 1=full).
+    private Color FillColor(float ratio)
     {
         if (!UseCustomColor)
         {
-            // Default gradient: red → yellow → green, fixed per segment
-            if (i == 0) return HealthLow;
-            if (i == 1) return HealthMid;
-            return HealthHigh;
+            // Default: vivid green → yellow → red as HP drops
+            if (ratio > 0.5f)
+                return Color.Lerp(HealthMid, HealthHigh, (ratio - 0.5f) * 2f);
+            else
+                return Color.Lerp(HealthLow, HealthMid, ratio * 2f);
         }
 
-        // Derive three shades from barColor via HSV
+        // Custom bar color: bright and vivid at full HP, darker/more saturated at low HP
         Color.RGBToHSV(_barColor, out float h, out float s, out float v);
-        float vShift = (i - 1) * 0.18f;  // -0.18 / 0 / +0.18
-        float sShift = (1 - i) * 0.10f;  // +0.10 / 0  / -0.10 (slightly punchier at low end)
-        return Color.HSVToRGB(h,
-            Mathf.Clamp01(s + sShift),
-            Mathf.Clamp01(v + vShift));
+        float targetV = Mathf.Lerp(0.80f, 1.00f, ratio);        // darken as HP drops (floor 0.80 keeps it bright)
+        float targetS = Mathf.Lerp(Mathf.Min(1f, s + 0.15f), s, ratio);
+        return Color.HSVToRGB(h, Mathf.Clamp01(targetS), Mathf.Clamp01(targetV));
     }
 
     private Color DamageFlash()
     {
         if (!UseCustomColor) return FlashDmgCol;
-        // Darken & saturate the enemy's bar colour
         Color.RGBToHSV(_barColor, out float h, out float s, out float v);
         return Color.HSVToRGB(h, Mathf.Min(1f, s + 0.20f), Mathf.Max(0.1f, v - 0.30f));
     }
@@ -251,7 +237,6 @@ public class EnemyHealthBar : MonoBehaviour
     private Color HealFlash()
     {
         if (!UseCustomColor) return FlashHealCol;
-        // Brighten & desaturate the enemy's bar colour
         Color.RGBToHSV(_barColor, out float h, out float s, out float v);
         return Color.HSVToRGB(h, Mathf.Max(0f, s - 0.25f), Mathf.Min(1f, v + 0.30f));
     }
@@ -268,38 +253,29 @@ public class EnemyHealthBar : MonoBehaviour
         _root.localRotation = Quaternion.identity;
         _root.localScale    = Vector3.one;
 
-        // Background
+        // Background — full width, slightly padded
         var bgGO = new GameObject("BG");
         bgGO.transform.SetParent(_root);
         bgGO.transform.localPosition = Vector3.zero;
         bgGO.transform.localRotation = Quaternion.identity;
         bgGO.transform.localScale    = new Vector3(BarWidth + BgPadX * 2f, BarHeight + BgPadY * 2f, 1f);
-        _bgSR                = bgGO.AddComponent<SpriteRenderer>();
-        _bgSR.sprite         = px;
-        _bgSR.color          = BgCol;
+        _bgSR               = bgGO.AddComponent<SpriteRenderer>();
+        _bgSR.sprite        = px;
+        _bgSR.color         = BgCol;
         _bgSR.sortingLayerID = _sourceSR.sortingLayerID;
-        _bgSR.sortingOrder   = _sourceSR.sortingOrder + 3;
+        _bgSR.sortingOrder  = _sourceSR.sortingOrder + 3;
 
-        // Segments (left to right = lowest to highest HP threshold)
-        float segW = (BarWidth - (SegCount - 1) * SegGap) / SegCount;
-        for (int i = 0; i < SegCount; i++)
-        {
-            float xCenter = -BarWidth * 0.5f + segW * 0.5f + i * (segW + SegGap);
-
-            var go = new GameObject($"Seg{i}");
-            go.transform.SetParent(_root);
-            go.transform.localPosition = new Vector3(xCenter, 0f, 0f);
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale    = new Vector3(segW, BarHeight, 1f);
-
-            var sr           = go.AddComponent<SpriteRenderer>();
-            sr.sprite        = px;
-            sr.color         = EmptyCol;
-            sr.sortingLayerID = _sourceSR.sortingLayerID;
-            sr.sortingOrder  = _sourceSR.sortingOrder + 4;
-
-            _segSRs[i] = sr;
-        }
+        // Fill — starts full-width, shrinks in ApplyColors each frame
+        var fillGO = new GameObject("Fill");
+        fillGO.transform.SetParent(_root);
+        fillGO.transform.localPosition = Vector3.zero;
+        fillGO.transform.localRotation = Quaternion.identity;
+        fillGO.transform.localScale    = new Vector3(BarWidth, BarHeight, 1f);
+        _fillSR               = fillGO.AddComponent<SpriteRenderer>();
+        _fillSR.sprite        = px;
+        _fillSR.color         = HealthHigh;
+        _fillSR.sortingLayerID = _sourceSR.sortingLayerID;
+        _fillSR.sortingOrder  = _sourceSR.sortingOrder + 4;
     }
 
     // ── Shared 1×1 white pixel sprite ─────────────────────────────────────────

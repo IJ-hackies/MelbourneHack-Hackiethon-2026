@@ -20,7 +20,7 @@ public class CameraConfinerBridge : MonoBehaviour
 
     private void Start()
     {
-        var marker = FindObjectOfType<MapBoundsMarker>();
+        var marker = FindAnyObjectByType<MapBoundsMarker>();
         if (marker == null)
         {
             Debug.LogWarning("CameraConfinerBridge: no MapBoundsMarker found in scene — confiner not applied.");

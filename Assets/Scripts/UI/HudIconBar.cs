@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Top-right HUD icons: Grimoire (G), Merge (M), Settings (S).
+/// HUD icons: Grimoire (G) + Merge (M) top-left beside heart; Settings (S) top-right.
 /// Clicking each toggles the corresponding overlay UI.
 /// Merge button only glows at milestone stages (5, 10, 15...).
 ///
@@ -24,6 +24,7 @@ public class HudIconBar : MonoBehaviour
     [Header("Overlay References (wire after creating those scripts)")]
     [SerializeField] private GrimoireUI grimoireUI;
     [SerializeField] private MergeRitualUI mergeRitualUI;
+    [SerializeField] private SettingsUI settingsUI;
 
     [Header("Stage Tracking")]
     [SerializeField] private int currentStage = 1;
@@ -47,6 +48,8 @@ public class HudIconBar : MonoBehaviour
             grimoireUI = FindAnyObjectByType<GrimoireUI>();
         if (mergeRitualUI == null)
             mergeRitualUI = FindAnyObjectByType<MergeRitualUI>();
+        if (settingsUI == null)
+            settingsUI = FindAnyObjectByType<SettingsUI>();
 
         clearDetector = FindAnyObjectByType<FloorClearDetector>();
         if (clearDetector != null)
@@ -75,8 +78,10 @@ public class HudIconBar : MonoBehaviour
         // Keyboard shortcuts (unscaled so they work while paused)
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (grimoireUI != null && grimoireUI.IsOpen)       grimoireUI.Close();
+            if (grimoireUI != null && grimoireUI.IsOpen)            grimoireUI.Close();
             else if (mergeRitualUI != null && mergeRitualUI.IsOpen) mergeRitualUI.Close();
+            else if (settingsUI != null && settingsUI.IsOpen)       settingsUI.Close();
+            else if (settingsUI != null)                            settingsUI.Open(true);
         }
         if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.G))
             ToggleGrimoire();
@@ -111,36 +116,26 @@ public class HudIconBar : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Bar (no background — transparent container for icons)
-        float totalWidth = IconSize * 3 + IconGap * 2 + 12f;
-        var barRT = MakeRT("Bar", canvasGO.transform,
+        // ── Top-right bar: Grimoire | Merge | Settings (left → right) ───────
+        float tripleBarW = IconSize * 3f + IconGap * 2f + 12f;
+        var rightBarRT = MakeRT("TopRightBar", canvasGO.transform,
             Vector2.one, Vector2.one, Vector2.one,
             new Vector2(-Margin, -Margin),
-            new Vector2(totalWidth, IconSize + 10f));
+            new Vector2(tripleBarW, IconSize + 10f));
 
-        // Icons: right-to-left from top-right
-        float x = -6f;
+        MakeIconButtonLTR("Grimoire", rightBarRT, 0f,                        grimoireIcon, "G", OnGrimoireClick);
+        mergeImage = MakeIconButtonLTR("Merge",   rightBarRT, IconSize + IconGap,          mergeIcon,    "M", OnMergeClick);
+        MakeIconButtonLTR("Settings", rightBarRT, (IconSize + IconGap) * 2f, settingsIcon, "S", OnSettingsClick);
 
-        // Settings (rightmost)
-        MakeIconButton("Settings", barRT, x, settingsIcon, "S", OnSettingsClick);
-        x -= IconSize + IconGap;
-
-        // Merge
-        mergeImage = MakeIconButton("Merge", barRT, x, mergeIcon, "M", OnMergeClick);
-        x -= IconSize + IconGap;
-
-        // Grimoire (leftmost)
-        MakeIconButton("Grimoire", barRT, x, grimoireIcon, "G", OnGrimoireClick);
-
-        // ── Enemy counter (bottom-center) ──
+        // ── Enemy counter ───────────────────────────────────────────────────
         BuildEnemyCounter();
     }
 
     private void BuildEnemyCounter()
     {
         var counterRT = MakeRT("EnemyCounter", canvasGO.transform,
-            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-Margin, -(Margin + IconSize + 10f + 10f)), new Vector2(200f, 34f));
+            Vector2.right, Vector2.right, Vector2.right,
+            new Vector2(-Margin, Margin), new Vector2(200f, 34f));
 
         // Background pill
         var bgImg = counterRT.gameObject.AddComponent<Image>();
@@ -208,11 +203,56 @@ public class HudIconBar : MonoBehaviour
         return img;
     }
 
+    // Left-anchored variant of MakeIconButton for the top-left bar.
+    private Image MakeIconButtonLTR(string name, RectTransform parent, float xPos,
+        Sprite icon, string fallbackLetter, UnityEngine.Events.UnityAction onClick)
+    {
+        var rt = MakeRT(name, parent,
+            new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+            new Vector2(xPos, 0f), new Vector2(IconSize, IconSize));
+
+        var img = rt.gameObject.AddComponent<Image>();
+        img.color = Color.white;
+
+        if (icon != null)
+        {
+            img.sprite = icon;
+            img.preserveAspect = true;
+        }
+        else
+        {
+            img.color = new Color(0.96f, 0.9f, 0.78f);
+        }
+
+        var btn = rt.gameObject.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.onClick.AddListener(onClick);
+
+        if (icon == null && font != null)
+        {
+            var textRT = MakeRT("Label", rt,
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero);
+            textRT.offsetMin = Vector2.zero;
+            textRT.offsetMax = Vector2.zero;
+            var tmp = textRT.gameObject.AddComponent<TextMeshProUGUI>();
+            tmp.font = font;
+            tmp.text = fallbackLetter;
+            tmp.fontSize = 28f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = new Color(0.29f, 0.22f, 0.16f);
+            tmp.raycastTarget = false;
+        }
+
+        return img;
+    }
+
     // ── Button handlers ──────────────────────────────────────────────────────
 
     private void OnGrimoireClick() => ToggleGrimoire();
     private void OnMergeClick()    => ToggleMerge();
-    private void OnSettingsClick() { /* TODO: settings menu */ }
+    private void OnSettingsClick() => settingsUI?.Toggle(true);
 
     private void ToggleGrimoire()
     {

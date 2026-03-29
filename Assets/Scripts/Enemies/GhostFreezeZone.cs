@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 // Icy slow zone left behind when a GhostGooProjectile lands.
 // While the player stands inside the radius, their movement is slowed.
@@ -6,7 +7,7 @@ using UnityEngine;
 public class GhostFreezeZone : MonoBehaviour
 {
     [SerializeField] private float zoneDuration  = 5f;
-    [SerializeField] private float dotInterval   = 1.0f;  // seconds between damage ticks
+    [SerializeField] private float dotInterval   = 1.0f;
     [SerializeField] private float checkRadius   = 1.0f;
 
     private float               elapsed;
@@ -18,6 +19,7 @@ public class GhostFreezeZone : MonoBehaviour
     private Health              playerHealth;
     private PlayerHitEffect     playerHitEffect;
     private SpriteRenderer      sr;
+    private Light2D             zoneLight;
 
     public static GhostFreezeZone Spawn(Vector3 pos, float duration, float radius, float attackDamage)
     {
@@ -28,10 +30,11 @@ public class GhostFreezeZone : MonoBehaviour
         zone.zoneDuration     = duration;
         zone.checkRadius      = radius;
         zone.attackDamage     = attackDamage;
-        zone.dotTimer         = zone.dotInterval; // ready to tick immediately on first contact
+        zone.dotTimer         = zone.dotInterval;
 
         zone.SetupVisual(radius);
         zone.FindPlayer();
+        zone.SpawnLandingBurst(pos, radius);
 
         Destroy(go, duration);
         return zone;
@@ -41,26 +44,30 @@ public class GhostFreezeZone : MonoBehaviour
     {
         elapsed += Time.deltaTime;
 
+        float lifeT = Mathf.Clamp01(elapsed / zoneDuration);
+
         // Fade sprite as zone expires
         if (sr != null)
         {
-            float alpha = Mathf.Lerp(0.75f, 0f, elapsed / zoneDuration);
+            float alpha = Mathf.Lerp(0.85f, 0f, lifeT);
             var c = sr.color;
             sr.color = new Color(c.r, c.g, c.b, alpha);
         }
+
+        // Fade light with zone
+        if (zoneLight != null)
+            zoneLight.intensity = Mathf.Lerp(1.2f, 0f, lifeT);
 
         if (playerTransform == null) return;
 
         bool inside = Vector2.Distance(transform.position, playerTransform.position) <= checkRadius;
 
-        // Toggle slow on enter / exit
         if (inside && !playerWasInside) playerStatus?.SetSlowed(true);
         if (!inside && playerWasInside)  playerStatus?.SetSlowed(false);
         playerWasInside = inside;
 
         if (!inside) return;
 
-        // DoT timer only accumulates while the player is standing in the zone
         dotTimer += Time.deltaTime;
         if (dotTimer >= dotInterval)
         {
@@ -76,7 +83,6 @@ public class GhostFreezeZone : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Ensure slow is cleared if the zone expires while the player is still inside
         if (playerWasInside) playerStatus?.SetSlowed(false);
     }
 
@@ -88,7 +94,6 @@ public class GhostFreezeZone : MonoBehaviour
         playerHealth    = playerObj.GetComponent<Health>();
         playerHitEffect = playerObj.GetComponent<PlayerHitEffect>();
 
-        // Auto-add PlayerStatusEffects if missing so it works without manual Inspector setup
         playerStatus = playerObj.GetComponent<PlayerStatusEffects>();
         if (playerStatus == null)
             playerStatus = playerObj.AddComponent<PlayerStatusEffects>();
@@ -96,13 +101,14 @@ public class GhostFreezeZone : MonoBehaviour
 
     private void SetupVisual(float radius)
     {
-        // Runtime circle texture — filled disc with a brighter ring at the edge
+        // Runtime circle texture — filled disc with a vivid ring at the edge
         const int texSize = 128;
         var tex   = new Texture2D(texSize, texSize, TextureFormat.RGBA32, false);
         tex.filterMode = FilterMode.Bilinear;
 
-        var innerColor = new Color(0.55f, 0.85f, 1.00f, 0.30f); // pale icy blue fill
-        var ringColor  = new Color(0.30f, 0.65f, 1.00f, 0.80f); // brighter border ring
+        // Brighter, more saturated icy zone colors
+        var innerColor = new Color(0.45f, 0.90f, 1.00f, 0.35f); // bright icy blue fill
+        var ringColor  = new Color(0.65f, 0.95f, 1.00f, 1.00f); // vivid bright ring
 
         float r  = (texSize - 1) / 2f;
         float cx = r, cy = r;
@@ -112,7 +118,7 @@ public class GhostFreezeZone : MonoBehaviour
         {
             float dist   = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
             float outer  = r;
-            float inner  = r * 0.78f;  // ring starts here
+            float inner  = r * 0.72f;
 
             if (dist > outer + 1f)
             {
@@ -120,7 +126,6 @@ public class GhostFreezeZone : MonoBehaviour
             }
             else if (dist > inner)
             {
-                // Ring — blend innerColor → ringColor, fade out at very edge
                 float t     = (dist - inner) / (outer - inner);
                 float alpha = Mathf.Clamp01((outer - dist) / 2f);
                 tex.SetPixel(x, y, Color.Lerp(innerColor, ringColor, t) * new Color(1, 1, 1, alpha));
@@ -132,7 +137,6 @@ public class GhostFreezeZone : MonoBehaviour
         }
         tex.Apply();
 
-        // PPU: texSize / (radius * 2) world units
         float ppu    = texSize / (radius * 2f);
         var sprite   = Sprite.Create(tex, new Rect(0, 0, texSize, texSize),
                                      new Vector2(0.5f, 0.5f), pixelsPerUnit: ppu);
@@ -141,9 +145,83 @@ public class GhostFreezeZone : MonoBehaviour
         sr.sprite           = sprite;
         sr.sortingLayerName = "Background";
         sr.sortingOrder     = 10;
-        sr.color            = new Color(1f, 1f, 1f, 0.75f);
+        sr.color            = new Color(1f, 1f, 1f, 0.85f);
 
         SetupSnowflakes(radius);
+
+        // Dynamic cold light for the zone
+        try
+        {
+            var light                   = gameObject.AddComponent<Light2D>();
+            light.lightType             = Light2D.LightType.Point;
+            light.color                 = new Color(0.45f, 0.85f, 1f);
+            light.intensity             = 1.2f;
+            light.pointLightOuterRadius = radius * 1.8f;
+            light.pointLightInnerRadius = radius * 0.4f;
+            zoneLight                   = light;
+        }
+        catch { /* Light2D unavailable */ }
+    }
+
+    // Burst of ice shards and a bright flash erupting at landing
+    private void SpawnLandingBurst(Vector3 pos, float radius)
+    {
+        // Impact flash
+        HitEffectSpawner.SpawnImpactFlash(pos,
+            new Color(0.65f, 0.95f, 1f),
+            new Color(0.40f, 0.80f, 1f));
+
+        // Radial ice spike burst — fast outward shards
+        var go = new GameObject("FX_IceLandBurst");
+        go.transform.position = pos;
+
+        var ps  = go.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        var psr              = go.GetComponent<ParticleSystemRenderer>();
+        psr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
+        psr.renderMode       = ParticleSystemRenderMode.Stretch;
+        psr.velocityScale    = 0.7f;
+        psr.lengthScale      = 2.0f;
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 110;
+
+        var white   = new Color(0.92f, 0.98f, 1f, 1f);
+        var iceBlue = new Color(0.45f, 0.85f, 1f, 1f);
+
+        var main = ps.main;
+        main.duration        = 0.1f;
+        main.loop            = false;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(0.20f, 0.45f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(3.0f,  8.0f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.06f, 0.14f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(white, iceBlue);
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.gravityModifier = -0.10f;
+
+        var burstEmission = ps.emission;
+        burstEmission.SetBursts(new[] { new ParticleSystem.Burst(0f, 28, 40) });
+
+        var shape = ps.shape;
+        shape.enabled   = true;
+        shape.shapeType = ParticleSystemShapeType.Circle;
+        shape.radius    = 0.05f;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(white,   0f),
+                    new GradientColorKey(iceBlue,  0.5f),
+                    new GradientColorKey(new Color(0.2f, 0.5f, 0.8f), 1f) },
+            new[] { new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(0.5f, 0.6f),
+                    new GradientAlphaKey(0f, 1f) }
+        );
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        ps.Play();
+        Destroy(go, 1.5f);
     }
 
     private void SetupSnowflakes(float radius)
@@ -161,42 +239,39 @@ public class GhostFreezeZone : MonoBehaviour
         psr.sortingLayerName = "Entities";
         psr.sortingOrder     = 5;
 
-        var white      = new Color(0.92f, 0.97f, 1.00f, 1f);
-        var lightBlue  = new Color(0.55f, 0.85f, 1.00f, 1f);
+        var white      = new Color(0.95f, 0.99f, 1.00f, 1f);
+        var lightBlue  = new Color(0.55f, 0.90f, 1.00f, 1f);
 
         var main = ps.main;
         main.loop            = true;
         main.duration        = zoneDuration;
         main.startLifetime   = new ParticleSystem.MinMaxCurve(2.0f, 3.5f);
-        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.20f);
-        main.startSize       = new ParticleSystem.MinMaxCurve(0.03f, 0.07f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.25f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.04f, 0.09f);
         main.startColor      = new ParticleSystem.MinMaxGradient(white, lightBlue);
         main.startRotation   = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
-        main.gravityModifier = -0.04f; // drift very gently upward
+        main.gravityModifier = -0.05f;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles    = 60;
+        main.maxParticles    = 80;
 
-        var emission = ps.emission;
-        emission.rateOverTime = 8f;
+        var snowEmission = ps.emission;
+        snowEmission.rateOverTime = 12f;
 
-        // Emit from within the zone disc so flakes appear throughout the area
         var shape = ps.shape;
         shape.enabled   = true;
         shape.shapeType = ParticleSystemShapeType.Circle;
         shape.radius    = radius * 0.85f;
 
-        // Fade in and out over lifetime
         var col = ps.colorOverLifetime;
         col.enabled = true;
         Gradient g = new Gradient();
         g.SetKeys(
             new[] { new GradientColorKey(white, 0f), new GradientColorKey(lightBlue, 1f) },
-            new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.8f, 0.15f),
-                    new GradientAlphaKey(0.8f, 0.80f), new GradientAlphaKey(0f, 1f) }
+            new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f, 0.15f),
+                    new GradientAlphaKey(0.9f, 0.80f), new GradientAlphaKey(0f, 1f) }
         );
         col.color = new ParticleSystem.MinMaxGradient(g);
 
-        // Slow rotation over lifetime for a tumbling snowflake look
         var rot = ps.rotationOverLifetime;
         rot.enabled = true;
         rot.z       = new ParticleSystem.MinMaxCurve(-45f * Mathf.Deg2Rad, 45f * Mathf.Deg2Rad);

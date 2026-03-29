@@ -16,7 +16,7 @@ public class NanoBananaClient : MonoBehaviour
     public static NanoBananaClient Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private string model = "gemini-2.0-flash";
+    [SerializeField] private string model = "gemini-2.0-flash-preview-image-generation";
     [SerializeField] private int timeoutSeconds = 30;
     [SerializeField] private int iconSize = 64;
 
@@ -100,9 +100,9 @@ public class NanoBananaClient : MonoBehaviour
         return $"Generate a {iconSize}x{iconSize} pixel art spell icon for a 2D roguelite game. " +
                $"Spell name: \"{spell.spellName}\". Element: {element}. " +
                $"Behavior tags: {tags}. Primary color: {color}. " +
-               $"Style: 16-bit retro pixel art, single centered spell icon, solid black background (#000000). " +
+               $"Style: 16-bit retro pixel art, single centered spell icon, transparent background (no background). " +
                $"The icon should be a simple, recognizable symbol that represents the spell's theme. " +
-               $"No text, no border, no UI frame — just the spell icon on pure black.";
+               $"No text, no border, no UI frame — just the spell icon, nothing behind it.";
     }
 
     private string BuildRequestJson(string prompt)
@@ -126,15 +126,17 @@ public class NanoBananaClient : MonoBehaviour
     {
         try
         {
-            // Look for inline_data block with base64 image
-            int inlineIdx = responseJson.IndexOf("\"inline_data\"", StringComparison.Ordinal);
+            // Gemini returns "inlineData" (camelCase) — also accept "inline_data" as fallback
+            int inlineIdx = responseJson.IndexOf("\"inlineData\"", StringComparison.Ordinal);
+            if (inlineIdx < 0)
+                inlineIdx = responseJson.IndexOf("\"inline_data\"", StringComparison.Ordinal);
             if (inlineIdx < 0)
             {
-                Debug.LogError("[NanoBanana] No inline_data in response.");
+                Debug.LogError($"[NanoBanana] No inlineData in response. Body: {responseJson.Substring(0, Mathf.Min(500, responseJson.Length))}");
                 return null;
             }
 
-            // Find the "data" field within inline_data
+            // Find the "data" field within inlineData
             int dataIdx = responseJson.IndexOf("\"data\"", inlineIdx, StringComparison.Ordinal);
             if (dataIdx < 0)
             {
@@ -164,6 +166,7 @@ public class NanoBananaClient : MonoBehaviour
                 return null;
             }
             texture.filterMode = FilterMode.Point;
+            texture = StripBlackBackground(texture);
 
             // Create sprite from texture
             var sprite = Sprite.Create(
@@ -181,6 +184,35 @@ public class NanoBananaClient : MonoBehaviour
             Debug.LogError($"[NanoBanana] Parse error: {e.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Converts near-black pixels to transparent. Handles cases where the model
+    /// renders a black background despite being prompted for transparency.
+    /// </summary>
+    private static Texture2D StripBlackBackground(Texture2D src, float hardThreshold = 0.1f, float softThreshold = 0.22f)
+    {
+        Color[] pixels = src.GetPixels();
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            Color p = pixels[i];
+            float brightness = Mathf.Max(p.r, p.g, p.b);
+            if (brightness <= hardThreshold)
+            {
+                pixels[i] = new Color(p.r, p.g, p.b, 0f);
+            }
+            else if (brightness < softThreshold)
+            {
+                float t = (brightness - hardThreshold) / (softThreshold - hardThreshold);
+                pixels[i] = new Color(p.r, p.g, p.b, t);
+            }
+        }
+        var result = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false);
+        result.filterMode = FilterMode.Point;
+        result.SetPixels(pixels);
+        result.Apply();
+        Destroy(src);
+        return result;
     }
 
     private static string EscapeJson(string s)

@@ -24,14 +24,10 @@ public class PlayerHUD : MonoBehaviour
     [Header("Font — assign TMP font asset generated from Assets/Fonts/alagard.ttf")]
     [SerializeField] private TMP_FontAsset alagardFont;
 
-    [Header("Heart Position (canvas units at 1920×1080)")]
-    [SerializeField] private Vector2 heartPosition = new Vector2(20f, -20f);
-
     [Header("Status Row Position (canvas units at 1920×1080)")]
     [SerializeField] private Vector2 statusPosition = new Vector2(20f, 20f);
 
     // ── Layout (at 1920×1080 reference resolution) ────────────────────────────
-    private const float HeartSize   = 110f;
     private const float IconSize    = 58f;
     private const float IconSpacing = 61f; // icon width + gap
 
@@ -43,7 +39,7 @@ public class PlayerHUD : MonoBehaviour
     // ── UI nodes ──────────────────────────────────────────────────────────────
     private RectTransform heartRT;
     private TMP_Text      healthText;
-    private TMP_Text      healthShadowText; // drop-shadow copy of healthText
+    private Image         healthBarFill;
     private RectTransform statusContainer;
 
     private static Texture2D _glowTex; // cached soft-circle texture for status glows
@@ -120,24 +116,29 @@ public class PlayerHUD : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Heart container — anchored to top-left of canvas
-        heartRT = MakeRT("Heart", canvasGO.transform,
-            anchorMin: Vector2.up, anchorMax: Vector2.up,
-            pivot: new Vector2(0f, 1f),
-            pos: heartPosition,
-            size: new Vector2(HeartSize, HeartSize));
+        // ── Health bar row — bottom-center: [heart] [===bar===] ──────────────
+        const float BarW       = 340f;
+        const float BarH       = 22f;
+        const float BarBottomY = 16f;
+        const float HeartDim   = 44f;
+        float barCenterY = BarBottomY + BarH * 0.5f; // 27 px from screen bottom
 
-        // Heart drop shadow
+        // Heart container — also drives heartbeat scale animation
+        heartRT = MakeRT("Heart", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: new Vector2(-(BarW * 0.5f + 8f + HeartDim * 0.5f), barCenterY),
+            size: new Vector2(HeartDim, HeartDim));
+
         var heartShadowRT    = MakeRT("HeartShadow", heartRT,
             anchorMin: new Vector2(0.5f, 0.5f), anchorMax: new Vector2(0.5f, 0.5f),
             pivot: new Vector2(0.5f, 0.5f),
-            pos: new Vector2(6f, -6f), size: new Vector2(HeartSize + 14f, HeartSize + 14f));
+            pos: new Vector2(3f, -3f), size: new Vector2(HeartDim + 8f, HeartDim + 8f));
         var heartShadowImg   = heartShadowRT.gameObject.AddComponent<Image>();
         heartShadowImg.sprite = ExtractSprite(heartIconPrefab);
         heartShadowImg.preserveAspect = true;
         heartShadowImg.color = new Color(0f, 0f, 0f, 0.6f);
 
-        // Main heart sprite
         var heartMainRT      = MakeRT("HeartMain", heartRT,
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
@@ -146,36 +147,59 @@ public class PlayerHUD : MonoBehaviour
         heartImg.sprite      = ExtractSprite(heartIconPrefab);
         heartImg.preserveAspect = true;
 
-        // Health number drop shadow
-        var healthShadowRT   = MakeRT("HealthTextShadow", heartRT,
-            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+        // Bar drop shadow — flat rect, offset slightly for depth
+        var barShadowRT      = MakeRT("BarShadow", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
             pivot: new Vector2(0.5f, 0.5f),
-            pos: new Vector2(4f, -4f), size: Vector2.zero);
-        healthShadowText              = healthShadowRT.gameObject.AddComponent<TextMeshProUGUI>();
-        healthShadowText.font         = alagardFont;
-        healthShadowText.fontSize     = 28f;
-        healthShadowText.fontStyle    = FontStyles.Bold;
-        healthShadowText.alignment    = TextAlignmentOptions.Center;
-        healthShadowText.enableWordWrapping = false;
-        healthShadowText.overflowMode = TextOverflowModes.Overflow;
-        healthShadowText.color        = new Color(0f, 0f, 0f, 0.85f);
+            pos: new Vector2(2f, barCenterY - 2f),
+            size: new Vector2(BarW + 8f, BarH + 8f));
+        var barShadowImg     = barShadowRT.gameObject.AddComponent<Image>();
+        barShadowImg.color   = new Color(0f, 0f, 0f, 0.70f);
+        barShadowImg.raycastTarget = false;
 
-        // Health number main text
-        var healthTextRT = MakeRT("HealthText", heartRT,
-            anchorMin: Vector2.zero, anchorMax: Vector2.one,
+        // Bar container — flat rect mask; dark background visible in empty portion
+        var barContainerRT   = MakeRT("BarContainer", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
             pivot: new Vector2(0.5f, 0.5f),
-            pos: Vector2.zero, size: Vector2.zero);
+            pos: new Vector2(0f, barCenterY),
+            size: new Vector2(BarW, BarH));
+        var barContainerImg  = barContainerRT.gameObject.AddComponent<Image>();
+        barContainerImg.color  = new Color(0.06f, 0.04f, 0.03f, 0.9f);
+        barContainerImg.raycastTarget = false;
+        var barMask          = barContainerRT.gameObject.AddComponent<Mask>();
+        barMask.showMaskGraphic = true;
 
-        healthText              = healthTextRT.gameObject.AddComponent<TextMeshProUGUI>();
-        healthText.font         = alagardFont;
-        healthText.fontSize     = 28f;
-        healthText.fontStyle    = FontStyles.Bold;
-        healthText.alignment    = TextAlignmentOptions.Center;
-        healthText.enableWordWrapping = false;
-        healthText.overflowMode = TextOverflowModes.Overflow;
-        healthText.color        = Color.white;
-        healthText.outlineWidth = 0.3f;
-        healthText.outlineColor = new Color32(0, 0, 0, 210);
+        // Bar fill — child of container, clipped to pill shape by the mask
+        var barFillRT        = MakeRT("BarFill", barContainerRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        barFillRT.offsetMin  = Vector2.zero;
+        barFillRT.offsetMax  = Vector2.zero;
+        healthBarFill        = barFillRT.gameObject.AddComponent<Image>();
+        healthBarFill.type   = Image.Type.Filled;
+        healthBarFill.fillMethod = Image.FillMethod.Horizontal;
+        healthBarFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+        healthBarFill.fillAmount = 1f;
+        healthBarFill.color      = new Color(0.05f, 0.52f, 0.08f);
+        healthBarFill.raycastTarget = false;
+
+        // HP number — sibling of container (not masked), overlaid on the bar
+        var healthTextRT     = MakeRT("HealthText", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: new Vector2(0f, barCenterY),
+            size: new Vector2(BarW, BarH));
+        healthText           = healthTextRT.gameObject.AddComponent<TextMeshProUGUI>();
+        healthText.font      = alagardFont;
+        healthText.fontSize  = 17f;
+        healthText.fontStyle = FontStyles.Bold;
+        healthText.alignment = TextAlignmentOptions.Center;
+        healthText.textWrappingMode = TextWrappingModes.NoWrap;
+        healthText.overflowMode     = TextOverflowModes.Overflow;
+        healthText.color            = Color.white;
+        healthText.outlineWidth     = 0.4f;
+        healthText.outlineColor     = new Color32(0, 0, 0, 230);
+        healthText.raycastTarget    = false;
 
         // Status icon row — anchored to bottom-left of canvas
         statusContainer = MakeRT("StatusRow", canvasGO.transform,
@@ -218,7 +242,7 @@ public class PlayerHUD : MonoBehaviour
     {
         if (fastBeatTimer > 0f) fastBeatTimer -= Time.deltaTime;
 
-        float freq      = fastBeatTimer > 0f ? 2.6f : 1.1f;
+        float freq      = fastBeatTimer > 0f ? 2.6f : 0.65f;
         float amplitude = fastBeatTimer > 0f ? 0.09f : 0.05f;
 
         beatPhase += freq * Mathf.PI * 2f * Time.deltaTime;
@@ -249,20 +273,61 @@ public class PlayerHUD : MonoBehaviour
 
     private void UpdateHealthText()
     {
-        string hp = Mathf.CeilToInt(health.Current).ToString();
-        healthText.text = hp;
-        if (healthShadowText != null) healthShadowText.text = hp;
+        float pct = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
+        healthText.text = Mathf.CeilToInt(health.Current).ToString();
+
+        // Bar fill + colour — flash white on damage then settle back to health colour
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = pct;
+            float flashT = Mathf.Clamp01(healthFlashTimer / 0.45f);
+            healthBarFill.color = Color.Lerp(HealthBarColor(pct), Color.white, flashT * flashT);
+        }
 
         if (healthFlashTimer > 0f)
         {
             healthFlashTimer -= Time.deltaTime;
-            float t = healthFlashTimer / 0.45f;
+            float t = Mathf.Clamp01(healthFlashTimer / 0.45f);
             healthText.color = Color.Lerp(Color.white, new Color(1f, 0.12f, 0.12f), t);
         }
         else
         {
             healthText.color = Color.white;
         }
+    }
+
+    // Dark green (full) → amber (half) → red (empty)
+    private static Color HealthBarColor(float pct)
+    {
+        if (pct > 0.5f)
+            return Color.Lerp(new Color(1.0f, 0.65f, 0.0f), new Color(0.05f, 0.52f, 0.08f), (pct - 0.5f) * 2f);
+        return Color.Lerp(new Color(0.85f, 0.08f, 0.05f), new Color(1.0f, 0.65f, 0.0f), pct * 2f);
+    }
+
+    // Generates a white pill-shaped (fully rounded ends) 9-sliced sprite.
+    // The left/right ends are perfect semicircles; the middle stretches cleanly.
+    private static Sprite CreatePillSprite(float barHeightUnits)
+    {
+        const int ppu = 4; // pixels per canvas unit — enough detail for smooth curves
+        int h = Mathf.Max(2, Mathf.RoundToInt(barHeightUnits * ppu));
+        int r = Mathf.Min(h / 2, 2 * ppu); // 2-unit corner radius — subtle rounding only
+        int w = r * 2 + 4;            // caps + 4px stretchable centre
+        var tex        = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        var pixels     = new Color[w * h];
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            float cx   = Mathf.Clamp(x, r, w - 1 - r);
+            float cy   = Mathf.Clamp(y, r, h - 1 - r);
+            float dist = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+            float a    = Mathf.Clamp01(r - dist + 0.5f);
+            pixels[y * w + x] = new Color(1f, 1f, 1f, a);
+        }
+        tex.SetPixels(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f),
+            ppu, 0, SpriteMeshType.FullRect, new Vector4(r, r, r, r));
     }
 
     // ── Status slot sync ──────────────────────────────────────────────────────
@@ -370,7 +435,7 @@ public class PlayerHUD : MonoBehaviour
         tmp.fontSize     = 26f;
         tmp.fontStyle    = FontStyles.Bold;
         tmp.alignment    = TextAlignmentOptions.Center;
-        tmp.enableWordWrapping = false;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Overflow;
         tmp.color        = Color.white;
         tmp.outlineWidth = 0.35f;

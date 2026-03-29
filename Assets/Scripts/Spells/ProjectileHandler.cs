@@ -222,7 +222,11 @@ public class ProjectileHandler : MonoBehaviour
         // Default: destroy on wall contact
         Vector2      nextPos = ctx.Rb.position + ctx.Rb.linearVelocity * Time.fixedDeltaTime * 2f;
         RaycastHit2D hit     = Physics2D.Linecast(ctx.Rb.position, nextPos, WallLayer);
-        if (hit.collider != null) RequestDestroy();
+        if (hit.collider != null)
+        {
+            HitEffectSpawner.SpawnWallBlock(hit.point, hit.normal, GetSpellColor(ctx.Spell));
+            RequestDestroy();
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -369,6 +373,12 @@ public class ProjectileHandler : MonoBehaviour
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>Primary display colour for a spell — respects Gemini's hex override, falls back to element default.</summary>
+    public static Color GetSpellColor(SpellData spell) =>
+        !string.IsNullOrEmpty(spell.projectileColor)
+            ? ParseHexColor(spell.projectileColor, ElementToColor(spell.element))
+            : ElementToColor(spell.element);
 
     /// <summary>Exposed so behavior components (e.g. DetonatingBehavior) can call SpawnImpactFlash.</summary>
     public static Color ElementToColor(string element) => element?.ToLower() switch

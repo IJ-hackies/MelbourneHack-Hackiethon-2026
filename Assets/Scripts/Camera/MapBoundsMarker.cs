@@ -38,7 +38,7 @@ public class MapBoundsMarker : MonoBehaviour
             new Vector2(-hw,  hh),
         });
 
-        FindObjectOfType<CinemachineConfiner>()?.InvalidatePathCache();
+        FindAnyObjectByType<CinemachineConfiner>()?.InvalidatePathCache();
     }
 
     private void OnDrawGizmos()

@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// Alien AI — does not chase. Wanders until player is detected, then stands and
-// fires a crystalline projectile when in range. Wander + detection are handled by EnemyBase.
+// Alien AI — pathfinds toward the player until in attack range, then stands and fires.
 public class AlienAI : EnemyBase
 {
     [Header("Animation Timing")]
@@ -25,8 +24,12 @@ public class AlienAI : EnemyBase
     public Color HitColorA          { get => hitColorA;          set => hitColorA          = value; }
     public Color HitColorB          { get => hitColorB;          set => hitColorB          = value; }
 
+    [Header("Pathfinding")]
+    [SerializeField] private float pathRefreshInterval = 0.3f;
+
     private bool isAttacking;
     private bool damageDealt;
+    private float pathTimer;
 
     private bool    isIdling;
     private Vector2 idleBasePos;
@@ -42,6 +45,7 @@ public class AlienAI : EnemyBase
     {
         isAttacking = false;
         isIdling    = false;
+        pathTimer   = pathRefreshInterval;
     }
 
     protected override void OnDeactivated()
@@ -58,21 +62,52 @@ public class AlienAI : EnemyBase
             return;
         }
 
-        // Idle float bob while waiting to attack
-        if (!isIdling)
+        bool inRange = DistanceToPlayer() <= AttackRange;
+
+        if (inRange)
         {
-            isIdling    = true;
-            idleBasePos = rb.position;
-            animator.enabled = false;
+            // In range — idle float bob and face the player
+            if (!isIdling)
+            {
+                isIdling         = true;
+                idleBasePos      = rb.position;
+                animator.enabled = false;
+            }
+
+            float floatY = Mathf.Sin(Time.time * 1.5f * Mathf.PI * 2f) * 0.015f;
+            rb.MovePosition(new Vector2(idleBasePos.x, idleBasePos.y + floatY));
+
+            if (player != null)
+                UpdateDirectionSprite(GetDirectionKey(DirectionToPlayer()));
+
+            TryAttack();
         }
+        else
+        {
+            // Not in range — pathfind toward the player
+            if (isIdling)
+            {
+                isIdling         = false;
+                animator.enabled = true;
+                currentClip      = "";
+            }
 
-        float floatY = Mathf.Sin(Time.time * 1.5f * Mathf.PI * 2f) * 0.015f;
-        rb.MovePosition(new Vector2(idleBasePos.x, idleBasePos.y + floatY));
+            pathTimer += Time.deltaTime;
+            if (pathTimer >= pathRefreshInterval || PathComplete)
+            {
+                pathTimer = 0f;
+                StartPathTo(player.position);
+            }
 
-        if (player != null)
-            UpdateDirectionSprite(GetDirectionKey(DirectionToPlayer()));
+            Vector2 moveDir  = GetNextPathDirection();
+            if (moveDir == Vector2.zero) moveDir = LastPathDir;
+            if (moveDir == Vector2.zero) moveDir = DirectionToPlayer();
 
-        TryAttack();
+            rb.MovePosition(rb.position + moveDir * MoveSpeed * Time.fixedDeltaTime);
+            UpdateDirectionSprite(GetDirectionKey(moveDir));
+
+            TryAttack();
+        }
     }
 
     private void TryAttack()
@@ -129,6 +164,7 @@ public class AlienAI : EnemyBase
                                  projectileColorA, projectileColorB,
                                  playerHealth, playerHitEffect, projectileSpeed,
                                  poisonDuration: 2f,
-                                 pierceWalls: true);
+                                 pierceWalls: true,
+                                 style: ProjectileStyle.Alien);
     }
 }

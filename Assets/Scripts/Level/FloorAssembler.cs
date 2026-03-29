@@ -14,6 +14,12 @@ using UnityEngine.Tilemaps;
 /// </summary>
 public class FloorAssembler : MonoBehaviour
 {
+    /// <summary>
+    /// Fired at the end of AssembleFloor(). Passes the world-space origin of the map
+    /// (i.e. transform.position — the bottom-left of chamber [0]).
+    /// Subscribe in Awake, unsubscribe in OnDestroy.
+    /// </summary>
+    public static event System.Action<Vector3> OnFloorReady;
     [System.Serializable]
     public class ChamberEntry
     {
@@ -179,7 +185,7 @@ public class FloorAssembler : MonoBehaviour
                     gridGraph.collision.diameter = 2.0f;
                     gridGraph.collision.type = Pathfinding.ColliderType.Sphere;
                     gridGraph.cutCorners = false;
-                    gridGraph.erodeIterations = 1;
+                    gridGraph.erodeIterations = 2;
                 }
             }
 
@@ -191,7 +197,7 @@ public class FloorAssembler : MonoBehaviour
             // Force all CompositeCollider2D on Walls tilemaps to rebuild immediately,
             // otherwise the A* scan runs before Unity's physics step and sees no walls.
             Physics2D.SyncTransforms();
-            foreach (var composite in FindObjectsOfType<CompositeCollider2D>())
+            foreach (var composite in FindObjectsByType<CompositeCollider2D>(FindObjectsSortMode.None))
                 composite.GenerateGeometry();
 
             AstarPath.active.Scan();
@@ -214,6 +220,8 @@ public class FloorAssembler : MonoBehaviour
 
         if (enemySpawner != null && enemySpawns != null && enemySpawns.Count > 0)
             enemySpawner.SpawnFloor(enemySpawns, transform.position);
+
+        OnFloorReady?.Invoke(transform.position);
     }
 
     private void ApplyGroundTint(GameObject chamber)
@@ -305,7 +313,7 @@ public class FloorAssembler : MonoBehaviour
 
     private void PositionMapBounds()
     {
-        var marker = FindObjectOfType<MapBoundsMarker>();
+        var marker = FindAnyObjectByType<MapBoundsMarker>();
         if (marker == null) return;
 
         marker.transform.position = transform.position + new Vector3(

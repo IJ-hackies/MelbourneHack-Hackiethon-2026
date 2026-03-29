@@ -12,16 +12,16 @@ public class GhostAI : EnemyBase
 
     [Header("Projectile")]
     [SerializeField] private float projectileSpeed  = 5f;
-    [SerializeField] private Color projectileColorA = new Color(0.90f, 0.95f, 1.00f, 1f);
-    [SerializeField] private Color projectileColorB = new Color(0.75f, 0.85f, 0.90f, 1f);
+    [SerializeField] private Color projectileColorA = new Color(0.55f, 1.00f, 0.72f, 1f); // spectral ectoplasm green
+    [SerializeField] private Color projectileColorB = new Color(0.30f, 0.88f, 0.55f, 1f);
 
     [Header("Freeze Zone")]
     [SerializeField] private float zoneDuration = 5f;
     [SerializeField] private float zoneRadius   = 1.3f;
 
     [Header("Hit Effect Colours")]
-    [SerializeField] private Color hitColorA = new Color(0.90f, 0.95f, 1.00f, 1f);
-    [SerializeField] private Color hitColorB = new Color(0.75f, 0.85f, 0.90f, 1f);
+    [SerializeField] private Color hitColorA = new Color(0.55f, 1.00f, 0.72f, 1f);
+    [SerializeField] private Color hitColorB = new Color(0.30f, 0.88f, 0.55f, 1f);
 
     public float AttackAnimDuration { get => attackAnimDuration; set => attackAnimDuration = Mathf.Max(0.05f, value); }
     public float DamageHitFrame     { get => damageHitFrame;     set => damageHitFrame     = Mathf.Max(0f, value); }
@@ -34,9 +34,13 @@ public class GhostAI : EnemyBase
     public float ZoneDuration       { get => zoneDuration;       set => zoneDuration       = Mathf.Max(0f, value); }
     public float ZoneRadius         { get => zoneRadius;         set => zoneRadius         = Mathf.Max(0f, value); }
 
+    [Header("Pathfinding")]
+    [SerializeField] private float pathRefreshInterval = 0.3f;
+
     private bool                damageDealt;
     private bool                isAttacking;
     private GhostGooProjectile  activeProjectile;
+    private float               pathTimer;
 
     protected override void Start()
     {
@@ -65,6 +69,7 @@ public class GhostAI : EnemyBase
     {
         isAttacking = false;
         damageDealt = false;
+        pathTimer   = pathRefreshInterval;
     }
 
     protected override void OnDeactivated()
@@ -75,9 +80,30 @@ public class GhostAI : EnemyBase
     protected override void UpdateActive()
     {
         if (isAttacking)
+        {
             UpdateAttack();
-        else
-            TryAttack();
+            return;
+        }
+
+        if (DistanceToPlayer() > AttackRange)
+        {
+            // Ghost moves directly through walls — no A* needed, just move straight
+            pathTimer += Time.deltaTime;
+            if (pathTimer >= pathRefreshInterval || PathComplete)
+            {
+                pathTimer = 0f;
+                StartPathTo(player.position);
+            }
+
+            Vector2 moveDir = GetNextPathDirection();
+            if (moveDir == Vector2.zero) moveDir = LastPathDir;
+            if (moveDir == Vector2.zero) moveDir = DirectionToPlayer();
+
+            rb.MovePosition(rb.position + moveDir * MoveSpeed * Time.fixedDeltaTime);
+            UpdateDirectionSprite(GetDirectionKey(moveDir));
+        }
+
+        TryAttack();
     }
 
     private void TryAttack()
