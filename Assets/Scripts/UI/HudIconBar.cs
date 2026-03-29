@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
@@ -75,6 +76,14 @@ public class HudIconBar : MonoBehaviour
 
     private void BuildBar()
     {
+        // Ensure an EventSystem exists so button clicks are dispatched
+        if (FindAnyObjectByType<EventSystem>() == null)
+        {
+            var esGO = new GameObject("EventSystem");
+            esGO.AddComponent<EventSystem>();
+            esGO.AddComponent<StandaloneInputModule>();
+        }
+
         canvasGO = new GameObject("HudIconBar_Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -87,15 +96,12 @@ public class HudIconBar : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Bar background
+        // Bar (no background — transparent container for icons)
         float totalWidth = IconSize * 3 + IconGap * 2 + 12f;
         var barRT = MakeRT("Bar", canvasGO.transform,
             Vector2.one, Vector2.one, Vector2.one,
             new Vector2(-Margin, -Margin),
             new Vector2(totalWidth, IconSize + 10f));
-        var barImg = barRT.gameObject.AddComponent<Image>();
-        barImg.color = new Color(0.22f, 0.15f, 0.11f, 0.75f);
-        barImg.raycastTarget = false;
 
         // Icons: right-to-left from top-right
         float x = -6f;
