@@ -26,6 +26,9 @@ public class StageDirector : MonoBehaviour
     [SerializeField] private StageTransitionUI transitionUI;
     [SerializeField] private MergeRitualUI     mergeRitualUI;
 
+    [Header("Spell Icons")]
+    [SerializeField] private Sprite starterSpellIcon;  // StarterSpell.png — drag in Inspector
+
     [Header("Pre-generation")]
     [Tooltip("Start Gemini call when this fraction of enemies are dead.")]
     [SerializeField] [Range(0.3f, 0.9f)] private float pregenThreshold = 0.5f;
@@ -41,6 +44,7 @@ public class StageDirector : MonoBehaviour
     private FloorClearDetector clearDetector;
     private SessionLogger      sessionLogger;
     private GeminiClient       geminiClient;
+    private NanoBananaClient   nanoBananaClient;
     private HudIconBar         hudIconBar;
     private Health             playerHealth;
 
@@ -65,8 +69,13 @@ public class StageDirector : MonoBehaviour
         // Auto-find singletons / scene objects
         clearDetector = FindAnyObjectByType<FloorClearDetector>();
         sessionLogger = FindAnyObjectByType<SessionLogger>();
-        geminiClient  = FindAnyObjectByType<GeminiClient>();
-        hudIconBar    = FindAnyObjectByType<HudIconBar>();
+        geminiClient     = FindAnyObjectByType<GeminiClient>();
+        nanoBananaClient = FindAnyObjectByType<NanoBananaClient>();
+        hudIconBar       = FindAnyObjectByType<HudIconBar>();
+
+        // Auto-load starter spell icon from Resources if not assigned in Inspector
+        if (starterSpellIcon == null)
+            starterSpellIcon = Resources.Load<Sprite>("SpellIcons/StarterSpell");
 
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
@@ -117,7 +126,21 @@ public class StageDirector : MonoBehaviour
 
         // Add new spell to Grimoire
         if (manifest.new_spell != null && !string.IsNullOrEmpty(manifest.new_spell.name))
-            Grimoire.Instance?.AddSpell(manifest.new_spell.ToSpellData());
+        {
+            SpellData newSpell = manifest.new_spell.ToSpellData();
+
+            // Assign icon: starter sprite for Stage 1, Nano Banana for generated spells
+            if (stageNumber == 1 && starterSpellIcon != null)
+                newSpell.icon = starterSpellIcon;
+            else if (nanoBananaClient != null)
+                nanoBananaClient.GenerateIcon(newSpell, icon =>
+                {
+                    newSpell.icon = icon;
+                    Grimoire.Instance?.NotifyLoadoutChanged();
+                });
+
+            Grimoire.Instance?.AddSpell(newSpell);
+        }
 
         // Apply corruptions
         if (manifest.corrupted_spells != null)
@@ -319,15 +342,15 @@ public class StageDirector : MonoBehaviour
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null) return;
 
-        // Center of the 4x2 grid = (40, 20) relative to FloorAssembler origin
+        // Center of chamber[0] (bottom-left) = (10, 10) — guaranteed open floor
         Vector3 origin = floorAssembler != null ? floorAssembler.transform.position : Vector3.zero;
-        Vector3 center = origin + new Vector3(40f, 20f, 0f);
-        playerObj.transform.position = center;
+        Vector3 spawnPos = origin + new Vector3(10f, 10f, 0f);
+        playerObj.transform.position = spawnPos;
 
         var rb = playerObj.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
-            rb.position = center;
+            rb.position = spawnPos;
             rb.linearVelocity = Vector2.zero;
         }
     }

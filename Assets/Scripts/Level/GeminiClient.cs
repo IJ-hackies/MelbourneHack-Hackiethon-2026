@@ -53,6 +53,9 @@ public class GeminiClient : MonoBehaviour
     /// <summary>Returns true if an API key is configured.</summary>
     public bool HasApiKey => !string.IsNullOrEmpty(apiKey);
 
+    /// <summary>Returns the configured API key (for sharing with NanoBananaClient).</summary>
+    public string ApiKey => apiKey;
+
     // ── Coroutine ────────────────────────────────────────────────────────────
 
     private IEnumerator GenerateFloorCoroutine(string sessionLogJson, int nextStageNumber,

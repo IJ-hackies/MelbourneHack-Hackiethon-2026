@@ -32,6 +32,7 @@ public class SpellHotbar : MonoBehaviour
     {
         public RectTransform root;
         public Image bg;
+        public Image icon;
         public Image cooldownOverlay;
         public TMP_Text nameText;
         public TMP_Text keyText;
@@ -95,6 +96,17 @@ public class SpellHotbar : MonoBehaviour
             slot.bg.type = Image.Type.Simple;
             slot.bg.preserveAspect = true;
 
+            // Spell icon overlay (centered inside slot, slightly inset)
+            float iconInset = slotSize * 0.15f;
+            float iconDim = slotSize - iconInset * 2f;
+            var iconRT = MakeRT($"Icon_{i}", slot.root,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(iconDim, iconDim));
+            slot.icon = iconRT.gameObject.AddComponent<Image>();
+            slot.icon.preserveAspect = true;
+            slot.icon.raycastTarget = false;
+            slot.icon.enabled = false; // hidden until a spell with an icon is equipped
+
             // Cooldown overlay — dark fill that shrinks from top
             var coolRT = MakeRT("Cooldown", slot.root,
                 new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
@@ -140,6 +152,17 @@ public class SpellHotbar : MonoBehaviour
             slots[i].bg.sprite = isActive ? slotSelectedSprite : slotSprite;
             slots[i].nameText.text = spell != null ? spell.spellName : "";
             slots[i].nameText.color = spell != null ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+
+            // Show spell icon if available
+            if (spell != null && spell.icon != null)
+            {
+                slots[i].icon.sprite = spell.icon;
+                slots[i].icon.enabled = true;
+            }
+            else
+            {
+                slots[i].icon.enabled = false;
+            }
 
             // Dim empty slots
             slots[i].bg.color = spell != null ? Color.white : new Color(1f, 1f, 1f, 0.5f);

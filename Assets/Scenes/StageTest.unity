@@ -262,6 +262,7 @@ GameObject:
   - component: {fileID: 75030476}
   - component: {fileID: 75030475}
   - component: {fileID: 75030474}
+  - component: {fileID: 75030478}
   m_Layer: 0
   m_Name: GameDirector
   m_TagString: Untagged
@@ -312,6 +313,7 @@ MonoBehaviour:
   enemySpawner: {fileID: 0}
   transitionUI: {fileID: 0}
   mergeRitualUI: {fileID: 0}
+  starterSpellIcon: {fileID: 0}
   pregenThreshold: 0.5
 --- !u!4 &75030477
 Transform:
@@ -328,6 +330,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &75030478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29f2610b8bd8f5043a8af4a3b2974cdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NanoBananaClient
+  model: gemini-3-pro-image-preview
+  timeoutSeconds: 60
+  iconSize: 64
 --- !u!1 &399761513
 GameObject:
   m_ObjectHideFlags: 0
@@ -547,183 +564,183 @@ MonoBehaviour:
   - tilesetId: acid
     chambers:
     - id: acid_center_block_02
-      prefab: {fileID: 2438422911765812634, guid: 5ddd86133ae51144ebbd10fd8a1318b7, type: 3}
+      prefab: {fileID: 3392903348870991277, guid: 5ddd86133ae51144ebbd10fd8a1318b7, type: 3}
     - id: acid_diagonal_split_06
-      prefab: {fileID: 5006923736419536471, guid: a1c51992667c93d468d792f1145917d1, type: 3}
+      prefab: {fileID: 2299730924157233131, guid: a1c51992667c93d468d792f1145917d1, type: 3}
     - id: acid_divided_rooms_08
-      prefab: {fileID: 4165868922224787378, guid: 1c3801dfecaf78c4a8a6393259ae4875, type: 3}
+      prefab: {fileID: 4638456716800035680, guid: 1c3801dfecaf78c4a8a6393259ae4875, type: 3}
     - id: acid_four_pillars_03
-      prefab: {fileID: 2059364077900108740, guid: fd2ef1b408f6f3a47868c41591dca081, type: 3}
+      prefab: {fileID: 1737335706316808755, guid: fd2ef1b408f6f3a47868c41591dca081, type: 3}
     - id: acid_grid_pillars_07
-      prefab: {fileID: 8813191881470449463, guid: 7ffaabbcd7f3ce642ba9888d38441d7b, type: 3}
+      prefab: {fileID: 6560749177169004933, guid: 7ffaabbcd7f3ce642ba9888d38441d7b, type: 3}
     - id: acid_hazard_field_05
-      prefab: {fileID: 4630253269473540355, guid: bbc13221eb119b547b06389d9e44bebd, type: 3}
+      prefab: {fileID: 9048687873196252281, guid: bbc13221eb119b547b06389d9e44bebd, type: 3}
     - id: acid_open_arena_01
-      prefab: {fileID: 2677861399472660610, guid: 2bfda9616e3a73243881a61a2542748e, type: 3}
+      prefab: {fileID: 6344645907587668946, guid: 2bfda9616e3a73243881a61a2542748e, type: 3}
     - id: acid_scattered_cover_04
-      prefab: {fileID: 151794896708481717, guid: 2630cc13035062f48b1cd1a5babd28e1, type: 3}
+      prefab: {fileID: 5057910616854100553, guid: 2630cc13035062f48b1cd1a5babd28e1, type: 3}
   - tilesetId: bubblegum
     chambers:
     - id: bubblegum_center_block_02
-      prefab: {fileID: 6072154979505326746, guid: 892c1c159aeb70444a3c16594e8cfdd8, type: 3}
+      prefab: {fileID: 7409620741138086195, guid: 892c1c159aeb70444a3c16594e8cfdd8, type: 3}
     - id: bubblegum_diagonal_split_06
-      prefab: {fileID: 1518962107514886952, guid: 5a619db9b38090144b68ee4d89a3e5b8, type: 3}
+      prefab: {fileID: 3958597818017134767, guid: 5a619db9b38090144b68ee4d89a3e5b8, type: 3}
     - id: bubblegum_divided_rooms_08
-      prefab: {fileID: 1564127593245877055, guid: 7ac35c3e09566724a8fb9db4b7084f49, type: 3}
+      prefab: {fileID: 1486176882143378482, guid: 7ac35c3e09566724a8fb9db4b7084f49, type: 3}
     - id: bubblegum_four_pillars_03
-      prefab: {fileID: 4087858036920754218, guid: 58628470409d1f441b6d92f7bb779af2, type: 3}
+      prefab: {fileID: 7223767729933272131, guid: 58628470409d1f441b6d92f7bb779af2, type: 3}
     - id: bubblegum_grid_pillars_07
-      prefab: {fileID: 6430206494637886885, guid: 6baa4b2d0425647498d73783fbe662a2, type: 3}
+      prefab: {fileID: 93724833994121435, guid: 6baa4b2d0425647498d73783fbe662a2, type: 3}
     - id: bubblegum_hazard_field_05
-      prefab: {fileID: 5180631000153428309, guid: e35101ec86c8c02459773396268fee15, type: 3}
+      prefab: {fileID: 1401718341205078820, guid: e35101ec86c8c02459773396268fee15, type: 3}
     - id: bubblegum_open_arena_01
-      prefab: {fileID: 6380022362238836804, guid: f1cd49a72621da948a3f133639aaab43, type: 3}
+      prefab: {fileID: 3201608038915157765, guid: f1cd49a72621da948a3f133639aaab43, type: 3}
     - id: bubblegum_scattered_cover_04
-      prefab: {fileID: 6324246697117734227, guid: 19d1a8057ffa4d5418abca69f7f39fea, type: 3}
+      prefab: {fileID: 5518733149807976958, guid: 19d1a8057ffa4d5418abca69f7f39fea, type: 3}
   - tilesetId: dungeon
     chambers:
     - id: dungeon_center_block_02
-      prefab: {fileID: 4838698806607299015, guid: 937f0d2871c41374e80a7992827d540b, type: 3}
+      prefab: {fileID: 1343780750555385538, guid: 937f0d2871c41374e80a7992827d540b, type: 3}
     - id: dungeon_diagonal_split_06
-      prefab: {fileID: 431386980018526042, guid: 936a6e32a3236af4db28fffb0fdb9833, type: 3}
+      prefab: {fileID: 4852770431485617617, guid: 936a6e32a3236af4db28fffb0fdb9833, type: 3}
     - id: dungeon_divided_rooms_08
-      prefab: {fileID: 6267056819350962779, guid: 6b49b96f6afc15b4682a12bd4cae25e2, type: 3}
+      prefab: {fileID: 6416389544591876516, guid: 6b49b96f6afc15b4682a12bd4cae25e2, type: 3}
     - id: dungeon_four_pillars_03
-      prefab: {fileID: 7382247309962051537, guid: 0f10cf9400d36f34ebad33b9ba90d53a, type: 3}
+      prefab: {fileID: 1966025687944699995, guid: 0f10cf9400d36f34ebad33b9ba90d53a, type: 3}
     - id: dungeon_grid_pillars_07
-      prefab: {fileID: 6723375337439272900, guid: cdd7b9670c7f28843bcb507ca7b10a0f, type: 3}
+      prefab: {fileID: 6709854875143936466, guid: cdd7b9670c7f28843bcb507ca7b10a0f, type: 3}
     - id: dungeon_hazard_field_05
-      prefab: {fileID: 2913321508567379052, guid: aa4f7db702c0d4b479714ed7156c3e02, type: 3}
+      prefab: {fileID: 3009347212930062726, guid: aa4f7db702c0d4b479714ed7156c3e02, type: 3}
     - id: dungeon_open_arena_01
-      prefab: {fileID: 3872546387930823072, guid: fe933ae495f3a7a40878b07f3f2aa987, type: 3}
+      prefab: {fileID: 3127953499381861831, guid: fe933ae495f3a7a40878b07f3f2aa987, type: 3}
     - id: dungeon_scattered_cover_04
-      prefab: {fileID: 625908962156279825, guid: d7ddf9cb7968cdf4f8c52b79a3d51e7f, type: 3}
+      prefab: {fileID: 9048282118749002659, guid: d7ddf9cb7968cdf4f8c52b79a3d51e7f, type: 3}
   - tilesetId: flames
     chambers:
     - id: flames_center_block_02
-      prefab: {fileID: 7244812995774268746, guid: 59222f46922a4ba4eab70f381f4fd1bd, type: 3}
+      prefab: {fileID: 7434814863585953558, guid: 59222f46922a4ba4eab70f381f4fd1bd, type: 3}
     - id: flames_diagonal_split_06
-      prefab: {fileID: 1270773604237444222, guid: fa05f2e8692510444a280c7574907c13, type: 3}
+      prefab: {fileID: 8417974072291656102, guid: fa05f2e8692510444a280c7574907c13, type: 3}
     - id: flames_divided_rooms_08
-      prefab: {fileID: 7467796853359763051, guid: 8eb3ccb06d70ff14a959e39cd49dda5c, type: 3}
+      prefab: {fileID: 2402121739987152480, guid: 8eb3ccb06d70ff14a959e39cd49dda5c, type: 3}
     - id: flames_four_pillars_03
-      prefab: {fileID: 808940153970177027, guid: 6ca90ea43f78722418f8bab0734eb0ae, type: 3}
+      prefab: {fileID: 6365145211869251212, guid: 6ca90ea43f78722418f8bab0734eb0ae, type: 3}
     - id: flames_grid_pillars_07
-      prefab: {fileID: 555061589174879897, guid: 14cb9011e465438488999ef42035027e, type: 3}
+      prefab: {fileID: 2963830524386160069, guid: 14cb9011e465438488999ef42035027e, type: 3}
     - id: flames_hazard_field_05
-      prefab: {fileID: 5008591827861711402, guid: 93fa21d81d722cc47abc17e8195c10c9, type: 3}
+      prefab: {fileID: 6826969736172128186, guid: 93fa21d81d722cc47abc17e8195c10c9, type: 3}
     - id: flames_open_arena_01
-      prefab: {fileID: 3015493366597309368, guid: 1e1db83f043726641a4fe5b0e1ee30e7, type: 3}
+      prefab: {fileID: 3456102891573059624, guid: 1e1db83f043726641a4fe5b0e1ee30e7, type: 3}
     - id: flames_scattered_cover_04
-      prefab: {fileID: 5814633312275280908, guid: 8c42a0aa2d202b14c8626d810fb2aed7, type: 3}
+      prefab: {fileID: 7522740068757381964, guid: 8c42a0aa2d202b14c8626d810fb2aed7, type: 3}
   - tilesetId: forest
     chambers:
     - id: forest_center_block_02
-      prefab: {fileID: 5537522462710898843, guid: b5252b4c61f331049b6df39450229f35, type: 3}
+      prefab: {fileID: 3069179046786291135, guid: b5252b4c61f331049b6df39450229f35, type: 3}
     - id: forest_diagonal_split_06
-      prefab: {fileID: 3657331276109194294, guid: 91fc726df10c8124ea9083e6b767af72, type: 3}
+      prefab: {fileID: 2381235035274311206, guid: 91fc726df10c8124ea9083e6b767af72, type: 3}
     - id: forest_divided_rooms_08
-      prefab: {fileID: 6567188314846801771, guid: f62eadd5c75b2584190655f74bf1fb88, type: 3}
+      prefab: {fileID: 3892753806705806958, guid: f62eadd5c75b2584190655f74bf1fb88, type: 3}
     - id: forest_four_pillars_03
-      prefab: {fileID: 3608833248033175526, guid: f29781af0e7944c48856235e543eb88e, type: 3}
+      prefab: {fileID: 3549429436385932749, guid: f29781af0e7944c48856235e543eb88e, type: 3}
     - id: forest_grid_pillars_07
-      prefab: {fileID: 5742284708287516177, guid: 307697dda8ee5ec45aabb9134b16858e, type: 3}
+      prefab: {fileID: 140085598227554985, guid: 307697dda8ee5ec45aabb9134b16858e, type: 3}
     - id: forest_hazard_field_05
-      prefab: {fileID: 1998948871390633654, guid: 94b2f44fda1b8564180b1f144e05c3a8, type: 3}
+      prefab: {fileID: 6743399092636799538, guid: 94b2f44fda1b8564180b1f144e05c3a8, type: 3}
     - id: forest_open_arena_01
-      prefab: {fileID: 4403684023279007337, guid: 300b487595398fe408a57650d60f50dd, type: 3}
+      prefab: {fileID: 2851895912536110652, guid: 300b487595398fe408a57650d60f50dd, type: 3}
     - id: forest_scattered_cover_04
-      prefab: {fileID: 620546569420528783, guid: 6d904e0784e26624888ffceb1321b13d, type: 3}
+      prefab: {fileID: 26639128951617818, guid: 6d904e0784e26624888ffceb1321b13d, type: 3}
   - tilesetId: frozen
     chambers:
     - id: frozen_center_block_02
-      prefab: {fileID: 3918629601330056473, guid: c19995c07876d174194fdcb243a625dd, type: 3}
+      prefab: {fileID: 2293944724127390545, guid: c19995c07876d174194fdcb243a625dd, type: 3}
     - id: frozen_diagonal_split_06
-      prefab: {fileID: 6795656857887620159, guid: 1ca74633805006f4dbd8a54041650496, type: 3}
+      prefab: {fileID: 2389566461157741201, guid: 1ca74633805006f4dbd8a54041650496, type: 3}
     - id: frozen_divided_rooms_08
-      prefab: {fileID: 3032187337942792264, guid: 4a9bdb12c5957ff45aa8d728ad9ba1d4, type: 3}
+      prefab: {fileID: 6423789610889313928, guid: 4a9bdb12c5957ff45aa8d728ad9ba1d4, type: 3}
     - id: frozen_four_pillars_03
-      prefab: {fileID: 8840720519044572068, guid: da4101a14bd46ab4d957a0626cb8edec, type: 3}
+      prefab: {fileID: 5076037739927917262, guid: da4101a14bd46ab4d957a0626cb8edec, type: 3}
     - id: frozen_grid_pillars_07
-      prefab: {fileID: 4454283115187586751, guid: 8b1b44f78035af44e840ced21a2a4cc2, type: 3}
+      prefab: {fileID: 3819065451333370569, guid: 8b1b44f78035af44e840ced21a2a4cc2, type: 3}
     - id: frozen_hazard_field_05
-      prefab: {fileID: 7797262975535097407, guid: 9cffee0cf00f2274fa9f698aa5783ce0, type: 3}
+      prefab: {fileID: 17138382541435765, guid: 9cffee0cf00f2274fa9f698aa5783ce0, type: 3}
     - id: frozen_open_arena_01
-      prefab: {fileID: 4293970024860104610, guid: 3afa1cc33357e264abb6d921ec640431, type: 3}
+      prefab: {fileID: 3487824394424193525, guid: 3afa1cc33357e264abb6d921ec640431, type: 3}
     - id: frozen_scattered_cover_04
-      prefab: {fileID: 4278591734695758856, guid: 4545709f4059a9743bcc8d3d8d660859, type: 3}
+      prefab: {fileID: 3244700083806861486, guid: 4545709f4059a9743bcc8d3d8d660859, type: 3}
   - tilesetId: honey
     chambers:
     - id: honey_center_block_02
-      prefab: {fileID: 6355970671904092122, guid: b0593563cff1b7e409f724c46683dd94, type: 3}
+      prefab: {fileID: 2908237201279603122, guid: b0593563cff1b7e409f724c46683dd94, type: 3}
     - id: honey_diagonal_split_06
-      prefab: {fileID: 9103820829499295192, guid: 5e6bbe64dae996c4b9ec1e6b2fe5be2e, type: 3}
+      prefab: {fileID: 8742766858022304294, guid: 5e6bbe64dae996c4b9ec1e6b2fe5be2e, type: 3}
     - id: honey_divided_rooms_08
-      prefab: {fileID: 2538470438619125897, guid: 0fcc0c45b3d5fe04bb83463dc042cd77, type: 3}
+      prefab: {fileID: 922697998595158939, guid: 0fcc0c45b3d5fe04bb83463dc042cd77, type: 3}
     - id: honey_four_pillars_03
-      prefab: {fileID: 8337034095188218716, guid: 2115c14e95f8f774e9fcd129975f023f, type: 3}
+      prefab: {fileID: 2687088548336248252, guid: 2115c14e95f8f774e9fcd129975f023f, type: 3}
     - id: honey_grid_pillars_07
-      prefab: {fileID: 267194372452772022, guid: c956fd736c9951f49a5e49c95b776cb6, type: 3}
+      prefab: {fileID: 2962354376138100924, guid: c956fd736c9951f49a5e49c95b776cb6, type: 3}
     - id: honey_hazard_field_05
-      prefab: {fileID: 4377679400947094810, guid: 4117c9339d9bbaa4a9f3ede4f415c51d, type: 3}
+      prefab: {fileID: 6171308519434408395, guid: 4117c9339d9bbaa4a9f3ede4f415c51d, type: 3}
     - id: honey_open_arena_01
-      prefab: {fileID: 315912401319311392, guid: 35d0724a3684f9a44959c9a9edad52e4, type: 3}
+      prefab: {fileID: 8634746869657499579, guid: 35d0724a3684f9a44959c9a9edad52e4, type: 3}
     - id: honey_scattered_cover_04
-      prefab: {fileID: 7400535245019110498, guid: 22d6c4c6ba668dc47b5602373de012cc, type: 3}
+      prefab: {fileID: 8767451136289987164, guid: 22d6c4c6ba668dc47b5602373de012cc, type: 3}
   - tilesetId: ocean
     chambers:
     - id: ocean_center_block_02
-      prefab: {fileID: 2247161618816076141, guid: 5be96bba16a4a854fae7e082470ec2b9, type: 3}
+      prefab: {fileID: 3425597527998189630, guid: 5be96bba16a4a854fae7e082470ec2b9, type: 3}
     - id: ocean_diagonal_split_06
-      prefab: {fileID: 6186986189561104015, guid: 27c903cb164eea946b5c8e5c4c358156, type: 3}
+      prefab: {fileID: 5825372913145616946, guid: 27c903cb164eea946b5c8e5c4c358156, type: 3}
     - id: ocean_divided_rooms_08
-      prefab: {fileID: 5424820055863019932, guid: 3e88c4302d5b66c4796fe8b34e883040, type: 3}
+      prefab: {fileID: 8809054179568632514, guid: 3e88c4302d5b66c4796fe8b34e883040, type: 3}
     - id: ocean_four_pillars_03
-      prefab: {fileID: 8239733029845504602, guid: 2079f5ba314da014fa602c2a84d4da13, type: 3}
+      prefab: {fileID: 6078591562259071174, guid: 2079f5ba314da014fa602c2a84d4da13, type: 3}
     - id: ocean_grid_pillars_07
-      prefab: {fileID: 1410449571529971238, guid: a3de7ce3f339e6b4d9ff5fd07ad187cf, type: 3}
+      prefab: {fileID: 4035796457172820355, guid: a3de7ce3f339e6b4d9ff5fd07ad187cf, type: 3}
     - id: ocean_hazard_field_05
-      prefab: {fileID: 8440085042952510413, guid: 15dfc100e06d22140801241e7eb33330, type: 3}
+      prefab: {fileID: 2753998370585054024, guid: 15dfc100e06d22140801241e7eb33330, type: 3}
     - id: ocean_open_arena_01
-      prefab: {fileID: 3112571272812017786, guid: 179ccd2a6e7cb374cb92c28c5b8ecea4, type: 3}
+      prefab: {fileID: 4768697652519042030, guid: 179ccd2a6e7cb374cb92c28c5b8ecea4, type: 3}
     - id: ocean_scattered_cover_04
-      prefab: {fileID: 9021191163586478356, guid: 6f7ecf54484401849ad0b09626efd1e0, type: 3}
+      prefab: {fileID: 2830869538551858576, guid: 6f7ecf54484401849ad0b09626efd1e0, type: 3}
   - tilesetId: rocky
     chambers:
     - id: rocky_center_block_02
-      prefab: {fileID: 5511797380465071949, guid: b969cb8c64f20414d99a1c2d01f1f6aa, type: 3}
+      prefab: {fileID: 7511821162094051139, guid: b969cb8c64f20414d99a1c2d01f1f6aa, type: 3}
     - id: rocky_diagonal_split_06
-      prefab: {fileID: 8182259524460280734, guid: f99523694c8bf224b82d47c9a6ebdc5e, type: 3}
+      prefab: {fileID: 4792980830831494208, guid: f99523694c8bf224b82d47c9a6ebdc5e, type: 3}
     - id: rocky_divided_rooms_08
-      prefab: {fileID: 7644351971465755069, guid: 55893ba05de8aea479fe69634d167fcf, type: 3}
+      prefab: {fileID: 8241204968530206715, guid: 55893ba05de8aea479fe69634d167fcf, type: 3}
     - id: rocky_four_pillars_03
-      prefab: {fileID: 5761086923032358591, guid: ac8356b69fbb1b74db7f74840a223bb8, type: 3}
+      prefab: {fileID: 1027587642842202533, guid: ac8356b69fbb1b74db7f74840a223bb8, type: 3}
     - id: rocky_grid_pillars_07
-      prefab: {fileID: 3117380096258193766, guid: 76677bf4d30023b49b743dc98dba24ed, type: 3}
+      prefab: {fileID: 6723437858433945954, guid: 76677bf4d30023b49b743dc98dba24ed, type: 3}
     - id: rocky_hazard_field_05
-      prefab: {fileID: 4275236708567522321, guid: db31ca117630a624f875b959308f91be, type: 3}
+      prefab: {fileID: 1024367592147661098, guid: db31ca117630a624f875b959308f91be, type: 3}
     - id: rocky_open_arena_01
-      prefab: {fileID: 5670295183351201338, guid: 400b123cc12af4c45b84ff425ed5eeb3, type: 3}
+      prefab: {fileID: 6243666218227066503, guid: 400b123cc12af4c45b84ff425ed5eeb3, type: 3}
     - id: rocky_scattered_cover_04
-      prefab: {fileID: 4971050666787835885, guid: a0219e3248341404ab3469ed0be4bfe0, type: 3}
+      prefab: {fileID: 3139394996566542974, guid: a0219e3248341404ab3469ed0be4bfe0, type: 3}
   - tilesetId: techy
     chambers:
     - id: techy_center_block_02
-      prefab: {fileID: 3187171763004010679, guid: 5217a70a1a22cda44b0c5e9f5f7041a3, type: 3}
+      prefab: {fileID: 281738416771886655, guid: 5217a70a1a22cda44b0c5e9f5f7041a3, type: 3}
     - id: techy_diagonal_split_06
-      prefab: {fileID: 7535890105457982911, guid: 2f76e0f64ac73f34482d77b6615c395f, type: 3}
+      prefab: {fileID: 6187218776757334890, guid: 2f76e0f64ac73f34482d77b6615c395f, type: 3}
     - id: techy_divided_rooms_08
-      prefab: {fileID: 6654231965583272233, guid: b088b42725ca70f46899490b1c8e86ec, type: 3}
+      prefab: {fileID: 2004377049105796005, guid: b088b42725ca70f46899490b1c8e86ec, type: 3}
     - id: techy_four_pillars_03
-      prefab: {fileID: 3760014684911805667, guid: 66ecd808d631d1d4e90010b8d4611279, type: 3}
+      prefab: {fileID: 3397692684295144174, guid: 66ecd808d631d1d4e90010b8d4611279, type: 3}
     - id: techy_grid_pillars_07
-      prefab: {fileID: 5421869333931485928, guid: ad624ec959632aa4eb2fd3db494f041d, type: 3}
+      prefab: {fileID: 2951967823057264937, guid: ad624ec959632aa4eb2fd3db494f041d, type: 3}
     - id: techy_hazard_field_05
-      prefab: {fileID: 2859768571426122090, guid: 148afa373ce82dd48a99e47623952724, type: 3}
+      prefab: {fileID: 4789934047765565496, guid: 148afa373ce82dd48a99e47623952724, type: 3}
     - id: techy_open_arena_01
-      prefab: {fileID: 487504284660280614, guid: fba28e185b863824db4d53fbe033df94, type: 3}
+      prefab: {fileID: 481379543157508554, guid: fba28e185b863824db4d53fbe033df94, type: 3}
     - id: techy_scattered_cover_04
-      prefab: {fileID: 3871980061671816341, guid: 38257b6b7f8a15745a2458576744b066, type: 3}
+      prefab: {fileID: 8882333655012803096, guid: 38257b6b7f8a15745a2458576744b066, type: 3}
   enemySpawner: {fileID: 69802697}
   enemySpawns: []
   activeTilesetId: dungeon
@@ -956,12 +973,18 @@ MonoBehaviour:
   boxSprite: {fileID: 7499154508442906066, guid: c99152a44e86aec428665e2439c541a7, type: 3}
   buttonSprite: {fileID: 2530564911472380330, guid: 7e17d0dca40aa0643843dfdb9b2d4b88, type: 3}
   font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
-  scrollW: 420
-  scrollH: 700
+  scrollWidthPct: 0.5
+  scrollHeightPct: 0.88
   titleFontSize: 22
   messageFontSize: 16
   spellNameFontSize: 20
   bodyFontSize: 13
+  fadeToBlackDuration: 0.7
+  stageClearedFadeIn: 0.6
+  stageClearedHold: 1
+  stageClearedFadeOut: 0.4
+  messageFadeInDuration: 1.2
+  messageFadeInDelay: 0.4
 --- !u!4 &1900390845
 Transform:
   m_ObjectHideFlags: 0

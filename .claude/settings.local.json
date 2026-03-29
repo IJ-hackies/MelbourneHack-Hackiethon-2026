@@ -30,7 +30,19 @@
       "Bash(python generate_chambers.py)",
       "Bash(start:*)",
       "WebSearch",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(ls -d C:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Art/Sprites/Enemies/*)",
+      "Bash(grep -r class.*Animator C:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
+      "Bash(grep -r \"Timeline\\\\|Cinemachine\" C:/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
+      "Bash(find /c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets/Scripts -name *.cs -type f -exec grep -l \"icon\\\\|Icon\\\\|sprite.*spell\\\\|spell.*sprite\" {})",
+      "Bash(2)",
+      "Bash(find C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026Assets -type f -name *.shader -o -name *.shadergraph)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:help.apiyi.com)",
+      "Bash(grep -iE \"\\\\.\\(prefab|unity\\)$\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(find C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026Assets -type f \\\\\\(-name *.vfx -o -name *Particle* \\\\\\))",
+      "Bash(grep -r \"Material.*Particle\\\\|Shader.*Particle\\\\|m_EmitterVelocityMode\" C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026AssetsPrefabs --include=*.prefab)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"

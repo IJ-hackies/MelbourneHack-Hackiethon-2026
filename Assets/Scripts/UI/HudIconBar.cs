@@ -139,8 +139,8 @@ public class HudIconBar : MonoBehaviour
     private void BuildEnemyCounter()
     {
         var counterRT = MakeRT("EnemyCounter", canvasGO.transform,
-            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, Margin), new Vector2(200f, 40f));
+            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(-Margin, -(Margin + IconSize + 10f + 10f)), new Vector2(200f, 34f));
 
         // Background pill
         var bgImg = counterRT.gameObject.AddComponent<Image>();

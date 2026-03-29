@@ -54,6 +54,7 @@ public class GrimoireUI : MonoBehaviour
     {
         public RectTransform rt;
         public Image bg;
+        public Image icon;
         public TMP_Text nameText;
         public SpellData spell;
     }
@@ -300,6 +301,25 @@ public class GrimoireUI : MonoBehaviour
             row.bg.color = isCorrupted
                 ? new Color(0.38f, 0.12f, 0.12f)
                 : new Color(1f, 0.99f, 0.92f);
+
+            // Spell icon inside the box (inset)
+            float iconInset = boxSize * 0.12f;
+            float iconDim = boxSize - iconInset * 2f;
+            var iconRT = MakeRT($"Icon_{i}", boxRT,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(iconDim, iconDim));
+            row.icon = iconRT.gameObject.AddComponent<Image>();
+            row.icon.preserveAspect = true;
+            row.icon.raycastTarget = false;
+            if (spell.icon != null)
+            {
+                row.icon.sprite = spell.icon;
+                row.icon.enabled = true;
+            }
+            else
+            {
+                row.icon.enabled = false;
+            }
 
             var btn = boxRT.gameObject.AddComponent<Button>();
             btn.targetGraphic = row.bg;

@@ -29,6 +29,9 @@ public class Grimoire : MonoBehaviour
     /// <summary>Fired whenever the loadout or active slot changes. UI subscribes to this.</summary>
     public event Action OnLoadoutChanged;
 
+    /// <summary>Force a UI refresh (e.g. after an icon is loaded asynchronously).</summary>
+    public void NotifyLoadoutChanged() => OnLoadoutChanged?.Invoke();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
