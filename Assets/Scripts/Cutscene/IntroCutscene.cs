@@ -73,7 +73,9 @@ public class IntroCutscene : MonoBehaviour
     [SerializeField] [TextArea(3, 6)]
     private string chronicleMessage =
         "Another soul stumbles into the dark.\nThe Grimoire stirs... it has been waiting.\nLet us see what you are made of.";
-    [SerializeField] private string titleMessage = "EVERCHANGING GRIMOIRE";
+    [SerializeField] private string titleMessage = "The Everchanging Grimoire";
+    [SerializeField] private string subtitleMessage =
+        "rumoured to have taken the souls of all who seeks it...along with their spells";
 
     [Header("Scene Transition")]
     [SerializeField] private string gameplaySceneName = "StageTest";
@@ -89,6 +91,7 @@ public class IntroCutscene : MonoBehaviour
     private GameObject            grimoireObj;
     private Light2D               grimoireLight;
     private ParticleSystem        grimoireParticles;
+    private TMP_Text              subtitleText;
 
     private const float GrimoireGlowStartDist = 5.5f;
     private const float RingRadius            = 7.5f;
@@ -156,6 +159,14 @@ public class IntroCutscene : MonoBehaviour
             cGO.AddComponent<GraphicRaycaster>();
         }
 
+        // UI buttons require an EventSystem to receive clicks
+        if (FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+        {
+            var esGO = new GameObject("EventSystem");
+            esGO.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            esGO.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+        }
+
         if (fadeImage == null)
         {
             var go = new GameObject("FadeOverlay");
@@ -179,6 +190,12 @@ public class IntroCutscene : MonoBehaviour
                 new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.65f));
         titleText.text  = "";
         titleText.color = new Color(1f, 0.9f, 0.6f, 0f);
+
+        if (subtitleText == null)
+            subtitleText = MakeUIText("SubtitleText", 22, FontStyles.Italic,
+                new Vector2(0.15f, 0.25f), new Vector2(0.85f, 0.38f));
+        subtitleText.text  = "";
+        subtitleText.color = new Color(0.75f, 0.65f, 0.5f, 0f);
 
         // Skip button — top-right corner
         if (skipButton == null)
@@ -239,13 +256,24 @@ public class IntroCutscene : MonoBehaviour
     {
         yield return new WaitForSeconds(0.3f);
 
-        // ── ACT 1: Title card ────────────────────────────────────────────────
-        // Start empty at full alpha so TypewriterReveal builds up with no pre-flash
+        // ── ACT 1: Title card + subtitle ────────────────────────────────────
+        // Title typewriters in
         titleText.text  = "";
         titleText.color = new Color(titleText.color.r, titleText.color.g, titleText.color.b, 1f);
         yield return TypewriterReveal(titleText, titleMessage, 0.07f);
+        yield return Wait(0.8f);
+
+        // Subtitle typewriters in beneath
+        subtitleText.text  = "";
+        subtitleText.color = new Color(subtitleText.color.r, subtitleText.color.g, subtitleText.color.b, 1f);
+        yield return TypewriterReveal(subtitleText, subtitleMessage, 0.045f);
         yield return Wait(1.5f);
-        yield return FadeTextAlpha(titleText, 1f, 0f, 1.0f);
+
+        // Fade both out together
+        Coroutine fadeTitle    = StartCoroutine(FadeTextAlpha(titleText, 1f, 0f, 1.0f));
+        Coroutine fadeSubtitle = StartCoroutine(FadeTextAlpha(subtitleText, 1f, 0f, 1.0f));
+        yield return fadeTitle;
+        yield return fadeSubtitle;
 
         if (skipping) { yield return SkipToGameplay(); yield break; }
 

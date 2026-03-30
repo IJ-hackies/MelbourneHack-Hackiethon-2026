@@ -16,5 +16,5 @@ public class FloorManifestDTO
     public string[]        chamber_grid;
     public EnemySpawnDTO[] enemy_spawns;
     public SpellDTO        new_spell;
-    public CorruptionDTO[] corrupted_spells;
+    public CutsceneStepDTO[] cutscene_steps;
 }

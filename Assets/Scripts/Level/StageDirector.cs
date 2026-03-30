@@ -41,12 +41,14 @@ public class StageDirector : MonoBehaviour
     private bool              pregenComplete;
     private bool              floorCleared;
     private float             playerHpBeforeStage;
+    private string            previousManifestJson;  // JSON of the last Gemini-generated manifest
 
     private FloorClearDetector clearDetector;
     private SessionLogger      sessionLogger;
     private GeminiClient       geminiClient;
     private NanoBananaClient   nanoBananaClient;
     private HudIconBar         hudIconBar;
+    private CutscenePlayer     cutscenePlayer;
     private Health             playerHealth;
 
     public int StageNumber => stageNumber;
@@ -73,6 +75,7 @@ public class StageDirector : MonoBehaviour
         geminiClient     = FindAnyObjectByType<GeminiClient>();
         nanoBananaClient = FindAnyObjectByType<NanoBananaClient>();
         hudIconBar       = FindAnyObjectByType<HudIconBar>();
+        cutscenePlayer   = FindAnyObjectByType<CutscenePlayer>();
 
         // Auto-load starter spell icon from Resources if not assigned in Inspector
         if (starterSpellIcon == null)
@@ -110,6 +113,14 @@ public class StageDirector : MonoBehaviour
 
     private void LoadStage(FloorManifestDTO manifest)
     {
+        Debug.Log($"[StageDirector] LoadStage({stageNumber}): " +
+                  $"floor_name=\"{manifest.floor_name}\", " +
+                  $"tileset_id=\"{manifest.tileset_id}\", " +
+                  $"enemy_spawns={manifest.enemy_spawns?.Length ?? 0}, " +
+                  $"new_spell=\"{manifest.new_spell?.name}\", " +
+                  $"cutscene_steps={manifest.cutscene_steps?.Length ?? 0}, " +
+                  $"chamber_grid={manifest.chamber_grid?.Length ?? 0}");
+
         // Reset tracking for new floor
         clearDetector?.Reset();
         sessionLogger?.ResetFloor();
@@ -146,11 +157,6 @@ public class StageDirector : MonoBehaviour
             Grimoire.Instance?.AddSpell(newSpell);
         }
 
-        // Apply corruptions
-        if (manifest.corrupted_spells != null)
-            foreach (var corruption in manifest.corrupted_spells)
-                Grimoire.Instance?.ApplyCorruption(corruption);
-
         Debug.Log($"[StageDirector] Stage {stageNumber} loaded: \"{manifest.floor_name}\"");
     }
 
@@ -185,11 +191,13 @@ public class StageDirector : MonoBehaviour
 
         Debug.Log($"[StageDirector] Pre-generating stage {nextStage} (kill progress: {clearDetector.KillProgress:P0})...");
 
-        geminiClient.GenerateFloor(sessionLog, nextStage, manifest =>
+        geminiClient.GenerateFloor(sessionLog, nextStage, previousManifestJson, manifest =>
         {
             if (manifest != null)
             {
                 nextManifest = manifest;
+                // Store this manifest as context for the next Gemini call
+                previousManifestJson = JsonUtility.ToJson(manifest);
                 Debug.Log($"[StageDirector] Pre-generation complete: \"{manifest.floor_name}\"");
 
                 // Pre-create the SpellData and generate its icon immediately.
@@ -245,6 +253,8 @@ public class StageDirector : MonoBehaviour
 
     // ── Transition flow ──────────────────────────────────────────────────────
 
+    private bool cutsceneJustPlayed;
+
     private void ShowTransition()
     {
         if (nextManifest == null)
@@ -253,24 +263,51 @@ public class StageDirector : MonoBehaviour
             return;
         }
 
+        // Play Gemini-generated cutscene first, then show the transition scroll
+        if (cutscenePlayer != null
+            && nextManifest.cutscene_steps != null
+            && nextManifest.cutscene_steps.Length > 0)
+        {
+            cutsceneJustPlayed = true;
+            cutscenePlayer.Play(nextManifest.cutscene_steps, () => ShowTransitionScroll());
+        }
+        else
+        {
+            cutsceneJustPlayed = false;
+            ShowTransitionScroll();
+        }
+    }
+
+    private void ShowTransitionScroll()
+    {
         // Calculate HP for the new stage
         float hpIncrease = 0.05f; // default 5% — could come from manifest later
         float newHp = playerHpBeforeStage * (1f + hpIncrease);
 
         if (transitionUI != null)
         {
-            // Give the scroll a direct reference to the pre-created SpellData so it can
-            // show a loading indicator while the icon is still generating.
             transitionUI.SetPendingSpellData(nextSpellData);
-            transitionUI.FadeToBlackThenShow(nextManifest, playerHpBeforeStage, newHp, () =>
+
+            if (cutsceneJustPlayed)
             {
-                // After player clicks "BEGIN" on the transition scroll
-                OnTransitionComplete(newHp);
-            });
+                // Cutscene already faded to black and paused — skip the redundant fade,
+                // go straight to the scroll (Show handles pause + "STAGE CLEARED" display).
+                transitionUI.Show(nextManifest, playerHpBeforeStage, newHp, () =>
+                {
+                    OnTransitionComplete(newHp);
+                });
+            }
+            else
+            {
+                // No cutscene — do the normal fade-to-black → "STAGE CLEARED" → scroll
+                transitionUI.FadeToBlackThenShow(nextManifest, playerHpBeforeStage, newHp, () =>
+                {
+                    OnTransitionComplete(newHp);
+                });
+            }
         }
         else
         {
-            // No transition UI — proceed directly
             OnTransitionComplete(newHp);
         }
     }
@@ -306,6 +343,11 @@ public class StageDirector : MonoBehaviour
     {
         stageNumber++;
 
+        // Safety: force-unpause in case any UI left timeScale at 0
+        PauseManager.Reset();
+
+        Debug.Log($"[StageDirector] AdvanceToNextStage({stageNumber}): Time.timeScale={Time.timeScale}");
+
         // Scale player HP
         if (playerHealth != null)
             playerHealth.SetMaxHealth(newHp);
@@ -318,6 +360,22 @@ public class StageDirector : MonoBehaviour
 
         // Load the pre-generated manifest
         LoadStage(nextManifest);
+
+        // Diagnose player state after stage load
+        var playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            var pm = playerObj.GetComponent<PlayerMovement>();
+            var rb = playerObj.GetComponent<Rigidbody2D>();
+            Debug.Log($"[StageDirector] Post-load player state: " +
+                      $"pos={playerObj.transform.position}, " +
+                      $"timeScale={Time.timeScale}, " +
+                      $"PlayerMovement.enabled={pm?.enabled}, " +
+                      $"speedMultiplier={pm?.SpeedMultiplier}, " +
+                      $"rb.bodyType={rb?.bodyType}, " +
+                      $"rb.simulated={rb?.simulated}, " +
+                      $"rb.constraints={rb?.constraints}");
+        }
     }
 
     private void CleanupPreviousFloor()
@@ -357,9 +415,10 @@ public class StageDirector : MonoBehaviour
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null) return;
 
-        // Center of chamber[0] (bottom-left) = (10, 10) — guaranteed open floor
+        // Opening between chamber[0] and chamber[4] (bottom-left pair) = (10, 20).
+        // Every chamber has a 4-tile gap centered on each side, so this is always clear.
         Vector3 origin = floorAssembler != null ? floorAssembler.transform.position : Vector3.zero;
-        Vector3 spawnPos = origin + new Vector3(10f, 10f, 0f);
+        Vector3 spawnPos = origin + new Vector3(10f, 20f, 0f);
         playerObj.transform.position = spawnPos;
 
         var rb = playerObj.GetComponent<Rigidbody2D>();
@@ -412,7 +471,6 @@ public class StageDirector : MonoBehaviour
                 trail_width      = 0.12f,
                 burst_count      = 1
             },
-            corrupted_spells = Array.Empty<CorruptionDTO>()
         };
     }
 
@@ -452,8 +510,7 @@ public class StageDirector : MonoBehaviour
                         ""trail_length"": 0.2,
                         ""trail_width"": 0.15,
                         ""burst_count"": 1
-                    },
-                    ""corrupted_spells"": []
+                    }
                 }");
             }
             return _stage1;

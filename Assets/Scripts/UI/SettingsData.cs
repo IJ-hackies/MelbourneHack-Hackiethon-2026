@@ -15,6 +15,7 @@ public static class SettingsData
     public static KeyCode Slot1      { get; private set; } = KeyCode.Alpha1;
     public static KeyCode Slot2      { get; private set; } = KeyCode.Alpha2;
     public static KeyCode Slot3      { get; private set; } = KeyCode.Alpha3;
+    public static KeyCode Dash       { get; private set; } = KeyCode.E;
     public static KeyCode ToggleMap  { get; private set; } = KeyCode.M;
 
     // ── Volume ────────────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ public static class SettingsData
             case "Slot1":     Slot1     = key; break;
             case "Slot2":     Slot2     = key; break;
             case "Slot3":     Slot3     = key; break;
+            case "Dash":      Dash      = key; break;
             case "ToggleMap": ToggleMap = key; break;
         }
         Save();
@@ -62,6 +64,7 @@ public static class SettingsData
         PlayerPrefs.SetInt("Key_Slot1",     (int)Slot1);
         PlayerPrefs.SetInt("Key_Slot2",     (int)Slot2);
         PlayerPrefs.SetInt("Key_Slot3",     (int)Slot3);
+        PlayerPrefs.SetInt("Key_Dash",      (int)Dash);
         PlayerPrefs.SetInt("Key_ToggleMap", (int)ToggleMap);
         PlayerPrefs.SetFloat("Vol_Music",   MusicVolume);
         PlayerPrefs.SetFloat("Vol_Sfx",     SfxVolume);
@@ -78,6 +81,7 @@ public static class SettingsData
         Slot1     = (KeyCode)PlayerPrefs.GetInt("Key_Slot1",     (int)KeyCode.Alpha1);
         Slot2     = (KeyCode)PlayerPrefs.GetInt("Key_Slot2",     (int)KeyCode.Alpha2);
         Slot3     = (KeyCode)PlayerPrefs.GetInt("Key_Slot3",     (int)KeyCode.Alpha3);
+        Dash      = (KeyCode)PlayerPrefs.GetInt("Key_Dash",      (int)KeyCode.E);
         ToggleMap = (KeyCode)PlayerPrefs.GetInt("Key_ToggleMap", (int)KeyCode.M);
         MusicVolume = PlayerPrefs.GetFloat("Vol_Music", 0.8f);
         SfxVolume   = PlayerPrefs.GetFloat("Vol_Sfx",   0.8f);

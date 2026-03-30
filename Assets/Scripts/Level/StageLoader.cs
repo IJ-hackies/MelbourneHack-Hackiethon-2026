@@ -63,11 +63,6 @@ public class StageLoader : MonoBehaviour
         if (manifest.new_spell != null && !string.IsNullOrEmpty(manifest.new_spell.name))
             Grimoire.Instance?.AddSpell(manifest.new_spell.ToSpellData());
 
-        // Apply spell corruptions to existing Grimoire entries
-        if (manifest.corrupted_spells != null)
-            foreach (var corruption in manifest.corrupted_spells)
-                Grimoire.Instance?.ApplyCorruption(corruption);
-
         Debug.Log($"StageLoader: loaded floor \"{manifest.floor_name}\"");
     }
 
@@ -125,7 +120,6 @@ public class StageLoader : MonoBehaviour
     ""element"": """",
     ""is_merged"": false,
     ""merged_from"": []
-  },
-  ""corrupted_spells"": []
+  }
 }";
 }

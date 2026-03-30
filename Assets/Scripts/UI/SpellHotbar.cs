@@ -28,6 +28,11 @@ public class SpellHotbar : MonoBehaviour
     private GameObject canvasGO;
     private SlotUI[] slots;
 
+    // Dash cooldown indicator
+    private Image          dashCooldownOverlay;
+    private TMP_Text       dashKeyText;
+    private PlayerMovement cachedPlayer;
+
     private class SlotUI
     {
         public RectTransform root;
@@ -137,6 +142,51 @@ public class SpellHotbar : MonoBehaviour
 
             slots[i] = slot;
         }
+
+        // ── Dash cooldown indicator — small slot to the right of spell slots ──
+        BuildDashIndicator(canvasGO.transform, totalWidth, startX);
+    }
+
+    private void BuildDashIndicator(Transform parent, float totalWidth, float startX)
+    {
+        float dashSize = slotSize * 0.65f;
+        float dashX = startX + Grimoire.LoadoutSize * (slotSize + slotGap) + slotGap + dashSize / 2f;
+
+        var root = MakeRT("DashSlot", parent,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(dashX, bottomPad + (slotSize - dashSize) / 2f),
+            new Vector2(dashSize, dashSize));
+
+        // Background
+        var bg = root.gameObject.AddComponent<Image>();
+        bg.color = new Color(0.3f, 0.3f, 0.3f, 0.7f);
+        if (slotSprite != null) { bg.sprite = slotSprite; bg.color = new Color(1f, 1f, 1f, 0.6f); }
+
+        // Dash label (centered in slot)
+        MakeText("DashLabel", root,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(dashSize, dashSize * 0.5f),
+            "DASH", nameFontSize, Color.black, TextAlignmentOptions.Center);
+
+        // Cooldown overlay
+        var coolRT = MakeRT("DashCooldown", root,
+            new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        coolRT.offsetMin = Vector2.zero;
+        coolRT.offsetMax = Vector2.zero;
+        dashCooldownOverlay = coolRT.gameObject.AddComponent<Image>();
+        dashCooldownOverlay.color = new Color(0f, 0f, 0f, 0.55f);
+        dashCooldownOverlay.raycastTarget = false;
+        dashCooldownOverlay.type = Image.Type.Filled;
+        dashCooldownOverlay.fillMethod = Image.FillMethod.Vertical;
+        dashCooldownOverlay.fillOrigin = 0;
+        dashCooldownOverlay.fillAmount = 0f;
+
+        // Key label above slot
+        dashKeyText = MakeText("DashKey", root,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f),
+            new Vector2(0f, keyLabelY), new Vector2(dashSize, 20f),
+            SettingsData.KeyLabel(SettingsData.Dash), keyFontSize, Color.white, TextAlignmentOptions.Center);
     }
 
     // ── Refresh on loadout change ────────────────────────────────────────────
@@ -198,6 +248,13 @@ public class SpellHotbar : MonoBehaviour
                 : 0f;
         }
 
+        // Dash cooldown
+        if (dashCooldownOverlay != null)
+        {
+            if (cachedPlayer == null) cachedPlayer = FindAnyObjectByType<PlayerMovement>();
+            dashCooldownOverlay.fillAmount = cachedPlayer != null ? cachedPlayer.DashCooldownPct : 0f;
+        }
+
         // Also refresh active slot highlight (key press may not fire event if slot already active)
         int currentActive = grimoire.ActiveSlot;
         for (int i = 0; i < Grimoire.LoadoutSize; i++)
@@ -220,6 +277,8 @@ public class SpellHotbar : MonoBehaviour
         if (slots == null) return;
         for (int i = 0; i < Grimoire.LoadoutSize; i++)
             slots[i].keyText.text = SettingsData.KeyLabel(GetSlotKey(i));
+        if (dashKeyText != null)
+            dashKeyText.text = SettingsData.KeyLabel(SettingsData.Dash);
     }
 
     private static KeyCode GetSlotKey(int slotIndex) => slotIndex switch

@@ -78,7 +78,20 @@ public class FloorAssembler : MonoBehaviour
     public void LoadManifest(FloorManifestDTO manifest)
     {
         if (!string.IsNullOrEmpty(manifest.tileset_id))
-            activeTilesetId = manifest.tileset_id;
+        {
+            // Normalise to lowercase — Gemini may return "Dungeon" instead of "dungeon".
+            string requested = manifest.tileset_id.Trim().ToLowerInvariant();
+
+            // Validate the tileset exists; fall back to previous tileset if unknown.
+            bool found = false;
+            foreach (var lib in tilesetLibraries)
+                if (lib.tilesetId == requested) { found = true; break; }
+
+            if (found)
+                activeTilesetId = requested;
+            else
+                Debug.LogWarning($"FloorAssembler: unknown tileset '{requested}' from manifest — keeping '{activeTilesetId}'.");
+        }
 
         // If the manifest includes a chamber grid (e.g. hardcoded Stage 1), use it.
         // Otherwise randomize 8 chambers from the active tileset (repetition allowed).
@@ -129,12 +142,22 @@ public class FloorAssembler : MonoBehaviour
 
     public void AssembleFloor()
     {
-        // Clear any previously assembled chambers
+        // Clear any previously assembled chambers.
+        // Deactivate first so old wall colliders are removed from physics
+        // immediately, then Destroy for proper cleanup at end of frame.
         for (int i = transform.childCount - 1; i >= 0; i--)
-            Destroy(transform.GetChild(i).gameObject);
+        {
+            var child = transform.GetChild(i).gameObject;
+            child.SetActive(false);
+            Destroy(child);
+        }
 
         var library = BuildLibrary(activeTilesetId);
+        Debug.Log($"[FloorAssembler] AssembleFloor: tileset='{activeTilesetId}', " +
+                  $"library has {library.Count} chambers, " +
+                  $"grid=[{string.Join(", ", chamberGrid)}]");
 
+        int chambersPlaced = 0;
         for (int i = 0; i < 8; i++)
         {
             if (i >= chamberGrid.Length) break;
@@ -154,7 +177,13 @@ public class FloorAssembler : MonoBehaviour
             var chamber = Instantiate(prefab, worldOffset, Quaternion.identity, transform);
             ApplyGroundTint(chamber);
             ConfigureChamberLayers(chamber);
+            chambersPlaced++;
         }
+
+        Debug.Log($"[FloorAssembler] Placed {chambersPlaced}/8 chambers.");
+        if (chambersPlaced == 0)
+            Debug.LogError("[FloorAssembler] NO CHAMBERS PLACED — map will be empty! " +
+                           $"Check tileset '{activeTilesetId}' has registered prefabs (Tools > Populate Chamber Library).");
 
         PositionMapBounds();
         SpawnBoundaryWalls();

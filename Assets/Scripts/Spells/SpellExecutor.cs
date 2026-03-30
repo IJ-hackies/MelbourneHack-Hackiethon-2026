@@ -27,7 +27,7 @@ public class SpellExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(SettingsData.Attack))
+        if (Input.GetKey(SettingsData.Attack))
             TryCast();
     }
 

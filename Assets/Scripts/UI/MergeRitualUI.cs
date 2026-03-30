@@ -113,6 +113,15 @@ public class MergeRitualUI : MonoBehaviour
         var bdImg = backdrop.gameObject.AddComponent<Image>();
         bdImg.color = new Color(0f, 0f, 0f, 0.75f);
 
+        // Panel background — black rounded-edge box
+        var panelBg = MakeRT("PanelBg", canvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(panelW + 80f, 600f));
+        var panelImg = panelBg.gameObject.AddComponent<Image>();
+        panelImg.sprite = boxSprite;
+        panelImg.type = Image.Type.Sliced;
+        panelImg.color = new Color(0.06f, 0.06f, 0.08f, 0.94f);
+
         // Title
         MakeTMP("Title", canvasGO.transform,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
