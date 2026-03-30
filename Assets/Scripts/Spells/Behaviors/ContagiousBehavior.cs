@@ -40,12 +40,17 @@ public class ContagiousBehavior : ProjectileBehaviorBase
         weak.cooldown    = ctx.Spell.cooldown;
         weak.element     = ctx.Spell.element;
 
-        Vector2 dir  = ((Vector2)next.transform.position - origin).normalized;
-        var child    = Instantiate(gameObject, origin, Quaternion.identity);
-        // Remove ContagiousBehavior from copy before Init so it can't re-spread
-        var cb = child.GetComponent<ContagiousBehavior>();
-        if (cb != null) Destroy(cb);
-        child.GetComponent<ProjectileHandler>()?.Init(weak, dir, isSplitChild: true);
+        Vector2 dir = ((Vector2)next.transform.position - origin).normalized;
+        GameObject prefab = ctx.ProjectilePrefab;
+        if (prefab == null) return;
+
+        var child   = Instantiate(prefab, origin, Quaternion.identity);
+        var handler = child.GetComponent<ProjectileHandler>();
+        if (handler != null)
+        {
+            handler.sourcePrefab = prefab;
+            handler.Init(weak, dir, isSplitChild: true);
+        }
     }
 
     private static SpellTag[] RemoveContagious(SpellTag[] tags)

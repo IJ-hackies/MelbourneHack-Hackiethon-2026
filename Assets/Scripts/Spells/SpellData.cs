@@ -32,6 +32,7 @@ public class SpellData : ScriptableObject
     [Header("Merge")]
     public bool isMerged;
     public string[] mergedFrom;
+    [HideInInspector] public SpellData[] mergedSourceSpells;
 
     public bool HasTag(SpellTag tag)
     {

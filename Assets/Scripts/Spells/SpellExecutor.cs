@@ -27,8 +27,18 @@ public class SpellExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKey(SettingsData.Attack))
+        if (IsAttackHeld())
             TryCast();
+    }
+
+    private static bool IsAttackHeld()
+    {
+        KeyCode key = SettingsData.Attack;
+        // Input.GetMouseButton is more reliable for held mouse buttons
+        if (key == KeyCode.Mouse0) return Input.GetMouseButton(0);
+        if (key == KeyCode.Mouse1) return Input.GetMouseButton(1);
+        if (key == KeyCode.Mouse2) return Input.GetMouseButton(2);
+        return Input.GetKey(key);
     }
 
     private void TryCast()
@@ -62,15 +72,21 @@ public class SpellExecutor : MonoBehaviour
             dmgMult = 2f;
         }
 
-        if (spell.isMerged)
+        if (spell.isMerged && spell.mergedSourceSpells != null && spell.mergedSourceSpells.Length > 0)
         {
-            if (spell.HasTag(SpellTag.BEAM))                                     HandleBeam(spell, aimDir);
-            if (spell.HasTag(SpellTag.ORBITAL))                                  HandleOrbital(spell);
-            if (spell.HasTag(SpellTag.PROJECTILE) || spell.HasTag(SpellTag.CHANNELED))
+            // Fire each source spell's projectile simultaneously with reduced damage
+            float perSpellMult = dmgMult * 0.5f;
+            foreach (var src in spell.mergedSourceSpells)
             {
-                HandleProjectile(spell, aimDir, damageMultiplier: dmgMult);
-                if (spell.HasTag(SpellTag.DOUBLE_HIT))
-                    HandleProjectile(spell, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir, damageMultiplier: dmgMult);
+                if (src == null) continue;
+                if (src.HasTag(SpellTag.BEAM))      HandleBeam(src, aimDir, perSpellMult);
+                if (src.HasTag(SpellTag.ORBITAL))    HandleOrbital(src);
+                if (src.HasTag(SpellTag.PROJECTILE) || src.HasTag(SpellTag.CHANNELED))
+                {
+                    HandleProjectile(src, aimDir, damageMultiplier: perSpellMult);
+                    if (src.HasTag(SpellTag.DOUBLE_HIT))
+                        HandleProjectile(src, Quaternion.Euler(0, 0, 15f) * (Vector3)aimDir, damageMultiplier: perSpellMult);
+                }
             }
         }
         else
@@ -87,11 +103,29 @@ public class SpellExecutor : MonoBehaviour
 
         // MIRRORED — identical copy fired in the opposite direction
         if (spell.HasTag(SpellTag.MIRRORED))
-            HandleProjectile(spell, -aimDir, damageMultiplier: dmgMult);
+        {
+            if (spell.isMerged && spell.mergedSourceSpells != null)
+            {
+                foreach (var src in spell.mergedSourceSpells)
+                    if (src != null && (src.HasTag(SpellTag.PROJECTILE) || src.HasTag(SpellTag.CHANNELED)))
+                        HandleProjectile(src, -aimDir, damageMultiplier: dmgMult * 0.5f);
+            }
+            else
+                HandleProjectile(spell, -aimDir, damageMultiplier: dmgMult);
+        }
 
         // GHOST_CAST — invisible damage copy alongside the visible spell
         if (spell.HasTag(SpellTag.GHOST_CAST))
-            HandleProjectile(spell, aimDir, isGhost: true, damageMultiplier: dmgMult);
+        {
+            if (spell.isMerged && spell.mergedSourceSpells != null)
+            {
+                foreach (var src in spell.mergedSourceSpells)
+                    if (src != null && (src.HasTag(SpellTag.PROJECTILE) || src.HasTag(SpellTag.CHANNELED)))
+                        HandleProjectile(src, aimDir, isGhost: true, damageMultiplier: dmgMult * 0.5f);
+            }
+            else
+                HandleProjectile(spell, aimDir, isGhost: true, damageMultiplier: dmgMult);
+        }
 
         // ECHOING — re-casts automatically after 3s
         if (spell.HasTag(SpellTag.ECHOING))
@@ -143,47 +177,88 @@ public class SpellExecutor : MonoBehaviour
             var proj    = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
             var handler = proj.GetComponent<ProjectileHandler>();
             if (handler != null)
+            {
+                handler.sourcePrefab = projectilePrefab;
                 handler.Init(spell, shotDir, isGhost: isGhost, damageMultiplier: damageMultiplier);
+            }
         }
     }
 
+    private const int MaxOrbitals = 3;
+
     private void HandleOrbital(SpellData spell)
     {
-        if (orbitalPrefab == null)
-        {
-            Debug.LogWarning("[SpellExecutor] No orbitalPrefab assigned.");
-            return;
-        }
-
         int existing = 0;
         foreach (Transform child in transform)
             if (child.GetComponent<OrbitalMotion>() != null) existing++;
 
-        var orb     = Instantiate(orbitalPrefab, transform.position, Quaternion.identity, transform);
+        if (existing >= MaxOrbitals) return;
+
+        GameObject orb;
+        if (orbitalPrefab != null)
+        {
+            orb = Instantiate(orbitalPrefab, transform.position, Quaternion.identity, transform);
+        }
+        else
+        {
+            // Create orbital dynamically when no prefab is assigned
+            orb = new GameObject("Orbital_" + spell.spellName);
+            orb.transform.SetParent(transform, false);
+            int projLayer = projectilePrefab != null
+                ? projectilePrefab.layer
+                : LayerMask.NameToLayer("PlayerProjectile");
+            if (projLayer >= 0) orb.layer = projLayer;
+
+            var sr = orb.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateCircleSprite();
+            sr.sortingOrder = 5;
+
+            var rb = orb.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+
+            var col = orb.AddComponent<CircleCollider2D>();
+            col.radius = 0.3f;
+            col.isTrigger = true;
+        }
+
         var orbital = orb.GetComponent<OrbitalMotion>() ?? orb.AddComponent<OrbitalMotion>();
         orbital.Init(spell, existing);
     }
 
-    private void HandleBeam(SpellData spell, Vector2 dir)
+    private void HandleBeam(SpellData spell, Vector2 dir, float damageMultiplier = 1f)
     {
         const float BeamRange = 15f;
-        RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, dir, BeamRange, ProjectileHandler.EnemyMask);
+        int wallMask = 1 << 9; // Wall layer
+
+        // Find where the beam ends (wall hit or max range)
+        Vector2 origin = transform.position;
+        RaycastHit2D wallHit = Physics2D.Raycast(origin, dir, BeamRange, wallMask);
+        float beamDist = wallHit.collider != null ? wallHit.distance : BeamRange;
+        Vector2 beamEnd = origin + dir * beamDist;
+
+        float dmg = spell.damage * damageMultiplier;
+
+        // Deal damage to enemies along the beam
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dir, beamDist, ProjectileHandler.EnemyMask);
 
         foreach (var hit in hits)
         {
             var h = hit.collider.GetComponent<Health>();
             if (h == null || h.IsDead) continue;
 
-            h.TakeDamage(spell.damage);
-            SessionLogger.Instance?.RecordDamageDealt(spell.element, spell.damage);
+            h.TakeDamage(dmg);
+            SessionLogger.Instance?.RecordDamageDealt(spell.element, dmg);
 
             if (spell.HasTag(SpellTag.LIFESTEAL))
-                playerHealth?.Heal(spell.damage * 0.3f);
+                playerHealth?.Heal(dmg * 0.3f);
 
             ApplyBeamStatusEffects(spell, hit.collider.gameObject, hit.point);
 
             if (!spell.HasTag(SpellTag.PIERCE)) break;
         }
+
+        // Spawn a visible beam line
+        SpawnBeamVisual(origin, beamEnd, spell);
     }
 
     private void ApplyBeamStatusEffects(SpellData spell, GameObject enemyObj, Vector2 hitPoint)
@@ -234,5 +309,69 @@ public class SpellExecutor : MonoBehaviour
     {
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         return ((Vector2)(mouseWorld - transform.position)).normalized;
+    }
+
+    private void SpawnBeamVisual(Vector2 start, Vector2 end, SpellData spell)
+    {
+        var beamObj = new GameObject("BeamVisual");
+        var lr = beamObj.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.SetPosition(0, start);
+        lr.SetPosition(1, end);
+
+        Color beamColor = ProjectileHandler.GetSpellColor(spell);
+
+        lr.startWidth = 0.25f;
+        lr.endWidth = 0.15f;
+        lr.startColor = beamColor;
+        lr.endColor = beamColor;
+
+        // Use same URP-safe material pattern as HitEffectSpawner
+        lr.material = HitEffectSpawner.GetAdditiveParticleMaterial();
+        lr.sortingLayerName = "Entities";
+        lr.sortingOrder = 200;
+
+        // Fade out over 0.15s
+        StartCoroutine(FadeBeam(lr, beamColor, 0.15f));
+    }
+
+    private IEnumerator FadeBeam(LineRenderer lr, Color color, float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float a = Mathf.Lerp(1f, 0f, t / duration);
+            Color c = new Color(color.r, color.g, color.b, a);
+            lr.startColor = c;
+            lr.endColor = c;
+            lr.startWidth = Mathf.Lerp(0.25f, 0.05f, t / duration);
+            lr.endWidth = Mathf.Lerp(0.15f, 0.02f, t / duration);
+            yield return null;
+        }
+        Destroy(lr.gameObject);
+    }
+
+    private static Sprite circleSprite;
+    private static Sprite CreateCircleSprite()
+    {
+        if (circleSprite != null) return circleSprite;
+        int size = 16;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Point;
+        float center = (size - 1) / 2f;
+        float radiusSq = center * center;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - center, dy = y - center;
+                tex.SetPixel(x, y, dx * dx + dy * dy <= radiusSq
+                    ? Color.white : Color.clear);
+            }
+        tex.Apply();
+        circleSprite = Sprite.Create(tex, new Rect(0, 0, size, size),
+            new Vector2(0.5f, 0.5f), size);
+        return circleSprite;
     }
 }

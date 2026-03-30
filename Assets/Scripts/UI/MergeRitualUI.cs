@@ -356,10 +356,12 @@ public class MergeRitualUI : MonoBehaviour
         previewTags.text = tags.TrimEnd();
 
         float avgSpd = totalSpd / selected.Count;
-        float finalCd = maxCd * 1.5f;
-        previewStats.text = $"DMG: {totalDmg:F0}  (additive)\n" +
+        float finalDmg = totalDmg * 0.5f;
+        float finalCd = maxCd * 2f;
+        previewStats.text = $"DMG: {finalDmg:F0}  (total x 0.5)\n" +
                             $"SPD: {avgSpd:F1}  (average)\n" +
-                            $"CD: {finalCd:F1}  (max x 1.5)";
+                            $"CD: {finalCd:F1}  (max x 2.0)\n" +
+                            $"Fires all {selected.Count} projectiles simultaneously";
 
         // Warning for corruption
         bool hasCorruption = tagSet.Contains(SpellTag.SELF_DAMAGE)

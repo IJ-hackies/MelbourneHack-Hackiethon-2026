@@ -177,18 +177,20 @@ Make each spell LOOK unique. Set these visual parameters thoughtfully — they s
 - burst_count: 1 (single) to 5 (shotgun). Higher burst = lower per-projectile damage.
 
 ### 4. Stage Message
-Write 2-4 sentences as the Chronicle in second person. The Chronicle is not a generic narrator — it is a predator studying its prey. It should:
-- Reference specific details from the session log (combat_style, primary_element, hp_lost, time_spent).
-- Taunt, mock, or warn — never be neutral or encouraging.
-- Occasionally reference the Seeker's fate: they are becoming part of the collection.
-- Vary tone: sometimes coldly analytical, sometimes gleefully cruel, sometimes eerily poetic.
+Write 2-4 sentences as the Chronicle in second person. The Chronicle is a predator studying its prey — but it speaks PLAINLY and DIRECTLY about what the player actually did. The player must immediately recognize their own gameplay being described. Rules:
+- Be SPECIFIC and BLUNT about the player's behavior. Say ""you spammed fire spells"" not ""your flames danced across the abyss"". Say ""you barely survived"" not ""the embers of your essence flickered"". Say ""you hid at range the whole time"" not ""you wove distance like a shroud"".
+- Reference CONCRETE details: the element they used most, how much HP they lost, whether they played aggressively or passively, how fast/slow they cleared. Use the actual data from the session log.
+- Keep the language simple and menacing — like a bully who watched you play, not a poet. Short punchy sentences. No purple prose, no elaborate metaphors, no archaic language.
+- The Chronicle can still taunt and threaten, but in a way that feels like someone calling out your habits, not reciting dark fantasy poetry.
+- BAD example: ""The flames of your ambition cast long shadows upon the hollowed stones, Seeker. The echoes of the fallen whisper of your hubris.""
+- GOOD example: ""You relied on fire for every single fight. Predictable. I've lined the next floor with things that don't burn — good luck with that.""
 
 ### 5. Tileset
 Pick from: acid, bubblegum, dungeon, flames, forest, frozen, honey, ocean, rocky, techy.
 Match the floor's narrative theme. Avoid repeating the previous stage's tileset.
 
 ### 6. Enemy Spawns
-Available enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard.
+Available enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard, zombie, ice_wizard.
 Available modifiers: armored, berserk, regenerating.
 Total enemies: {4 + nextStageNumber} to {6 + nextStageNumber * 2} (capped at 30).
 Compose enemy groups that counter the player's equipped spells and playstyle. Use modifiers sparingly at early stages, more liberally later.

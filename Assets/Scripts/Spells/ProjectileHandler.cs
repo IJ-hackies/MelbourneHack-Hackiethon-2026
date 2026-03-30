@@ -14,6 +14,9 @@ public class ProjectileHandler : MonoBehaviour
 {
     [SerializeField] private GameObject aoePrefab;
 
+    /// <summary>Set by SpellExecutor so fragment behaviors can spawn clean copies.</summary>
+    [HideInInspector] public GameObject sourcePrefab;
+
     // ── State ────────────────────────────────────────────────────────────────
     private ProjectileContext ctx;
     private bool              initialized;
@@ -69,7 +72,7 @@ public class ProjectileHandler : MonoBehaviour
             activeSpell             = boosted;
         }
 
-        ctx = new ProjectileContext(activeSpell, effectiveTags, rb, playerHealth, casterTf, dir, this);
+        ctx = new ProjectileContext(activeSpell, effectiveTags, rb, playerHealth, casterTf, dir, this, sourcePrefab);
 
         // Ghost: invisible but fully damaging
         if (isGhost)

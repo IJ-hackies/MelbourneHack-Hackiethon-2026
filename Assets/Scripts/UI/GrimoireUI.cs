@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -179,39 +180,41 @@ public class GrimoireUI : MonoBehaviour
         detailName = MakeTMP("DName", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 30f),
-            "", detailNameFontSize, Color.white, TextAlignmentOptions.Center);
-        dy -= 28f;
+            "", 32f, Color.white, TextAlignmentOptions.Center);
+        dy -= 30f;
 
         detailElement = MakeTMP("DElement", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 20f),
-            "", detailBodyFontSize, new Color(0.9f, 0.47f, 0f), TextAlignmentOptions.Center);
-        dy -= 25f;
+            new Vector2(rightPageX, dy), new Vector2(pageW, 22f),
+            "", 17f, new Color(0.9f, 0.47f, 0f), TextAlignmentOptions.Center);
+        dy -= 24f;
 
         detailFlavor = MakeTMP("DFlavor", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 50f),
-            "", detailBodyFontSize, new Color(0.35f, 0.35f, 0.35f), TextAlignmentOptions.Center);
+            "", 17f, new Color(0.35f, 0.35f, 0.35f), TextAlignmentOptions.Center);
         detailFlavor.fontStyle = FontStyles.Italic;
         dy -= 50f;
 
         detailCorruptionFlavor = MakeTMP("DCFlavor", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 30f),
-            "", detailBodyFontSize, new Color(0.79f, 0.17f, 0.17f, 0.85f), TextAlignmentOptions.Center);
+            new Vector2(rightPageX, dy), new Vector2(pageW, 28f),
+            "", 17f, new Color(0.79f, 0.17f, 0.17f, 0.85f), TextAlignmentOptions.Center);
         detailCorruptionFlavor.fontStyle = FontStyles.Italic;
-        dy -= 30f;
+        dy -= 28f;
 
         detailTags = MakeTMP("DTags", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 25f),
-            "", detailBodyFontSize, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
-        dy -= 30f;
+            new Vector2(rightPageX, dy), new Vector2(pageW, 85f),
+            "", 15f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.TopLeft);
+        detailTags.textWrappingMode = TMPro.TextWrappingModes.Normal;
+        detailTags.overflowMode = TextOverflowModes.Truncate;
+        dy -= 87f;
 
         detailStats = MakeTMP("DStats", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 25f),
-            "", statsFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+            "", 19f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         dy -= 42f;
 
         // Equip slot buttons (1 / 2 / 3)
@@ -401,16 +404,92 @@ public class GrimoireUI : MonoBehaviour
 
         string tags = "";
         if (spell.tags != null)
-            foreach (var t in spell.tags) tags += t + "  ";
+            foreach (var t in spell.tags)
+            {
+                string desc = GetTagDescription(t);
+                if (desc != null) tags += $"• {desc}\n";
+            }
         detailTags.text = tags.TrimEnd();
 
         detailStats.text = $"DMG: {spell.damage:F0}   SPD: {spell.speed:F1}   CD: {spell.cooldown:F1}";
+        detailStats.color = isCorrupted
+            ? new Color(0.79f, 0.17f, 0.17f)
+            : new Color(0.2f, 0.2f, 0.2f);
     }
 
     private void OnEquipToSlot(int slot)
     {
         if (selectedSpell == null) return;
         Grimoire.Instance?.EquipToSlot(selectedSpell, slot);
+    }
+
+    // ── Tag Descriptions ────────────────────────────────────────────────────
+
+    private static readonly Dictionary<SpellTag, string> tagDescriptions = new()
+    {
+        // Movement
+        { SpellTag.PROJECTILE, "Fires a projectile" },
+        { SpellTag.ORBITAL, "Orbits around you" },
+        { SpellTag.BEAM, "Instant beam attack" },
+        { SpellTag.CHANNELED, "Steerable while held" },
+        // Trajectory
+        { SpellTag.HOMING, "Homes toward enemies" },
+        { SpellTag.WALL_BOUNCE, "Bounces off walls (3x)" },
+        { SpellTag.REFLECTING, "Bounces off walls endlessly" },
+        { SpellTag.PIERCE_WALLS, "Passes through walls" },
+        { SpellTag.SPIRAL, "Corkscrews through the air" },
+        { SpellTag.STUTTER_MOTION, "Stop-start movement" },
+        { SpellTag.BOOMERANG, "Returns to you" },
+        { SpellTag.SURFACE_CRAWLING, "Slides along walls" },
+        { SpellTag.SKIPPING, "Bounces along the ground" },
+        { SpellTag.DELAYED_ARC, "Swells at midpoint, then accelerates" },
+        { SpellTag.SENTIENT, "Hunts enemies on its own" },
+        { SpellTag.DELAYED, "Activates after a delay" },
+        { SpellTag.PHASING, "Phases in and out of reality" },
+        { SpellTag.PERSISTENT, "Stays until it hits something" },
+        // Caster
+        { SpellTag.DOUBLE_HIT, "Fires a second copy" },
+        { SpellTag.MIRRORED, "Also fires backwards" },
+        { SpellTag.GHOST_CAST, "Fires an invisible damage copy" },
+        { SpellTag.SACRIFICE, "Costs HP, deals 2x damage" },
+        { SpellTag.ECHOING, "Re-casts itself after 3s" },
+        // On impact
+        { SpellTag.CHAIN, "Jumps between enemies" },
+        { SpellTag.FRAGMENTING, "Shatters into fragments on hit" },
+        { SpellTag.AOE_BURST, "Explodes on hit" },
+        { SpellTag.PIERCE, "Passes through enemies" },
+        { SpellTag.LIFESTEAL, "Heals you on hit" },
+        { SpellTag.PUSH, "Knocks enemies back" },
+        { SpellTag.PULL, "Pulls enemies toward you" },
+        { SpellTag.DETONATING, "Embeds then explodes" },
+        { SpellTag.LINGERING, "Leaves a damage zone" },
+        { SpellTag.SWAPPING, "Teleports you to impact" },
+        { SpellTag.CONTAGIOUS, "Spreads to nearby enemies" },
+        { SpellTag.BURROWING, "Burrows then erupts under enemies" },
+        { SpellTag.TETHERED, "Tethers and pulls enemy to you" },
+        { SpellTag.SPLIT_ON_IMPACT, "Splits into 3 on hit" },
+        // Status
+        { SpellTag.SLOW, "Slows enemies" },
+        { SpellTag.BURN, "Burns over time" },
+        { SpellTag.FREEZE, "Freezes enemies" },
+        { SpellTag.STUN, "Stuns enemies" },
+        { SpellTag.POISON, "Poisons (stacks 3x)" },
+        { SpellTag.BLEED, "Escalating bleed damage" },
+        { SpellTag.ROOT, "Roots enemies in place" },
+        { SpellTag.WEAKNESS, "Enemies take more damage" },
+        { SpellTag.CURSE, "Enemies flee in fear" },
+        { SpellTag.BLIND, "Blinds enemies" },
+        // Corruption
+        { SpellTag.SELF_DAMAGE, "Hurts you on cast" },
+        { SpellTag.ENEMY_HOMING, "Homes toward YOU" },
+        { SpellTag.REVERSED_CONTROLS, "Aim is reversed" },
+        // Meta
+        { SpellTag.PROBABILITY, "Random effect each cast" },
+    };
+
+    private static string GetTagDescription(SpellTag tag)
+    {
+        return tagDescriptions.TryGetValue(tag, out var desc) ? desc : null;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

@@ -10,9 +10,13 @@ public class OrbitalMotion : MonoBehaviour
 {
     private SpellData spell;
     private float angle;
+    private float lifetime;
+    private float spawnTime;
     private const float radius = 1.5f;
     private const float orbitSpeed = 200f; // degrees per second
     private const float damageCooldown = 0.6f;
+    private const float DefaultLifetime = 6f;
+    private const float MaxScale = 1.5f;
 
     // Per-enemy cooldown so the orbital doesn't deal damage every frame
     private readonly Dictionary<GameObject, float> hitCooldowns = new();
@@ -30,22 +34,45 @@ public class OrbitalMotion : MonoBehaviour
     {
         spell = spellData;
         angle = orbitIndex * 120f; // space up to 3 orbitals 120° apart
+        spawnTime = Time.time;
+        lifetime = DefaultLifetime;
 
         // Apply Gemini-controlled visuals
         Color primary = !string.IsNullOrEmpty(spell.projectileColor)
             && ColorUtility.TryParseHtmlString(spell.projectileColor.StartsWith("#") ? spell.projectileColor : "#" + spell.projectileColor, out Color pc)
             ? pc : ProjectileHandler.ElementToColor(spell.element);
 
-        float scale = Mathf.Clamp(spell.projectileScale > 0f ? spell.projectileScale : 1f, 0.3f, 4f);
+        float scale = Mathf.Clamp(spell.projectileScale > 0f ? spell.projectileScale : 1f, 0.3f, MaxScale);
         transform.localScale = Vector3.one * scale;
 
-        float glowSize = Mathf.Clamp(spell.glowSize > 0f ? spell.glowSize : 0.35f, 0.1f, 2f);
+        float glowSize = Mathf.Clamp(spell.glowSize > 0f ? spell.glowSize : 0.35f, 0.1f, 1f);
         HitEffectSpawner.AddGlowSprite(transform, primary, glowSize, 5);
     }
 
     private void Update()
     {
         if (spell == null) return;
+
+        float elapsed = Time.time - spawnTime;
+        if (elapsed >= lifetime)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        // Fade out during the last second
+        float fadeStart = lifetime - 1f;
+        if (elapsed > fadeStart)
+        {
+            float alpha = 1f - (elapsed - fadeStart);
+            var sr = GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                Color c = sr.color;
+                c.a = alpha;
+                sr.color = c;
+            }
+        }
 
         angle += orbitSpeed * Time.deltaTime;
         float rad = angle * Mathf.Deg2Rad;
