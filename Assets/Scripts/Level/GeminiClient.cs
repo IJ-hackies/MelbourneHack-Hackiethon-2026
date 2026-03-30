@@ -100,26 +100,20 @@ public class GeminiClient : MonoBehaviour
 
     private IEnumerator GenerateFreeTextCoroutine(string prompt, Action<string> onComplete)
     {
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            onComplete?.Invoke(null);
-            yield break;
-        }
-
         string escaped = EscapeJson(prompt);
-        string body = $@"{{
+        string geminiBody = $@"{{
   ""contents"": [{{""role"":""user"",""parts"":[{{""text"":""{escaped}""}}]}}],
   ""generationConfig"": {{""maxOutputTokens"": 250, ""temperature"": 0.9}}
 }}";
+        string body = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
 
-        using var request = new UnityWebRequest(Endpoint, "POST");
-        request.SetRequestHeader("x-goog-api-key", apiKey);
+        using var request = new UnityWebRequest(proxyUrl, "POST");
         request.SetRequestHeader("Content-Type", "application/json");
         request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
         request.downloadHandler = new DownloadHandlerBuffer();
         request.timeout         = timeoutSeconds;
 
-        Debug.Log("[GeminiClient] Requesting free-text narration...");
+        Debug.Log("[GeminiClient] Requesting free-text narration via proxy...");
         yield return request.SendWebRequest();
 
         if (request.result != UnityWebRequest.Result.Success)

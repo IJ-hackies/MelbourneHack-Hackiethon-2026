@@ -19,6 +19,11 @@ public class MergeCutscene : MonoBehaviour
     [SerializeField] private float celebrationDuration = 1.2f;
     [SerializeField] private float outroDuration       = 0.5f;
 
+    [Header("Ritual SFX")]
+    [Tooltip("Plays at cutscene start. Spin phase is timed to end when this clip does.")]
+    [SerializeField] private AudioClip ritualClip;
+    [SerializeField, Range(0f, 1f)] private float ritualVolume = 1f;
+
     [Header("Layout")]
     [SerializeField] private float iconSize    = 220f;
     [SerializeField] private float startSpread = 520f;
@@ -59,6 +64,18 @@ public class MergeCutscene : MonoBehaviour
         Color[] srcColors  = GetSpellColors(sources);
         Color   mergedColor = ParseColor(merged?.projectileColor, new Color(0.7f, 0.4f, 1f));
 
+        // Spin duration: driven by ritual clip length so the merge flash fires
+        // exactly when the clip ends. Falls back to minimumSpinDuration if no clip.
+        float spinDuration = ritualClip != null
+            ? Mathf.Max(ritualClip.length - introFadeDuration, 0.5f)
+            : minimumSpinDuration;
+
+        // Pause dungeon music for the duration of the cutscene
+        MusicManager.Instance?.Pause();
+
+        // Play ritual SFX at the very start
+        SFXManager.Instance?.PlayUI(ritualClip, ritualVolume);
+
         // Per-icon accumulated rotation angles (tracked separately to avoid
         // reading localEulerAngles, which can flip sign unexpectedly)
         float[] angles = new float[sourceIcons.Count];
@@ -79,10 +96,10 @@ public class MergeCutscene : MonoBehaviour
         Vector2[] startPos = GetStartPositions(sourceIcons.Count);
         float spinElapsed  = 0f;
 
-        while (spinElapsed < minimumSpinDuration || !isIconReady())
+        while (spinElapsed < spinDuration || !isIconReady())
         {
             spinElapsed += Time.unscaledDeltaTime;
-            float progress = spinElapsed / minimumSpinDuration;
+            float progress = spinElapsed / spinDuration;
 
             // Approach curve: slow for first 70%, fast for last 30%
             float approach = progress < 0.7f
@@ -206,6 +223,7 @@ public class MergeCutscene : MonoBehaviour
 
         canvasGO.SetActive(false);
         Cleanup();
+        MusicManager.Instance?.Resume();
         onComplete?.Invoke();
     }
 

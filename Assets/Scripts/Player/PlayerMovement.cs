@@ -8,10 +8,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
 
     [Header("Dash")]
-    [SerializeField] private float dashDistance  = 3f;
-    [SerializeField] private float dashDuration  = 0.12f;
-    [SerializeField] private float dashCooldown  = 1.5f;
-    [SerializeField] private float iFrameDuration = 0.25f;
+    [SerializeField] private float     dashDistance   = 3f;
+    [SerializeField] private float     dashDuration   = 0.12f;
+    [SerializeField] private float     dashCooldown   = 1.5f;
+    [SerializeField] private float     iFrameDuration = 0.25f;
+    [SerializeField] private AudioClip dashClip;
+    [SerializeField] [Range(0f, 1f)] private float dashAudioVolume = 1f;
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -28,8 +30,9 @@ public class PlayerMovement : MonoBehaviour
     private float dashCooldownTimer;
     private Health playerHealth;
 
-    public bool  IsDashing       => isDashing;
-    public float DashCooldownPct => dashCooldown > 0f ? Mathf.Clamp01(dashCooldownTimer / dashCooldown) : 0f;
+    public bool  IsDashing              => isDashing;
+    public float DashCooldownPct       => dashCooldown > 0f ? Mathf.Clamp01(dashCooldownTimer / dashCooldown) : 0f;
+    public float DashCooldownRemaining => Mathf.Max(0f, dashCooldownTimer);
 
     private void Awake()
     {
@@ -65,6 +68,9 @@ public class PlayerMovement : MonoBehaviour
     {
         isDashing = true;
         dashCooldownTimer = dashCooldown;
+
+        if (dashClip != null)
+            AudioSource.PlayClipAtPoint(dashClip, transform.position, dashAudioVolume);
 
         // Use current move direction, or last facing if standing still
         Vector2 dashDir = moveInput != Vector2.zero ? moveInput : lastDirection;

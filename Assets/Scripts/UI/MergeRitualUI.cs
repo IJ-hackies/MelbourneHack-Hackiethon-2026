@@ -50,8 +50,12 @@ public class MergeRitualUI : MonoBehaviour
     private Button mergeBtn;
     private TMP_Text mergeBtnText;
     private RectTransform mergeBtnRT;
-    private Image mergeBtnGlow;
-    private ParticleSystem mergeParticles;
+    private Image mergeBtnImg;
+    private RawImage mergeBtnGlow;
+    private Image[] mergeSparkles;
+    private float[] mergeSparkleAngles;
+
+    private static Texture2D _mergeGlowTex;
 
     private class MergeRowUI
     {
@@ -102,7 +106,6 @@ public class MergeRitualUI : MonoBehaviour
     private void OnDestroy()
     {
         if (canvasGO != null) Destroy(canvasGO);
-        if (mergeParticles != null) Destroy(mergeParticles.gameObject);
     }
 
     // ── Build ────────────────────────────────────────────────────────────────
@@ -211,24 +214,24 @@ public class MergeRitualUI : MonoBehaviour
             "", 14f, new Color(0.79f, 0.17f, 0.17f, 0.8f), TextAlignmentOptions.Center);
         previewWarning.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
-        // Bottom buttons — glow behind merge button, then button on top
+        // Bottom buttons — soft radial glow behind merge button, then button on top
         var glowRT = MakeRT("MergeBtnGlow", panelRoot,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(-75f, 225f), new Vector2(260f, 100f));
-        mergeBtnGlow = glowRT.gameObject.AddComponent<Image>();
-        mergeBtnGlow.sprite = buttonSprite;
-        mergeBtnGlow.type = Image.Type.Sliced;
+            new Vector2(-110f, 225f), new Vector2(340f, 160f));
+        mergeBtnGlow = glowRT.gameObject.AddComponent<RawImage>();
+        mergeBtnGlow.texture = GetMergeGlowTexture();
         mergeBtnGlow.color = new Color(0.7f, 0.1f, 1f, 0f);
+        mergeBtnGlow.raycastTarget = false;
 
         mergeBtnRT = MakeRT("MergeBtn", panelRoot,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(-75f, 225f), new Vector2(210f, 70f));
-        var mImg = mergeBtnRT.gameObject.AddComponent<Image>();
-        mImg.sprite = buttonSprite;
-        mImg.type = Image.Type.Sliced;
-        mImg.color = new Color(0.44f, 0.28f, 0.63f);
+            new Vector2(-110f, 225f), new Vector2(220f, 70f));
+        mergeBtnImg = mergeBtnRT.gameObject.AddComponent<Image>();
+        mergeBtnImg.sprite = buttonSprite;
+        mergeBtnImg.type = Image.Type.Sliced;
+        mergeBtnImg.color = new Color(0.44f, 0.28f, 0.63f);
         mergeBtn = mergeBtnRT.gameObject.AddComponent<Button>();
-        mergeBtn.targetGraphic = mImg;
+        mergeBtn.targetGraphic = mergeBtnImg;
         mergeBtn.onClick.AddListener(OnMergeClick);
         mergeBtnRT.gameObject.AddComponent<UIButtonHover>();
 
@@ -237,36 +240,22 @@ public class MergeRitualUI : MonoBehaviour
             Vector2.zero, Vector2.zero,
             "Perform Ritual", 20f, Color.white, TextAlignmentOptions.Center);
 
-        // Particles (world-space, repositioned each frame to track button)
-        var psGO = new GameObject("MergeParticles");
-        mergeParticles = psGO.AddComponent<ParticleSystem>();
-        var psMain = mergeParticles.main;
-        psMain.loop = true;
-        psMain.startLifetime = 1.2f;
-        psMain.startSpeed = 80f;
-        psMain.startSize = new ParticleSystem.MinMaxCurve(4f, 9f);
-        psMain.startColor = new ParticleSystem.MinMaxGradient(
-            new Color(0.7f, 0.2f, 1f, 1f), new Color(0.9f, 0.5f, 1f, 0.8f));
-        psMain.gravityModifier = -0.3f;
-        psMain.simulationSpace = ParticleSystemSimulationSpace.World;
-        psMain.maxParticles = 60;
-        var psEmit = mergeParticles.emission;
-        psEmit.rateOverTime = 18f;
-        var psShape = mergeParticles.shape;
-        psShape.shapeType = ParticleSystemShapeType.Rectangle;
-        psShape.scale = new Vector3(1.6f, 0.4f, 1f);
-        var psCol = mergeParticles.colorOverLifetime;
-        psCol.enabled = true;
-        var grad = new Gradient();
-        grad.SetKeys(
-            new[] { new GradientColorKey(new Color(0.8f, 0.3f, 1f), 0f), new GradientColorKey(new Color(0.6f, 0.1f, 0.9f), 1f) },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
-        psCol.color = grad;
-        mergeParticles.Stop();
+        // Sparkle dots that orbit the merge button when active
+        mergeSparkles = new Image[6];
+        mergeSparkleAngles = new float[] { 0f, 60f, 120f, 180f, 240f, 300f };
+        for (int i = 0; i < 6; i++)
+        {
+            var sparkleRT = MakeRT($"Sparkle_{i}", panelRoot,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(-110f, 225f), new Vector2(10f, 10f));
+            mergeSparkles[i] = sparkleRT.gameObject.AddComponent<Image>();
+            mergeSparkles[i].color = new Color(0.9f, 0.5f, 1f, 0f);
+            mergeSparkles[i].raycastTarget = false;
+        }
 
         var skipBtnRT = MakeRT("SkipBtn", panelRoot,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(120f, 225f), new Vector2(150f, 70f));
+            new Vector2(145f, 225f), new Vector2(130f, 70f));
         var sImg = skipBtnRT.gameObject.AddComponent<Image>();
         sImg.sprite = buttonSprite;
         sImg.type = Image.Type.Sliced;
@@ -288,24 +277,43 @@ public class MergeRitualUI : MonoBehaviour
     {
         if (!isOpen || mergeBtn == null) return;
 
-        // Pulse the glow when button is active
+        bool active = mergeBtn.interactable;
+
+        // Radial glow — dramatic pulse when active
         if (mergeBtnGlow != null)
         {
-            float a = mergeBtn.interactable
-                ? (Mathf.Sin(Time.unscaledTime * 4f) * 0.3f + 0.45f)
-                : 0f;
+            float a = active ? (Mathf.Sin(Time.unscaledTime * 3.5f) * 0.35f + 0.55f) : 0f;
             mergeBtnGlow.color = new Color(0.7f, 0.1f, 1f, a);
         }
 
-        // Keep particles positioned over the merge button
-        if (mergeParticles != null && mergeBtnRT != null && Camera.main != null)
+        // Button scale pulse when active
+        if (mergeBtnRT != null)
         {
-            Vector3[] corners = new Vector3[4];
-            mergeBtnRT.GetWorldCorners(corners);
-            Vector3 screenCenter = (corners[0] + corners[2]) * 0.5f;
-            // For Screen Space Overlay the corners are screen pixels (z=0); convert to world
-            screenCenter.z = -Camera.main.transform.position.z;
-            mergeParticles.transform.position = Camera.main.ScreenToWorldPoint(screenCenter);
+            float pulse = active ? (1f + Mathf.Sin(Time.unscaledTime * 3f) * 0.03f) : 1f;
+            mergeBtnRT.localScale = new Vector3(pulse, pulse, 1f);
+        }
+
+        // Sparkle dots orbiting the button elliptically
+        if (mergeSparkles != null)
+        {
+            for (int i = 0; i < mergeSparkles.Length; i++)
+            {
+                if (mergeSparkles[i] == null) continue;
+                if (active)
+                {
+                    mergeSparkleAngles[i] += 55f * Time.unscaledDeltaTime;
+                    float rad = mergeSparkleAngles[i] * Mathf.Deg2Rad;
+                    float x = -110f + Mathf.Cos(rad) * 116f;
+                    float y = 225f + Mathf.Sin(rad) * 38f;
+                    mergeSparkles[i].rectTransform.anchoredPosition = new Vector2(x, y);
+                    float alpha = Mathf.Sin(Time.unscaledTime * 4f + i * 1.05f) * 0.3f + 0.7f;
+                    mergeSparkles[i].color = new Color(0.9f, 0.5f, 1f, alpha);
+                }
+                else
+                {
+                    mergeSparkles[i].color = new Color(0.9f, 0.5f, 1f, 0f);
+                }
+            }
         }
     }
 
@@ -407,11 +415,10 @@ public class MergeRitualUI : MonoBehaviour
         mergeBtn.interactable = valid;
         mergeBtnText.color = valid ? Color.white : new Color(1f, 1f, 1f, 0.3f);
 
-        if (mergeParticles != null)
-        {
-            if (valid && !mergeParticles.isPlaying) mergeParticles.Play();
-            else if (!valid && mergeParticles.isPlaying) { mergeParticles.Stop(); mergeParticles.Clear(); }
-        }
+        if (mergeBtnImg != null)
+            mergeBtnImg.color = valid
+                ? new Color(0.58f, 0.18f, 0.88f)
+                : new Color(0.44f, 0.28f, 0.63f);
 
         if (!valid)
         {
@@ -567,5 +574,23 @@ public class MergeRitualUI : MonoBehaviour
         rt.anchoredPosition = pos;
         rt.sizeDelta = size;
         return rt;
+    }
+
+    private static Texture2D GetMergeGlowTexture()
+    {
+        if (_mergeGlowTex != null) return _mergeGlowTex;
+        const int size = 64;
+        _mergeGlowTex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float r = (size - 1) / 2f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float dist = Mathf.Sqrt((x - r) * (x - r) + (y - r) * (y - r)) / r;
+            float a = Mathf.Clamp01(1f - dist);
+            a = a * a; // quadratic falloff — bright centre, soft transparent edge
+            _mergeGlowTex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+        }
+        _mergeGlowTex.Apply();
+        return _mergeGlowTex;
     }
 }

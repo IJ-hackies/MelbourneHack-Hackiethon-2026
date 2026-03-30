@@ -56,6 +56,18 @@ public class MusicManager : MonoBehaviour
         StartFade(FadeOutCoroutine());
     }
 
+    /// <summary>Fades out and pauses — preserves playback position for Resume().</summary>
+    public void Pause()
+    {
+        StartFade(FadePauseCoroutine());
+    }
+
+    /// <summary>Unpauses and fades back in to the previous target volume.</summary>
+    public void Resume()
+    {
+        StartFade(FadeResumeCoroutine());
+    }
+
     private void StartFade(IEnumerator fade)
     {
         if (activeFade != null) StopCoroutine(activeFade);
@@ -88,6 +100,35 @@ public class MusicManager : MonoBehaviour
         }
         audioSource.volume = 0f;
         audioSource.Stop();
+        activeFade = null;
+    }
+
+    private IEnumerator FadePauseCoroutine()
+    {
+        float startVolume = audioSource.volume;
+        float elapsed = 0f;
+        while (elapsed < fadeOutDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            audioSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / fadeOutDuration);
+            yield return null;
+        }
+        audioSource.volume = 0f;
+        audioSource.Pause();
+        activeFade = null;
+    }
+
+    private IEnumerator FadeResumeCoroutine()
+    {
+        audioSource.UnPause();
+        float elapsed = 0f;
+        while (elapsed < fadeInDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            audioSource.volume = Mathf.Lerp(0f, targetVolume, elapsed / fadeInDuration);
+            yield return null;
+        }
+        audioSource.volume = targetVolume;
         activeFade = null;
     }
 

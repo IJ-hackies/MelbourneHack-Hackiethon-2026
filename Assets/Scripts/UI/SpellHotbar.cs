@@ -31,7 +31,9 @@ public class SpellHotbar : MonoBehaviour
     // Dash cooldown indicator
     private Image          dashCooldownOverlay;
     private TMP_Text       dashKeyText;
+    private TMP_Text       dashCenterLabel;
     private PlayerMovement cachedPlayer;
+
 
     private class SlotUI
     {
@@ -39,6 +41,7 @@ public class SpellHotbar : MonoBehaviour
         public Image bg;
         public Image icon;
         public Image cooldownOverlay;
+        public TMP_Text cooldownText;
         public TMP_Text nameText;
         public TMP_Text keyText;
     }
@@ -114,19 +117,27 @@ public class SpellHotbar : MonoBehaviour
             slot.icon.raycastTarget = false;
             slot.icon.enabled = false; // hidden until a spell with an icon is equipped
 
-            // Cooldown overlay — dark fill that shrinks from top
+            // Cooldown overlay — radial sweep (clock-wipe style)
             var coolRT = MakeRT("Cooldown", slot.root,
                 new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, Vector2.zero);
             coolRT.offsetMin = Vector2.zero;
             coolRT.offsetMax = Vector2.zero;
             slot.cooldownOverlay = coolRT.gameObject.AddComponent<Image>();
-            slot.cooldownOverlay.color = new Color(0f, 0f, 0f, 0.45f);
+            slot.cooldownOverlay.color = new Color(0f, 0f, 0f, 0.55f);
             slot.cooldownOverlay.raycastTarget = false;
             slot.cooldownOverlay.type = Image.Type.Filled;
-            slot.cooldownOverlay.fillMethod = Image.FillMethod.Vertical;
-            slot.cooldownOverlay.fillOrigin = 0; // bottom-up
+            slot.cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+            slot.cooldownOverlay.fillOrigin = 2; // top, sweeps clockwise
+            slot.cooldownOverlay.fillClockwise = true;
             slot.cooldownOverlay.fillAmount = 0f;
+
+            // Cooldown countdown text — centered, shown only while on cooldown
+            slot.cooldownText = MakeText($"CooldownText_{i}", slot.root,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(slotSize, slotSize),
+                "", nameFontSize + 2f, Color.white, TextAlignmentOptions.Center);
+            slot.cooldownText.gameObject.SetActive(false);
 
             // Key label above slot — shows current binding from SettingsData
             slot.keyText = MakeText($"Key_{i}", slot.root,
@@ -162,13 +173,7 @@ public class SpellHotbar : MonoBehaviour
         bg.color = new Color(0.3f, 0.3f, 0.3f, 0.7f);
         if (slotSprite != null) { bg.sprite = slotSprite; bg.color = new Color(1f, 1f, 1f, 0.6f); }
 
-        // Dash label (centered in slot)
-        MakeText("DashLabel", root,
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(dashSize, dashSize * 0.5f),
-            "DASH", nameFontSize, Color.black, TextAlignmentOptions.Center);
-
-        // Cooldown overlay
+        // Cooldown overlay — radial sweep (clock-wipe style)
         var coolRT = MakeRT("DashCooldown", root,
             new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero);
@@ -178,9 +183,16 @@ public class SpellHotbar : MonoBehaviour
         dashCooldownOverlay.color = new Color(0f, 0f, 0f, 0.55f);
         dashCooldownOverlay.raycastTarget = false;
         dashCooldownOverlay.type = Image.Type.Filled;
-        dashCooldownOverlay.fillMethod = Image.FillMethod.Vertical;
-        dashCooldownOverlay.fillOrigin = 0;
+        dashCooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+        dashCooldownOverlay.fillOrigin = 2; // top, sweeps clockwise
+        dashCooldownOverlay.fillClockwise = true;
         dashCooldownOverlay.fillAmount = 0f;
+
+        // Center label — shows "DASH" when ready, remaining seconds when on cooldown
+        dashCenterLabel = MakeText("DashLabel", root,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(dashSize, dashSize * 0.7f),
+            "DASH", nameFontSize, Color.white, TextAlignmentOptions.Center);
 
         // Key label above slot
         dashKeyText = MakeText("DashKey", root,
@@ -239,20 +251,32 @@ public class SpellHotbar : MonoBehaviour
             if (spell == null)
             {
                 slots[i].cooldownOverlay.fillAmount = 0f;
+                slots[i].cooldownText.gameObject.SetActive(false);
                 continue;
             }
 
             float remaining = grimoire.GetCooldownRemaining(i);
-            slots[i].cooldownOverlay.fillAmount = remaining > 0f
-                ? remaining / spell.cooldown
-                : 0f;
+            bool onCooldown = remaining > 0f;
+            slots[i].cooldownOverlay.fillAmount = onCooldown ? remaining / spell.cooldown : 0f;
+            slots[i].cooldownText.gameObject.SetActive(onCooldown);
+            if (onCooldown)
+                slots[i].cooldownText.text = remaining.ToString("F1");
         }
 
         // Dash cooldown
         if (dashCooldownOverlay != null)
         {
             if (cachedPlayer == null) cachedPlayer = FindAnyObjectByType<PlayerMovement>();
-            dashCooldownOverlay.fillAmount = cachedPlayer != null ? cachedPlayer.DashCooldownPct : 0f;
+            float dashPct = cachedPlayer != null ? cachedPlayer.DashCooldownPct : 0f;
+            bool dashOnCooldown = dashPct > 0f;
+            dashCooldownOverlay.fillAmount = dashPct;
+            if (dashCenterLabel != null)
+            {
+                dashCenterLabel.text = dashOnCooldown
+                    ? cachedPlayer.DashCooldownRemaining.ToString("F1")
+                    : "DASH";
+                dashCenterLabel.color = dashOnCooldown ? Color.white : new Color(1f, 1f, 1f, 0.85f);
+            }
         }
 
         // Also refresh active slot highlight (key press may not fire event if slot already active)

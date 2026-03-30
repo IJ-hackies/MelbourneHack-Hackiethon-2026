@@ -90,6 +90,12 @@ public abstract class EnemyBase : MonoBehaviour
     protected Vector2 currentDir = Vector2.down;
     protected string  currentClip = "";
 
+    // ── Hit Flash ─────────────────────────────────────────────────────────────
+    private static readonly Color HitFlashColor = new Color(1f, 0.15f, 0.15f, 1f);
+    private const float HitFlashDuration = 0.10f;
+    private Color     _originalSpriteColor;
+    private Coroutine _hitFlashCoroutine;
+
     public Health HealthComponent => health;
     public bool   IsDead          => health != null && health.IsDead;
 
@@ -118,6 +124,7 @@ public abstract class EnemyBase : MonoBehaviour
         health   = GetComponent<Health>();
         seeker   = GetComponent<Seeker>();
         sr       = GetComponent<SpriteRenderer>();
+        if (sr != null) _originalSpriteColor = sr.color;
 
         // Auto-attach health bar and push the serialized barColor directly (avoids abstract-type GetComponent timing issues)
         if (GetComponent<EnemyHealthBar>() == null)
@@ -140,6 +147,7 @@ public abstract class EnemyBase : MonoBehaviour
         }
 
         health.OnDeath.AddListener(OnDeath);
+        health.OnDamaged.AddListener(_ => TriggerHitFlash());
         LoadRotationSprites();
         EnsureSafeSpawnDistance();
         EnterWander();
@@ -517,6 +525,22 @@ public abstract class EnemyBase : MonoBehaviour
         if (playerHp == null || playerHp.IsDead) return;
         playerHp.TakeDamage(amount);
         SessionLogger.Instance?.RecordDamageTaken(source, amount);
+    }
+
+    // ── Hit Flash ─────────────────────────────────────────────────────────────
+    private void TriggerHitFlash()
+    {
+        if (sr == null || health.IsDead) return;
+        if (_hitFlashCoroutine != null) StopCoroutine(_hitFlashCoroutine);
+        _hitFlashCoroutine = StartCoroutine(HitFlash());
+    }
+
+    private IEnumerator HitFlash()
+    {
+        sr.color = HitFlashColor;
+        yield return new WaitForSeconds(HitFlashDuration);
+        if (sr != null) sr.color = _originalSpriteColor;
+        _hitFlashCoroutine = null;
     }
 
     protected abstract void Attack();

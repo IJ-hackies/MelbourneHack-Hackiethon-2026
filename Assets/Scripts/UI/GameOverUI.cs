@@ -87,7 +87,7 @@ public class GameOverUI : MonoBehaviour
         _narrationReady      = false;
         _waitingForNarration = false;
 
-        if (GeminiClient.Instance != null && GeminiClient.Instance.HasApiKey)
+        if (GeminiClient.Instance != null)
         {
             string prompt = BuildDeathPrompt(stageReached, sessionLogJson, spellList);
             GeminiClient.Instance.GenerateFreeText(prompt, text =>

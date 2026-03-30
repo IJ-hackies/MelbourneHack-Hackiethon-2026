@@ -31,6 +31,10 @@ public class StageDirector : MonoBehaviour
     [Header("Spell Icons")]
     [SerializeField] private Sprite starterSpellIcon;  // StarterSpell.png — drag in Inspector
 
+    [Header("Dungeon Start SFX")]
+    [SerializeField] private AudioClip dungeonStartClip;
+    [SerializeField, Range(0f, 1f)] private float dungeonStartVolume = 1f;
+
     [Header("Pre-generation")]
     [Tooltip("Start Gemini call when this fraction of enemies are dead.")]
     [SerializeField] [Range(0.3f, 0.9f)] private float pregenThreshold = 0.5f;
@@ -174,6 +178,10 @@ public class StageDirector : MonoBehaviour
         hudIconBar?.SetStage(stageNumber);
         hudIconBar?.RefreshEnemyCount();
         playerHpBeforeStage = playerHealth != null ? playerHealth.Current : 100f;
+
+        // Play dungeon start SFX on every floor except stage 1 (stage 1 comes from IntroCutscene)
+        if (stageNumber > 1)
+            SFXManager.Instance?.PlayUI(dungeonStartClip, dungeonStartVolume);
 
         // Load floor via FloorAssembler
         floorAssembler.LoadManifest(manifest);
