@@ -181,6 +181,7 @@ public class HudIconBar : MonoBehaviour
         var btn = rt.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
         btn.onClick.AddListener(onClick);
+        rt.gameObject.AddComponent<UIButtonHover>();
 
         // Fallback letter if no sprite
         if (icon == null && font != null)
@@ -227,6 +228,7 @@ public class HudIconBar : MonoBehaviour
         var btn = rt.gameObject.AddComponent<Button>();
         btn.targetGraphic = img;
         btn.onClick.AddListener(onClick);
+        rt.gameObject.AddComponent<UIButtonHover>();
 
         if (icon == null && font != null)
         {

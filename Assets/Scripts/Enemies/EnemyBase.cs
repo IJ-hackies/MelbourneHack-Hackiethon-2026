@@ -122,6 +122,9 @@ public abstract class EnemyBase : MonoBehaviour
         // Auto-attach health bar and push the serialized barColor directly (avoids abstract-type GetComponent timing issues)
         if (GetComponent<EnemyHealthBar>() == null)
             gameObject.AddComponent<EnemyHealthBar>().SetThemeColor(barColor);
+
+        if (GetComponent<EnemyOutline>() == null)
+            gameObject.AddComponent<EnemyOutline>();
     }
 
     protected virtual void Start()
@@ -520,6 +523,8 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void OnDeath()
     {
+        SFXManager.Instance?.PlayEnemyDeath(transform.position);
+
         // Disable all colliders immediately — dead bodies shouldn't block movement or projectiles
         foreach (var col in GetComponentsInChildren<Collider2D>())
             col.enabled = false;

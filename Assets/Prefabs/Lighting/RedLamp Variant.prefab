@@ -8,6 +8,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -4633370661727678084, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_SortingOrder
+      value: 982
+      objectReference: {fileID: 0}
+    - target: {fileID: 1169710025405323367, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1169710025405323367, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: radiusPulse
       value: 0.054
@@ -68,6 +76,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5964267718297587950, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6955982121256688261, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8611388261882881608, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: m_Color.b
       value: 0.9056604
@@ -81,6 +97,10 @@ PrefabInstance:
       value: 0.9056604
       objectReference: {fileID: 0}
     - target: {fileID: 8611388261882881608, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8611388261882881608, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: m_FalloffIntensity
       value: 1
       objectReference: {fileID: 0}
@@ -92,8 +112,33 @@ PrefabInstance:
       propertyPath: m_PointLightOuterRadius
       value: 16
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6955982121256688261, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6403160042089075254, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4178279051000912279}
   m_SourcePrefab: {fileID: 100100000, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+--- !u!1 &5261668184995653293 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6403160042089075254, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+  m_PrefabInstance: {fileID: 1286247684102042779}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4178279051000912279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5261668184995653293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00de367b0da2b49ee882f0c1e9f1f034, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LampParticles
+  primaryColor: {r: 1, g: 0.35, b: 0.05, a: 1}
+  secondaryColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  emissionRate: 5
+  riseSpeed: 0.55

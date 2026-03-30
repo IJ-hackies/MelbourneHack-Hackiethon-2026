@@ -40,6 +40,7 @@ public class PlayerHUD : MonoBehaviour
     private RectTransform heartRT;
     private TMP_Text      healthText;
     private Image         healthBarFill;
+    private RectTransform healthBarFillRT;
     private RectTransform statusContainer;
 
     private static Texture2D _glowTex; // cached soft-circle texture for status glows
@@ -86,6 +87,7 @@ public class PlayerHUD : MonoBehaviour
     {
         BuildHUD();
         health.OnDamaged.AddListener(_ => TriggerDamageFlash());
+        health.OnDamaged.AddListener(_ => SFXManager.Instance?.PlayPlayerHit());
     }
 
     private void OnDestroy()
@@ -157,6 +159,17 @@ public class PlayerHUD : MonoBehaviour
         barShadowImg.color   = new Color(0f, 0f, 0f, 0.70f);
         barShadowImg.raycastTarget = false;
 
+        // Bar outline — tight black border around the bar
+        const float OutlinePx = 2f;
+        var barOutlineRT     = MakeRT("BarOutline", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+            pivot: new Vector2(0.5f, 0.5f),
+            pos: new Vector2(0f, barCenterY),
+            size: new Vector2(BarW + OutlinePx * 2f, BarH + OutlinePx * 2f));
+        var barOutlineImg    = barOutlineRT.gameObject.AddComponent<Image>();
+        barOutlineImg.color  = new Color(0f, 0f, 0f, 1f);
+        barOutlineImg.raycastTarget = false;
+
         // Bar container — flat rect mask; dark background visible in empty portion
         var barContainerRT   = MakeRT("BarContainer", canvasGO.transform,
             anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
@@ -169,18 +182,16 @@ public class PlayerHUD : MonoBehaviour
         var barMask          = barContainerRT.gameObject.AddComponent<Mask>();
         barMask.showMaskGraphic = true;
 
-        // Bar fill — child of container, clipped to pill shape by the mask
-        var barFillRT        = MakeRT("BarFill", barContainerRT,
-            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+        // Bar fill — left-anchored child; anchorMax.x is set to health pct each frame
+        healthBarFillRT      = MakeRT("BarFill", barContainerRT,
+            Vector2.zero, Vector2.one, Vector2.zero,
             Vector2.zero, Vector2.zero);
-        barFillRT.offsetMin  = Vector2.zero;
-        barFillRT.offsetMax  = Vector2.zero;
-        healthBarFill        = barFillRT.gameObject.AddComponent<Image>();
-        healthBarFill.type   = Image.Type.Filled;
-        healthBarFill.fillMethod = Image.FillMethod.Horizontal;
-        healthBarFill.fillOrigin = (int)Image.OriginHorizontal.Left;
-        healthBarFill.fillAmount = 1f;
-        healthBarFill.color      = new Color(0.05f, 0.52f, 0.08f);
+        healthBarFillRT.anchorMin = Vector2.zero;
+        healthBarFillRT.anchorMax = Vector2.one;   // starts full; updated each frame
+        healthBarFillRT.offsetMin = Vector2.zero;
+        healthBarFillRT.offsetMax = Vector2.zero;
+        healthBarFill             = healthBarFillRT.gameObject.AddComponent<Image>();
+        healthBarFill.color       = new Color(0.05f, 0.52f, 0.08f);
         healthBarFill.raycastTarget = false;
 
         // HP number — sibling of container (not masked), overlaid on the bar
@@ -276,10 +287,10 @@ public class PlayerHUD : MonoBehaviour
         float pct = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
         healthText.text = Mathf.CeilToInt(health.Current).ToString();
 
-        // Bar fill + colour — flash white on damage then settle back to health colour
+        // Bar fill + colour — anchorMax.x drives width; flash white on damage
         if (healthBarFill != null)
         {
-            healthBarFill.fillAmount = pct;
+            healthBarFillRT.anchorMax = new Vector2(pct, 1f);
             float flashT = Mathf.Clamp01(healthFlashTimer / 0.45f);
             healthBarFill.color = Color.Lerp(HealthBarColor(pct), Color.white, flashT * flashT);
         }

@@ -17,4 +17,5 @@ public class FloorManifestDTO
     public EnemySpawnDTO[] enemy_spawns;
     public SpellDTO        new_spell;
     public CutsceneStepDTO[] cutscene_steps;
+    public string[]          lamp_ids;
 }

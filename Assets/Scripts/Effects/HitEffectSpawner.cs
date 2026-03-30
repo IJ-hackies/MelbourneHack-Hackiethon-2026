@@ -415,6 +415,7 @@ public static class HitEffectSpawner
         vol.space   = ParticleSystemSimulationSpace.World;
         vol.x = new ParticleSystem.MinMaxCurve(-tangent.x * tangentSpread, tangent.x * tangentSpread);
         vol.y = new ParticleSystem.MinMaxCurve(-tangent.y * tangentSpread, tangent.y * tangentSpread);
+        vol.z = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         var col = ps.colorOverLifetime;
         col.enabled = true;

@@ -58,6 +58,16 @@ public class GeminiClient : MonoBehaviour
     /// <summary>Returns the configured API key (for sharing with NanoBananaClient).</summary>
     public string ApiKey => apiKey;
 
+    /// <summary>
+    /// Sends a plain-text prompt to Gemini (no function calling) and returns the response text.
+    /// Used for free-form generation such as the game-over death narration.
+    /// On failure, callback receives null.
+    /// </summary>
+    public void GenerateFreeText(string prompt, Action<string> onComplete)
+    {
+        StartCoroutine(GenerateFreeTextCoroutine(prompt, onComplete));
+    }
+
     // ── Coroutine ────────────────────────────────────────────────────────────
 
     private IEnumerator GenerateFloorCoroutine(string sessionLogJson, int nextStageNumber,
@@ -100,6 +110,95 @@ public class GeminiClient : MonoBehaviour
             Debug.Log($"[GeminiClient] Generated floor: \"{manifest.floor_name}\"");
 
         onComplete?.Invoke(manifest);
+    }
+
+    // ── Free-text coroutine ───────────────────────────────────────────────────
+
+    private IEnumerator GenerateFreeTextCoroutine(string prompt, Action<string> onComplete)
+    {
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            onComplete?.Invoke(null);
+            yield break;
+        }
+
+        string escaped = EscapeJson(prompt);
+        string body = $@"{{
+  ""contents"": [{{""role"":""user"",""parts"":[{{""text"":""{escaped}""}}]}}],
+  ""generationConfig"": {{""maxOutputTokens"": 250, ""temperature"": 0.9}}
+}}";
+
+        using var request = new UnityWebRequest(Endpoint, "POST");
+        request.SetRequestHeader("x-goog-api-key", apiKey);
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.timeout         = timeoutSeconds;
+
+        Debug.Log("[GeminiClient] Requesting free-text narration...");
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"[GeminiClient] Free-text request failed: {request.error}");
+            onComplete?.Invoke(null);
+            yield break;
+        }
+
+        string text = ParseFreeTextResponse(request.downloadHandler.text);
+        if (text == null)
+            Debug.LogError($"[GeminiClient] Failed to parse free-text response:\n{request.downloadHandler.text}");
+        else
+            Debug.Log($"[GeminiClient] Free-text narration received ({text.Length} chars)");
+
+        onComplete?.Invoke(text);
+    }
+
+    private static string ParseFreeTextResponse(string json)
+    {
+        try
+        {
+            // Find the first "text":"..." value inside candidates[0].content.parts[0]
+            int textIdx = json.IndexOf("\"text\"", StringComparison.Ordinal);
+            if (textIdx < 0) return null;
+
+            int colon = json.IndexOf(':', textIdx);
+            if (colon < 0) return null;
+
+            int quote1 = json.IndexOf('"', colon + 1);
+            if (quote1 < 0) return null;
+
+            var sb = new StringBuilder();
+            int i  = quote1 + 1;
+            while (i < json.Length)
+            {
+                char c = json[i];
+                if (c == '\\' && i + 1 < json.Length)
+                {
+                    char next = json[i + 1];
+                    switch (next)
+                    {
+                        case '"':  sb.Append('"');  break;
+                        case '\\': sb.Append('\\'); break;
+                        case 'n':  sb.Append('\n'); break;
+                        case 'r':  sb.Append('\r'); break;
+                        case 't':  sb.Append('\t'); break;
+                        default:   sb.Append(next); break;
+                    }
+                    i += 2;
+                    continue;
+                }
+                if (c == '"') break;
+                sb.Append(c);
+                i++;
+            }
+            return sb.Length > 0 ? sb.ToString().Trim() : null;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[GeminiClient] ParseFreeTextResponse error: {e.Message}");
+            return null;
+        }
     }
 
     // ── Prompt ────────────────────────────────────────────────────────────────
@@ -258,7 +357,19 @@ Eerie (mid-game, player using fire):
   {{ ""action"": ""GLITCH"", ""duration"": 0.3 }},
   {{ ""action"": ""CLEAR_TEXT"", ""duration"": 0.5 }}
 ]
-```";
+```
+
+### 8. Lamp Selection
+Choose 1–2 lamp IDs that best fit this floor's atmosphere. Available lamps:
+- RedLamp — warm crimson glow (danger, ruins, blood, fire)
+- YellowLamp — amber/gold glow (ancient stone, torchlight, honey, warmth)
+- GreenLamp — toxic green glow (acid pools, forest, poison, nature)
+- BlueLamp — cold pale blue glow (frost, death, spectral dread)
+- OceanBlueLamp — deep teal/cyan glow (ocean, water, depths)
+- PinkLamp — vivid magenta glow (bubblegum, arcane, surreal)
+- TechLamp — clinical white-blue glow (tech, machinery, sterile)
+
+Return exactly 1–2 IDs in lamp_ids that match the tileset and floor name. Default guidance: dungeon/rocky/flames → RedLamp, frozen → BlueLamp, forest/acid → GreenLamp, ocean → OceanBlueLamp, techy → TechLamp, bubblegum → PinkLamp, honey → YellowLamp. Using 2 lamp types adds visual variety — prefer it when the theme supports contrast (e.g. RedLamp + YellowLamp for a fiery ruin).";
     }
 
     // ── Request JSON ──────────────────────────────────────────────────────────
@@ -292,9 +403,10 @@ Eerie (mid-game, player using fire):
               ""stage_message"":           {{ ""type"": ""string"",  ""description"": ""The Chronicle's message to the player (2-4 sentences, second person, ominous/taunting)"" }},
               ""enemy_spawns"":            {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""enemy_id"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }}, ""modifiers"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }} }}, ""required"": [""enemy_id"", ""count""] }}, ""description"": ""Array of enemy spawn entries"" }},
               ""new_spell"":               {{ ""type"": ""object"",  ""properties"": {{ ""name"": {{ ""type"": ""string"" }}, ""flavor"": {{ ""type"": ""string"" }}, ""corruption_flavor"": {{ ""type"": ""string"", ""description"": ""Set ONLY for cursed spells — explains the trade-off of built-in corruption tags"" }}, ""tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""damage"": {{ ""type"": ""number"" }}, ""speed"": {{ ""type"": ""number"" }}, ""cooldown"": {{ ""type"": ""number"" }}, ""element"": {{ ""type"": ""string"" }}, ""is_merged"": {{ ""type"": ""boolean"" }}, ""merged_from"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""projectile_color"": {{ ""type"": ""string"", ""description"": ""Hex color for main glow, e.g. #FF4400"" }}, ""secondary_color"": {{ ""type"": ""string"", ""description"": ""Hex color for trail gradient endpoint"" }}, ""projectile_scale"": {{ ""type"": ""number"", ""description"": ""Size multiplier 0.5-3.0"" }}, ""glow_size"": {{ ""type"": ""number"", ""description"": ""Glow radius 0.2-1.5"" }}, ""trail_length"": {{ ""type"": ""number"", ""description"": ""Trail time 0.0-0.5 seconds"" }}, ""trail_width"": {{ ""type"": ""number"", ""description"": ""Trail width 0.05-0.5"" }}, ""burst_count"": {{ ""type"": ""integer"", ""description"": ""Projectiles per cast 1-5"" }} }}, ""required"": [""name"", ""flavor"", ""tags"", ""damage"", ""speed"", ""cooldown"", ""projectile_color"", ""projectile_scale"", ""glow_size"", ""trail_length"", ""burst_count""], ""description"": ""The new spell given to the player. For cursed spells, include a corruption tag in tags[] and set corruption_flavor."" }},
-              ""cutscene_steps"":          {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""action"": {{ ""type"": ""string"", ""description"": ""One of: TYPEWRITER, CLEAR_TEXT, FLASH, WAIT, SCREEN_TINT, PARTICLES_BURST, PARTICLES_DRIFT, TEXT_SHAKE, PULSE, GLITCH"" }}, ""text"": {{ ""type"": ""string"" }}, ""speed"": {{ ""type"": ""number"" }}, ""duration"": {{ ""type"": ""number"" }}, ""intensity"": {{ ""type"": ""number"" }}, ""color"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }} }}, ""required"": [""action""] }}, ""description"": ""Dark-screen atmospheric cutscene sequence (5-12 steps). The Chronicle speaks from a dark void with particles, color washes, and dramatic text. Must end with CLEAR_TEXT."" }}
+              ""cutscene_steps"":          {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""action"": {{ ""type"": ""string"", ""description"": ""One of: TYPEWRITER, CLEAR_TEXT, FLASH, WAIT, SCREEN_TINT, PARTICLES_BURST, PARTICLES_DRIFT, TEXT_SHAKE, PULSE, GLITCH"" }}, ""text"": {{ ""type"": ""string"" }}, ""speed"": {{ ""type"": ""number"" }}, ""duration"": {{ ""type"": ""number"" }}, ""intensity"": {{ ""type"": ""number"" }}, ""color"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }} }}, ""required"": [""action""] }}, ""description"": ""Dark-screen atmospheric cutscene sequence (5-12 steps). The Chronicle speaks from a dark void with particles, color washes, and dramatic text. Must end with CLEAR_TEXT."" }},
+              ""lamp_ids"":                {{ ""type"": ""array"",   ""items"": {{ ""type"": ""string"" }}, ""description"": ""1–2 lamp IDs for this floor's lighting. Choose from: RedLamp, YellowLamp, GreenLamp, BlueLamp, OceanBlueLamp, PinkLamp, TechLamp. Match the floor biome and name. Always return 1–2 IDs."" }}
             }},
-            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell"", ""cutscene_steps""]
+            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell"", ""cutscene_steps"", ""lamp_ids""]
           }}
         }}
       ]

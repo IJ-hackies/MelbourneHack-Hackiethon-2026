@@ -228,6 +228,7 @@ public class CutscenePlayer : MonoBehaviour
         vol.enabled = true;
         vol.x       = new ParticleSystem.MinMaxCurve(-0.08f, 0.08f);
         vol.y       = new ParticleSystem.MinMaxCurve( 0.04f, 0.18f);
+        vol.z       = new ParticleSystem.MinMaxCurve(  0f,    0f);
 
         // Fade in, hold, fade out — keeps the effect subtle
         var col     = ps.colorOverLifetime;
@@ -510,6 +511,7 @@ public class CutscenePlayer : MonoBehaviour
         vol.enabled = true;
         vol.x       = new ParticleSystem.MinMaxCurve(-0.15f, 0.15f);
         vol.y       = new ParticleSystem.MinMaxCurve(0.05f,  0.2f);
+        vol.z       = new ParticleSystem.MinMaxCurve(  0f,   0f);
 
         var col     = ps.colorOverLifetime;
         col.enabled = true;

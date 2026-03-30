@@ -34,6 +34,7 @@ public class GrimoireUI : MonoBehaviour
     [SerializeField] private float listFontSize = 15f;
 
     private GameObject canvasGO;
+    private RectTransform _panelRoot;
     private bool isOpen;
 
     // Left page: library list
@@ -75,11 +76,21 @@ public class GrimoireUI : MonoBehaviour
         canvasGO.SetActive(true);
         PauseManager.Pause();
         RefreshLibrary();
+        if (_panelRoot != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_panelRoot));
     }
 
     public void Close()
     {
+        if (!isOpen) return;
         isOpen = false;
+        StartCoroutine(CloseRoutine());
+    }
+
+    private System.Collections.IEnumerator CloseRoutine()
+    {
+        if (_panelRoot != null)
+            yield return StartCoroutine(UIPanelAnimator.AnimateOut(_panelRoot));
         if (canvasGO != null) canvasGO.SetActive(false);
         PauseManager.Unpause();
     }
@@ -105,7 +116,7 @@ public class GrimoireUI : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Backdrop
+        // Backdrop — stays as direct child of canvas (does not animate)
         var backdrop = MakeRT("Backdrop", canvasGO.transform,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero);
@@ -115,6 +126,14 @@ public class GrimoireUI : MonoBehaviour
         var bdBtn = backdrop.gameObject.AddComponent<Button>();
         bdBtn.targetGraphic = bdImg;
         bdBtn.onClick.AddListener(Close);
+
+        // Panel root — wraps all visual book elements so they can animate together
+        var panelRoot = MakeRT("PanelRoot", canvasGO.transform,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        panelRoot.offsetMin = Vector2.zero;
+        panelRoot.offsetMax = Vector2.zero;
+        _panelRoot = panelRoot;
 
         // ── Book background ─────────────────────────────────────────────
         // Match rect to sprite aspect so the book fills the rect exactly
@@ -126,14 +145,14 @@ public class GrimoireUI : MonoBehaviour
         // Book image — rendered 20% larger for visual weight
         float imageW = bookW * 1.2f;
         float imageH = imageW / spriteAspect;
-        var bookImageRT = MakeRT("BookImage", canvasGO.transform,
+        var bookImageRT = MakeRT("BookImage", panelRoot,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(0f, 0f), new Vector2(imageW, imageH));
         var bookImg = bookImageRT.gameObject.AddComponent<Image>();
         bookImg.sprite = bookSprite;
 
         // Content layer — original dimensions so all text positions are unchanged
-        var bookRT = MakeRT("BookContent", canvasGO.transform,
+        var bookRT = MakeRT("BookContent", panelRoot,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(0f, 0f), new Vector2(bookW, bH));
 
@@ -242,6 +261,7 @@ public class GrimoireUI : MonoBehaviour
             var btn = bRT.gameObject.AddComponent<Button>();
             btn.targetGraphic = bImg;
             btn.onClick.AddListener(() => OnEquipToSlot(slot));
+            bRT.gameObject.AddComponent<UIButtonHover>();
             MakeTMP($"SlotLabel_{i}", bRT,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
                 Vector2.zero, Vector2.zero,
@@ -329,6 +349,7 @@ public class GrimoireUI : MonoBehaviour
             btn.transition = Selectable.Transition.None;
             SpellData captured = spell;
             btn.onClick.AddListener(() => SelectSpell(captured));
+            boxRT.gameObject.AddComponent<UIButtonHover>();
 
             // Name label below the box
             Color textColor = isCorrupted

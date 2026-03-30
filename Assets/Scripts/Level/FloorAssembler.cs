@@ -44,7 +44,10 @@ public class FloorAssembler : MonoBehaviour
     public List<EnemySpawnDTO> enemySpawns = new List<EnemySpawnDTO>();
 
     [Header("Active Tileset — set from Floor Manifest at runtime")]
-    public string activeTilesetId = "dungeon";
+    public string   activeTilesetId = "dungeon";
+
+    [Header("Active Lamp IDs — set from Floor Manifest at runtime (used by DecoSpawner)")]
+    public string[] activeLampIds;
 
     [Header("Grid — 8 chamber IDs, row-major (index 0-3 = bottom row, 4-7 = top row)")]
     [Tooltip(
@@ -98,6 +101,8 @@ public class FloorAssembler : MonoBehaviour
         chamberGrid = (manifest.chamber_grid != null && manifest.chamber_grid.Length > 0)
             ? manifest.chamber_grid
             : RandomizeChamberGrid(activeTilesetId);
+
+        activeLampIds = manifest.lamp_ids;
 
         enemySpawns.Clear();
         if (manifest.enemy_spawns != null)

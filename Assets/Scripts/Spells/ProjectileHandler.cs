@@ -228,6 +228,7 @@ public class ProjectileHandler : MonoBehaviour
         if (hit.collider != null)
         {
             HitEffectSpawner.SpawnWallBlock(hit.point, hit.normal, GetSpellColor(ctx.Spell));
+            SFXManager.Instance?.PlayWallHit(hit.point);
             RequestDestroy();
         }
     }
@@ -251,6 +252,7 @@ public class ProjectileHandler : MonoBehaviour
         if (h == null || h.IsDead) return;
 
         h.TakeDamage(ctx.Spell.damage);
+        SFXManager.Instance?.PlayEnemyHit(transform.position);
         HitEffectSpawner.SpawnImpactFlash(transform.position,
             ElementToColor(ctx.Spell.element), Color.white);
 

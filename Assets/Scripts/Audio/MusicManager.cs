@@ -25,8 +25,9 @@ public class MusicManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
-            return;
+            // New instance takes over — the gameplay scene's fully-wired MusicManager
+            // should replace any minimally-configured cutscene/bootstrap instance.
+            Destroy(Instance.gameObject);
         }
 
         Instance = this;

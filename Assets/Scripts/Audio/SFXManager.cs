@@ -41,6 +41,20 @@ public class SFXManager : MonoBehaviour
     [SerializeField] private AudioClip playerHitClip;
     [SerializeField, Range(0f, 1f)] private float playerHitVolume = 1f;
 
+    [Header("Enemy Hit SFX")]
+    [SerializeField] private AudioClip enemyHitClip;
+    [SerializeField, Range(0f, 1f)]   private float enemyHitVolume = 0.5f;
+    [SerializeField, Range(0.1f, 2f)] private float enemyHitPitch  = 0.35f;
+
+    [Header("Enemy Death SFX")]
+    [SerializeField] private AudioClip enemyDeathClip;
+    [SerializeField, Range(0f, 1f)]   private float enemyDeathVolume = 0.9f;
+
+    [Header("Wall Hit SFX")]
+    [SerializeField] private AudioClip wallHitClip;
+    [SerializeField, Range(0f, 1f)]   private float wallHitVolume = 0.6f;
+    [SerializeField, Range(0.1f, 2f)] private float wallHitPitch  = 1f;
+
     [Header("Scroll Open SFX")]
     [SerializeField] private AudioClip scrollOpenClip;
     [SerializeField, Range(0f, 1f)] private float scrollOpenVolume = 1f;
@@ -82,7 +96,12 @@ public class SFXManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            // New instance takes over — the gameplay scene's fully-wired SFXManager
+            // should replace any minimally-configured cutscene/bootstrap instance.
+            Destroy(Instance.gameObject);
+        }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -161,6 +180,22 @@ public class SFXManager : MonoBehaviour
         float holdTime = Mathf.Max(0f, playerShootClip.length - playerShootFadeOut);
         StartCoroutine(FadeOutVoice(voice, vol, holdTime, playerShootFadeOut));
     }
+    public void PlayWallHit(Vector2 pos)
+    {
+        if (wallHitClip == null) return;
+        float vol = ComputeVolume(wallHitVolume, pos);
+        if (vol < MinAudibleVolume) return;
+        PlayOnVoice(wallHitClip, vol, wallHitPitch, pos);
+    }
+
+    public void PlayEnemyHit(Vector2 pos)
+    {
+        if (enemyHitClip == null) return;
+        float vol = ComputeVolume(enemyHitVolume, pos);
+        if (vol < MinAudibleVolume) return;
+        PlayOnVoice(enemyHitClip, vol, enemyHitPitch, pos);
+    }
+    public void PlayEnemyDeath(Vector2 pos) => PlayAtPosition(enemyDeathClip, enemyDeathVolume, pos);
     public void PlayMergeSpell()      => PlayUI(mergeSpellClip,      mergeSpellVolume);
     public void PlayPlayerHit()       => PlayUI(playerHitClip,       playerHitVolume);
     public void PlayScrollOpen()      => PlayUI(scrollOpenClip,       scrollOpenVolume);

@@ -43,6 +43,8 @@ public class EnemyHealthBar : MonoBehaviour
     private Color          _barColor;
 
     private Transform      _root;
+    private SpriteRenderer _glowSR;    // large soft halo — lit-up bloom effect
+    private SpriteRenderer _outlineSR; // tight border matching fill colour
     private SpriteRenderer _bgSR;
     private SpriteRenderer _fillSR;   // single continuous fill, shrinks right-to-left
 
@@ -54,9 +56,10 @@ public class EnemyHealthBar : MonoBehaviour
     private Color _flashColor;
     private float _bounceTimer;
 
-    // ── Shared 1×1 sprite ─────────────────────────────────────────────────────
+    // ── Shared 1×1 sprite + unlit material ───────────────────────────────────
     private static Texture2D _pixTex;
     private static Sprite    _pixSprite;
+    private static Material  _unlitMat;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -167,8 +170,10 @@ public class EnemyHealthBar : MonoBehaviour
         _root.localScale = new Vector3(sx * boost, sy * boost, 1f);
 
         int baseOrder = _sourceSR.sortingOrder + 3;
-        _bgSR.sortingOrder   = baseOrder;
-        _fillSR.sortingOrder = baseOrder + 1;
+        _glowSR.sortingOrder    = baseOrder - 2;
+        _outlineSR.sortingOrder = baseOrder - 1;
+        _bgSR.sortingOrder      = baseOrder;
+        _fillSR.sortingOrder    = baseOrder + 1;
     }
 
     // ── Colours ───────────────────────────────────────────────────────────────
@@ -194,14 +199,27 @@ public class EnemyHealthBar : MonoBehaviour
         Color bg = Color.Lerp(BgCol, _flashColor, flashT * 0.5f);
         bg.a = alpha;
         _bgSR.color = bg;
+
+        // Outline: same hue as fill, fully opaque
+        Color outline = fill;
+        outline.a = alpha;
+        _outlineSR.color = outline;
+
+        // Glow: full saturation + brightness, higher alpha — neon bloom
+        Color.RGBToHSV(fill, out float gh, out float gs, out float _);
+        Color glow = Color.HSVToRGB(gh, 1f, 1f);
+        glow.a = alpha * 0.75f;
+        _glowSR.color = glow;
     }
 
     private void SetFadeAlpha(float a)
     {
         _fadeAlpha = a;
         bool on = a > 0.01f;
-        if (_bgSR   != null) _bgSR.enabled   = on;
-        if (_fillSR != null) _fillSR.enabled  = on;
+        if (_glowSR    != null) _glowSR.enabled    = on;
+        if (_outlineSR != null) _outlineSR.enabled  = on;
+        if (_bgSR      != null) _bgSR.enabled       = on;
+        if (_fillSR    != null) _fillSR.enabled      = on;
     }
 
     // ── Theme helpers ─────────────────────────────────────────────────────────
@@ -253,17 +271,46 @@ public class EnemyHealthBar : MonoBehaviour
         _root.localRotation = Quaternion.identity;
         _root.localScale    = Vector3.one;
 
+        // Glow — large halo behind everything, fill colour at half alpha
+        const float GlowPad = 0.015f;
+        var glowGO = new GameObject("Glow");
+        glowGO.transform.SetParent(_root);
+        glowGO.transform.localPosition = Vector3.zero;
+        glowGO.transform.localRotation = Quaternion.identity;
+        glowGO.transform.localScale    = new Vector3(BarWidth + (BgPadX + GlowPad) * 2f,
+                                                     BarHeight + (BgPadY + GlowPad) * 2f, 1f);
+        _glowSR                = glowGO.AddComponent<SpriteRenderer>();
+        _glowSR.sprite         = px;
+        _glowSR.material       = GetUnlitMaterial();
+        _glowSR.sortingLayerID = _sourceSR.sortingLayerID;
+        _glowSR.sortingOrder   = _sourceSR.sortingOrder + 1;
+
+        // Outline — tight border just outside the background
+        const float OutPad = 0.002f;
+        var outlineGO = new GameObject("Outline");
+        outlineGO.transform.SetParent(_root);
+        outlineGO.transform.localPosition = Vector3.zero;
+        outlineGO.transform.localRotation = Quaternion.identity;
+        outlineGO.transform.localScale    = new Vector3(BarWidth + (BgPadX + OutPad) * 2f,
+                                                        BarHeight + (BgPadY + OutPad) * 2f, 1f);
+        _outlineSR                = outlineGO.AddComponent<SpriteRenderer>();
+        _outlineSR.sprite         = px;
+        _outlineSR.material       = GetUnlitMaterial();
+        _outlineSR.sortingLayerID = _sourceSR.sortingLayerID;
+        _outlineSR.sortingOrder   = _sourceSR.sortingOrder + 2;
+
         // Background — full width, slightly padded
         var bgGO = new GameObject("BG");
         bgGO.transform.SetParent(_root);
         bgGO.transform.localPosition = Vector3.zero;
         bgGO.transform.localRotation = Quaternion.identity;
         bgGO.transform.localScale    = new Vector3(BarWidth + BgPadX * 2f, BarHeight + BgPadY * 2f, 1f);
-        _bgSR               = bgGO.AddComponent<SpriteRenderer>();
-        _bgSR.sprite        = px;
-        _bgSR.color         = BgCol;
+        _bgSR                = bgGO.AddComponent<SpriteRenderer>();
+        _bgSR.sprite         = px;
+        _bgSR.material       = GetUnlitMaterial();
+        _bgSR.color          = BgCol;
         _bgSR.sortingLayerID = _sourceSR.sortingLayerID;
-        _bgSR.sortingOrder  = _sourceSR.sortingOrder + 3;
+        _bgSR.sortingOrder   = _sourceSR.sortingOrder + 3;
 
         // Fill — starts full-width, shrinks in ApplyColors each frame
         var fillGO = new GameObject("Fill");
@@ -271,11 +318,12 @@ public class EnemyHealthBar : MonoBehaviour
         fillGO.transform.localPosition = Vector3.zero;
         fillGO.transform.localRotation = Quaternion.identity;
         fillGO.transform.localScale    = new Vector3(BarWidth, BarHeight, 1f);
-        _fillSR               = fillGO.AddComponent<SpriteRenderer>();
-        _fillSR.sprite        = px;
-        _fillSR.color         = HealthHigh;
+        _fillSR                = fillGO.AddComponent<SpriteRenderer>();
+        _fillSR.sprite         = px;
+        _fillSR.material       = GetUnlitMaterial();
+        _fillSR.color          = HealthHigh;
         _fillSR.sortingLayerID = _sourceSR.sortingLayerID;
-        _fillSR.sortingOrder  = _sourceSR.sortingOrder + 4;
+        _fillSR.sortingOrder   = _sourceSR.sortingOrder + 4;
     }
 
     // ── Shared 1×1 white pixel sprite ─────────────────────────────────────────
@@ -292,5 +340,14 @@ public class EnemyHealthBar : MonoBehaviour
         _pixTex.Apply();
         _pixSprite = Sprite.Create(_pixTex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
         return _pixSprite;
+    }
+
+    private static Material GetUnlitMaterial()
+    {
+        if (_unlitMat != null) return _unlitMat;
+        var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                  ?? Shader.Find("Sprites/Default");
+        _unlitMat = new Material(shader);
+        return _unlitMat;
     }
 }

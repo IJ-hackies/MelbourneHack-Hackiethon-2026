@@ -1,0 +1,175 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &887551904679964200
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -12.395
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -6.371
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 335257502374996860, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1988140613476388850, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_Name
+      value: BonePile Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 3509711032727326829, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_Size.x
+      value: 1.11
+      objectReference: {fileID: 0}
+    - target: {fileID: 3509711032727326829, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_Size.y
+      value: 0.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 3509711032727326829, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -6650170733726530260, guid: 906603d800795474e95eb41e44ea5c2e, type: 3}
+    - target: {fileID: 3509711032727326829, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1988140613476388850, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4064459914861454153}
+    - targetCorrespondingSourceObject: {fileID: 1988140613476388850, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6292126919209082072}
+  m_SourcePrefab: {fileID: 100100000, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+--- !u!1 &1713193715769680346 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1988140613476388850, guid: 70ae28004a9f647f78a85c5c0f0f1f12, type: 3}
+  m_PrefabInstance: {fileID: 887551904679964200}
+  m_PrefabAsset: {fileID: 0}
+--- !u!60 &4064459914861454153
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713193715769680346}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.11, y: 0.66}
+    newSize: {x: 1.11, y: 0.66}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0.39499998, y: -0.29}
+      - {x: 0.435, y: -0.19999999}
+      - {x: 0.465, y: -0.25}
+      - {x: 0.555, y: -0.22}
+      - {x: 0.555, y: -0.099999994}
+      - {x: 0.505, y: -0.04}
+      - {x: 0.445, y: 0.03}
+      - {x: 0.375, y: 0.049999997}
+      - {x: 0.074999996, y: 0.32999998}
+      - {x: -0.095, y: 0.32999998}
+      - {x: -0.24499999, y: 0.21}
+      - {x: -0.325, y: 0.099999994}
+      - {x: -0.355, y: 0.12}
+      - {x: -0.385, y: 0.12}
+      - {x: -0.49499997, y: 0.03}
+      - {x: -0.555, y: -0.03}
+      - {x: -0.555, y: -0.17999999}
+      - {x: -0.525, y: -0.22999999}
+      - {x: -0.465, y: -0.22}
+      - {x: -0.36499998, y: -0.29999998}
+      - {x: -0.265, y: -0.32999998}
+      - {x: -0.175, y: -0.32999998}
+      - {x: -0.074999996, y: -0.32}
+      - {x: -0.035, y: -0.32999998}
+      - {x: 0.074999996, y: -0.32999998}
+      - {x: 0.155, y: -0.28}
+      - {x: 0.225, y: -0.32999998}
+      - {x: 0.235, y: -0.32999998}
+  m_UseDelaunayMesh: 1
+--- !u!114 &6292126919209082072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713193715769680346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb0ae1b2a6f124cc799f07cb721cae2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BonePileDeco
+  shakeIntensity: 0.06
+  shakeDuration: 0.35

@@ -25,6 +25,8 @@ public class StageDirector : MonoBehaviour
     [SerializeField] private EnemySpawner      enemySpawner;
     [SerializeField] private StageTransitionUI transitionUI;
     [SerializeField] private MergeRitualUI     mergeRitualUI;
+    [SerializeField] private GameOverUI          gameOverUI;
+    [SerializeField] private PlayerDeathCutscene deathCutscene;
 
     [Header("Spell Icons")]
     [SerializeField] private Sprite starterSpellIcon;  // StarterSpell.png — drag in Inspector
@@ -50,6 +52,7 @@ public class StageDirector : MonoBehaviour
     private HudIconBar         hudIconBar;
     private CutscenePlayer     cutscenePlayer;
     private Health             playerHealth;
+    private bool               playerDead;
 
     public int StageNumber => stageNumber;
 
@@ -68,6 +71,9 @@ public class StageDirector : MonoBehaviour
         if (enemySpawner   == null) enemySpawner   = FindAnyObjectByType<EnemySpawner>();
         if (transitionUI   == null) transitionUI   = FindAnyObjectByType<StageTransitionUI>();
         if (mergeRitualUI  == null) mergeRitualUI  = FindAnyObjectByType<MergeRitualUI>();
+        if (gameOverUI     == null) gameOverUI     = FindAnyObjectByType<GameOverUI>();
+        if (deathCutscene  == null) deathCutscene  = FindAnyObjectByType<PlayerDeathCutscene>();
+        if (deathCutscene  == null) deathCutscene  = gameObject.AddComponent<PlayerDeathCutscene>();
 
         // Auto-find singletons / scene objects
         clearDetector = FindAnyObjectByType<FloorClearDetector>();
@@ -83,7 +89,11 @@ public class StageDirector : MonoBehaviour
 
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
+        {
             playerHealth = playerObj.GetComponent<Health>();
+            if (playerHealth != null)
+                playerHealth.OnDeath.AddListener(OnPlayerDeath);
+        }
 
         if (floorAssembler == null)
             Debug.LogError("[StageDirector] FloorAssembler not found in scene!");
@@ -107,6 +117,38 @@ public class StageDirector : MonoBehaviour
             clearDetector.OnEnemyCountChanged -= OnEnemyCountChanged;
             clearDetector.OnFloorCleared      -= OnFloorCleared;
         }
+        if (playerHealth != null)
+            playerHealth.OnDeath.RemoveListener(OnPlayerDeath);
+    }
+
+    // ── Player death ─────────────────────────────────────────────────────────
+
+    private void OnPlayerDeath()
+    {
+        if (playerDead) return; // guard against double-fire
+        playerDead = true;
+
+        // Build context strings for Gemini narration
+        string sessionLog = sessionLogger != null
+            ? sessionLogger.BuildSessionLog(stageNumber)
+            : "";
+
+        string spellList = "";
+        var spells = Grimoire.Instance?.AllSpells;
+        if (spells != null)
+            foreach (var s in spells)
+                spellList += s.spellName + ", ";
+        spellList = spellList.TrimEnd(',', ' ');
+
+        // Fire Gemini immediately in the background (before cutscene plays)
+        gameOverUI?.PreloadNarration(stageNumber, sessionLog, spellList);
+
+        // Play death cutscene then show Game Over UI
+        var playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (deathCutscene != null && playerObj != null)
+            deathCutscene.Play(playerObj, () => gameOverUI?.Show());
+        else
+            gameOverUI?.Show();
     }
 
     // ── Stage loading ────────────────────────────────────────────────────────

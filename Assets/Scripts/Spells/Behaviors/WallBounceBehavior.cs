@@ -26,10 +26,12 @@ public class WallBounceBehavior : ProjectileBehaviorBase
             bounceCount++;
             ctx.Rb.linearVelocity = Vector2.Reflect(ctx.Rb.linearVelocity, hit.normal);
             HitEffectSpawner.SpawnWallDeflect(hit.point, hit.normal, spellColor);
+            SFXManager.Instance?.PlayWallHit(hit.point);
         }
         else
         {
             HitEffectSpawner.SpawnWallBlock(hit.point, hit.normal, spellColor);
+            SFXManager.Instance?.PlayWallHit(hit.point);
             ctx.Handler.RequestDestroy();
         }
     }

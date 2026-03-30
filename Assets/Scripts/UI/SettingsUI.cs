@@ -45,6 +45,7 @@ public class SettingsUI : MonoBehaviour
 
     // ── State ─────────────────────────────────────────────────────────────────
     private GameObject    _canvas;
+    private RectTransform _panelRoot;
     private bool          _isDungeon;
     public  bool          IsOpen { get; private set; }
 
@@ -112,17 +113,26 @@ public class SettingsUI : MonoBehaviour
         IsOpen     = true;
         _canvas.SetActive(true);
 
-
         SwitchTab(_activeTab);
         RefreshAllBindLabels();
 
         if (isDungeon) PauseManager.Pause();
+        if (_panelRoot != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_panelRoot));
     }
 
     public void Close()
     {
+        if (!IsOpen) return;
         if (_listeningAction != null) CancelRebind();
         IsOpen = false;
+        StartCoroutine(CloseRoutine());
+    }
+
+    private System.Collections.IEnumerator CloseRoutine()
+    {
+        if (_panelRoot != null)
+            yield return StartCoroutine(UIPanelAnimator.AnimateOut(_panelRoot));
         _canvas.SetActive(false);
         if (_isDungeon) PauseManager.Unpause();
     }
@@ -164,6 +174,7 @@ public class SettingsUI : MonoBehaviour
             V2.half, V2.half, V2.half, V2.zero, new Vector2(PanelW, PanelH));
         var panelImg    = panelRT.gameObject.AddComponent<Image>();
         panelImg.color  = ColPanel;
+        _panelRoot = panelRT;
 
         BuildHeader(panelRT);
         BuildTabBar(panelRT);
@@ -210,6 +221,7 @@ public class SettingsUI : MonoBehaviour
         _tabControlsText        = MakeText("Label", ctRT, V2.zero, V2.one, V2.half,
             V2.zero, V2.zero, "CONTROLS", 18f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
         AddButton(ctRT.gameObject, () => SwitchTab(Tab.Controls));
+        ctRT.gameObject.AddComponent<UIButtonHover>();
 
         // Volume tab
         var vtRT = MakeRT("Volume", barRT,
@@ -220,6 +232,7 @@ public class SettingsUI : MonoBehaviour
         _tabVolumeText       = MakeText("Label", vtRT, V2.zero, V2.one, V2.half,
             V2.zero, V2.zero, "VOLUME", 18f, new Color(0.7f, 0.62f, 0.45f), TextAlignmentOptions.Center, FontStyles.Bold);
         AddButton(vtRT.gameObject, () => SwitchTab(Tab.Volume));
+        vtRT.gameObject.AddComponent<UIButtonHover>();
 
         // Divider line under tab bar
         var divRT  = MakeRT("Divider", panel,
@@ -351,6 +364,7 @@ public class SettingsUI : MonoBehaviour
         TMP_Text capturedText = btnText;
 
         AddButton(btnRT.gameObject, () => StartRebind(capturedAction, capturedBg, capturedText));
+        btnRT.gameObject.AddComponent<UIButtonHover>();
         _bindBtns[action] = (btnBg, btnText);
     }
 
@@ -497,6 +511,7 @@ public class SettingsUI : MonoBehaviour
             text, 17f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
 
         AddButton(rt.gameObject, onClick);
+        rt.gameObject.AddComponent<UIButtonHover>();
     }
 
     // ── Tab switching ─────────────────────────────────────────────────────────

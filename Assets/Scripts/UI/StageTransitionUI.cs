@@ -43,6 +43,8 @@ public class StageTransitionUI : MonoBehaviour
     private GameObject canvasGO;
     private GameObject page1;
     private GameObject page2;
+    private RectTransform _page1ScrollRT;
+    private RectTransform _page2ScrollRT;
     private Action onComplete;
 
     // Page 1 elements
@@ -101,6 +103,8 @@ public class StageTransitionUI : MonoBehaviour
         PauseManager.Pause();
         SFXManager.Instance?.PlayScrollOpen();
         Populate(manifest, prevHp, newHp);
+        if (_page1ScrollRT != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_page1ScrollRT));
     }
 
     public void Hide()
@@ -166,6 +170,8 @@ public class StageTransitionUI : MonoBehaviour
         page1.SetActive(true);
         SFXManager.Instance?.PlayScrollOpen();
         page2.SetActive(false);
+        if (_page1ScrollRT != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_page1ScrollRT));
 
         SetTextAlpha(titleText, 0f);
         SetTextAlpha(messageText, 0f);
@@ -258,6 +264,7 @@ public class StageTransitionUI : MonoBehaviour
         var scrollImg = scrollRT.gameObject.AddComponent<Image>();
         scrollImg.sprite = scrollBg;
         scrollImg.type = Image.Type.Sliced;
+        _page1ScrollRT = scrollRT;
 
         // ── Vertically centered content container (anchor-based) ──
         var contentRT = MakeRT("Content", scrollRT,
@@ -312,6 +319,7 @@ public class StageTransitionUI : MonoBehaviour
         var nextBtn = nextRT.gameObject.AddComponent<Button>();
         nextBtn.targetGraphic = nextImg;
         nextBtn.onClick.AddListener(GoToPage2);
+        nextRT.gameObject.AddComponent<UIButtonHover>();
     }
 
     private void BuildPage2()
@@ -335,6 +343,7 @@ public class StageTransitionUI : MonoBehaviour
         var scrollImg = scrollRT.gameObject.AddComponent<Image>();
         scrollImg.sprite = scrollBg;
         scrollImg.type = Image.Type.Sliced;
+        _page2ScrollRT = scrollRT;
 
         // ── Vertically centered content container (anchor-based) ──
         var contentRT = MakeRT("Content", scrollRT,
@@ -444,6 +453,7 @@ public class StageTransitionUI : MonoBehaviour
         var beginBtn = beginRT.gameObject.AddComponent<Button>();
         beginBtn.targetGraphic = beginImg;
         beginBtn.onClick.AddListener(Hide);
+        beginRT.gameObject.AddComponent<UIButtonHover>();
 
         MakeTMP("BeginText", beginRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
@@ -554,6 +564,8 @@ public class StageTransitionUI : MonoBehaviour
         if (Grimoire.Instance != null)
             Grimoire.Instance.OnLoadoutChanged += RefreshSpellIcon;
         RefreshSpellIcon();
+        if (_page2ScrollRT != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_page2ScrollRT));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

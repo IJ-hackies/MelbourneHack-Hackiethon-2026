@@ -27,10 +27,11 @@ public class MergeRitualUI : MonoBehaviour
 #pragma warning disable CS0414
     [SerializeField] private float panelH = 560f;
 #pragma warning restore CS0414
-    [SerializeField] private float rowH   = 48f;
+    [SerializeField] private float rowH   = 52f;
     [SerializeField] private float rowGap = 6f;
 
     private GameObject canvasGO;
+    private RectTransform _panelRoot;
     private bool isOpen;
 
     private RectTransform spellListContainer;
@@ -48,6 +49,9 @@ public class MergeRitualUI : MonoBehaviour
     // Buttons
     private Button mergeBtn;
     private TMP_Text mergeBtnText;
+    private RectTransform mergeBtnRT;
+    private Image mergeBtnGlow;
+    private ParticleSystem mergeParticles;
 
     private class MergeRowUI
     {
@@ -76,11 +80,21 @@ public class MergeRitualUI : MonoBehaviour
         PauseManager.Pause();
         RefreshList();
         UpdatePreview();
+        if (_panelRoot != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_panelRoot));
     }
 
     public void Close()
     {
+        if (!isOpen) return;
         isOpen = false;
+        StartCoroutine(CloseRoutine());
+    }
+
+    private System.Collections.IEnumerator CloseRoutine()
+    {
+        if (_panelRoot != null)
+            yield return StartCoroutine(UIPanelAnimator.AnimateOut(_panelRoot));
         if (canvasGO != null) canvasGO.SetActive(false);
         PauseManager.Unpause();
     }
@@ -88,6 +102,7 @@ public class MergeRitualUI : MonoBehaviour
     private void OnDestroy()
     {
         if (canvasGO != null) Destroy(canvasGO);
+        if (mergeParticles != null) Destroy(mergeParticles.gameObject);
     }
 
     // ── Build ────────────────────────────────────────────────────────────────
@@ -106,95 +121,108 @@ public class MergeRitualUI : MonoBehaviour
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Backdrop
+        // Backdrop — stays as direct child of canvas (does not animate)
         var backdrop = MakeRT("Backdrop", canvasGO.transform,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
         backdrop.offsetMin = Vector2.zero; backdrop.offsetMax = Vector2.zero;
         var bdImg = backdrop.gameObject.AddComponent<Image>();
         bdImg.color = new Color(0f, 0f, 0f, 0.75f);
 
-        // Panel background — black rounded-edge box
-        var panelBg = MakeRT("PanelBg", canvasGO.transform,
+        // Panel root — wraps all visual elements so they animate together
+        var panelRoot = MakeRT("PanelRoot", canvasGO.transform,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        panelRoot.offsetMin = Vector2.zero;
+        panelRoot.offsetMax = Vector2.zero;
+        _panelRoot = panelRoot;
+
+        // Panel background — purple box
+        var panelBg = MakeRT("PanelBg", panelRoot,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(panelW + 80f, 600f));
+            new Vector2(0f, 10f), new Vector2(panelW + 80f, 920f));
         var panelImg = panelBg.gameObject.AddComponent<Image>();
         panelImg.sprite = boxSprite;
         panelImg.type = Image.Type.Sliced;
-        panelImg.color = new Color(0.06f, 0.06f, 0.08f, 0.94f);
+        panelImg.color = new Color(0.18f, 0.07f, 0.32f, 0.97f);
 
         // Title
-        MakeTMP("Title", canvasGO.transform,
+        MakeTMP("Title", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -40f), new Vector2(500f, 40f),
-            "~ Merge Ritual ~", 28f, Color.white, TextAlignmentOptions.Center);
+            new Vector2(0f, -115f), new Vector2(600f, 48f),
+            "~ Merge Ritual ~", 33f, Color.white, TextAlignmentOptions.Center);
 
-        MakeTMP("Subtitle", canvasGO.transform,
+        MakeTMP("Subtitle", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -80f), new Vector2(500f, 20f),
-            "Select 2-3 spells to fuse. Source spells are consumed.", 13f,
+            new Vector2(0f, -165f), new Vector2(600f, 24f),
+            "Select 2-3 spells to fuse. Source spells are consumed.", 15f,
             new Color(0.6f, 0.6f, 0.6f), TextAlignmentOptions.Center);
 
         // Left: spell list
         float leftX = -panelW / 4f - 20f;
-        MakeTMP("AvailLabel", canvasGO.transform,
+        MakeTMP("AvailLabel", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(leftX, -110f), new Vector2(340f, 25f),
-            "Available Spells", 18f, Color.white, TextAlignmentOptions.Center);
+            new Vector2(leftX, -200f), new Vector2(400f, 28f),
+            "Available Spells", 22f, Color.white, TextAlignmentOptions.Center);
 
-        spellListContainer = MakeRT("SpellList", canvasGO.transform,
+        spellListContainer = MakeRT("SpellList", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(leftX, -145f), new Vector2(340f, 400f));
+            new Vector2(leftX, -238f), new Vector2(400f, 420f));
 
         // Right: preview
         float rightX = panelW / 4f + 20f;
-        MakeTMP("PreviewLabel", canvasGO.transform,
+        MakeTMP("PreviewLabel", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightX, -110f), new Vector2(380f, 25f),
-            "Merge Preview", 18f, Color.white, TextAlignmentOptions.Center);
+            new Vector2(rightX, -200f), new Vector2(430f, 28f),
+            "Merge Preview", 22f, Color.white, TextAlignmentOptions.Center);
 
-        previewCard = MakeRT("PreviewCard", canvasGO.transform,
+        previewCard = MakeRT("PreviewCard", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightX, -145f), new Vector2(380f, 300f));
-        var pcImg = previewCard.gameObject.AddComponent<Image>();
-        pcImg.color = new Color(0.55f, 0.35f, 0.65f, 0.3f);
+            new Vector2(rightX, -238f), new Vector2(430f, 340f));
 
         float py = -15f;
         previewName = MakeTMP("PName", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, py), new Vector2(350f, 30f),
-            "", 20f, Color.white, TextAlignmentOptions.Center);
-        py -= 30f;
+            new Vector2(0f, py), new Vector2(400f, 34f),
+            "", 22f, Color.white, TextAlignmentOptions.Center);
+        py -= 36f;
 
         previewFrom = MakeTMP("PFrom", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, py), new Vector2(350f, 20f),
-            "", 12f, new Color(0.6f, 0.6f, 0.6f), TextAlignmentOptions.Center);
-        py -= 35f;
+            new Vector2(0f, py), new Vector2(400f, 22f),
+            "", 14f, new Color(0.6f, 0.6f, 0.6f), TextAlignmentOptions.Center);
+        py -= 38f;
 
         previewTags = MakeTMP("PTags", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, py), new Vector2(350f, 50f),
-            "", 12f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
+            new Vector2(0f, py), new Vector2(400f, 56f),
+            "", 14f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
         previewTags.textWrappingMode = TMPro.TextWrappingModes.Normal;
-        py -= 55f;
+        py -= 60f;
 
         previewStats = MakeTMP("PStats", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, py), new Vector2(350f, 60f),
-            "", 12f, Color.white, TextAlignmentOptions.Center);
+            new Vector2(0f, py), new Vector2(400f, 68f),
+            "", 14f, Color.white, TextAlignmentOptions.Center);
         previewStats.textWrappingMode = TMPro.TextWrappingModes.Normal;
-        py -= 65f;
+        py -= 72f;
 
         previewWarning = MakeTMP("PWarn", previewCard,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, py), new Vector2(350f, 35f),
-            "", 12f, new Color(0.79f, 0.17f, 0.17f, 0.8f), TextAlignmentOptions.Center);
+            new Vector2(0f, py), new Vector2(400f, 38f),
+            "", 14f, new Color(0.79f, 0.17f, 0.17f, 0.8f), TextAlignmentOptions.Center);
         previewWarning.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
-        // Bottom buttons
-        var mergeBtnRT = MakeRT("MergeBtn", canvasGO.transform,
+        // Bottom buttons — glow behind merge button, then button on top
+        var glowRT = MakeRT("MergeBtnGlow", panelRoot,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(-60f, 60f), new Vector2(160f, 50f));
+            new Vector2(-75f, 225f), new Vector2(260f, 100f));
+        mergeBtnGlow = glowRT.gameObject.AddComponent<Image>();
+        mergeBtnGlow.sprite = buttonSprite;
+        mergeBtnGlow.type = Image.Type.Sliced;
+        mergeBtnGlow.color = new Color(0.7f, 0.1f, 1f, 0f);
+
+        mergeBtnRT = MakeRT("MergeBtn", panelRoot,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(-75f, 225f), new Vector2(210f, 70f));
         var mImg = mergeBtnRT.gameObject.AddComponent<Image>();
         mImg.sprite = buttonSprite;
         mImg.type = Image.Type.Sliced;
@@ -202,15 +230,43 @@ public class MergeRitualUI : MonoBehaviour
         mergeBtn = mergeBtnRT.gameObject.AddComponent<Button>();
         mergeBtn.targetGraphic = mImg;
         mergeBtn.onClick.AddListener(OnMergeClick);
+        mergeBtnRT.gameObject.AddComponent<UIButtonHover>();
 
         mergeBtnText = MakeTMP("MergeTxt", mergeBtnRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero,
-            "Perform Ritual", 18f, Color.white, TextAlignmentOptions.Center);
+            "Perform Ritual", 20f, Color.white, TextAlignmentOptions.Center);
 
-        var skipBtnRT = MakeRT("SkipBtn", canvasGO.transform,
+        // Particles (world-space, repositioned each frame to track button)
+        var psGO = new GameObject("MergeParticles");
+        mergeParticles = psGO.AddComponent<ParticleSystem>();
+        var psMain = mergeParticles.main;
+        psMain.loop = true;
+        psMain.startLifetime = 1.2f;
+        psMain.startSpeed = 80f;
+        psMain.startSize = new ParticleSystem.MinMaxCurve(4f, 9f);
+        psMain.startColor = new ParticleSystem.MinMaxGradient(
+            new Color(0.7f, 0.2f, 1f, 1f), new Color(0.9f, 0.5f, 1f, 0.8f));
+        psMain.gravityModifier = -0.3f;
+        psMain.simulationSpace = ParticleSystemSimulationSpace.World;
+        psMain.maxParticles = 60;
+        var psEmit = mergeParticles.emission;
+        psEmit.rateOverTime = 18f;
+        var psShape = mergeParticles.shape;
+        psShape.shapeType = ParticleSystemShapeType.Rectangle;
+        psShape.scale = new Vector3(1.6f, 0.4f, 1f);
+        var psCol = mergeParticles.colorOverLifetime;
+        psCol.enabled = true;
+        var grad = new Gradient();
+        grad.SetKeys(
+            new[] { new GradientColorKey(new Color(0.8f, 0.3f, 1f), 0f), new GradientColorKey(new Color(0.6f, 0.1f, 0.9f), 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+        psCol.color = grad;
+        mergeParticles.Stop();
+
+        var skipBtnRT = MakeRT("SkipBtn", panelRoot,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(100f, 60f), new Vector2(110f, 50f));
+            new Vector2(120f, 225f), new Vector2(150f, 70f));
         var sImg = skipBtnRT.gameObject.AddComponent<Image>();
         sImg.sprite = buttonSprite;
         sImg.type = Image.Type.Sliced;
@@ -218,13 +274,39 @@ public class MergeRitualUI : MonoBehaviour
         var skipBtn = skipBtnRT.gameObject.AddComponent<Button>();
         skipBtn.targetGraphic = sImg;
         skipBtn.onClick.AddListener(Close);
+        skipBtnRT.gameObject.AddComponent<UIButtonHover>();
 
         MakeTMP("SkipTxt", skipBtnRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero,
-            "Skip", 18f, Color.white, TextAlignmentOptions.Center);
+            "Skip", 20f, Color.white, TextAlignmentOptions.Center);
 
         canvasGO.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (!isOpen || mergeBtn == null) return;
+
+        // Pulse the glow when button is active
+        if (mergeBtnGlow != null)
+        {
+            float a = mergeBtn.interactable
+                ? (Mathf.Sin(Time.unscaledTime * 4f) * 0.3f + 0.45f)
+                : 0f;
+            mergeBtnGlow.color = new Color(0.7f, 0.1f, 1f, a);
+        }
+
+        // Keep particles positioned over the merge button
+        if (mergeParticles != null && mergeBtnRT != null && Camera.main != null)
+        {
+            Vector3[] corners = new Vector3[4];
+            mergeBtnRT.GetWorldCorners(corners);
+            Vector3 screenCenter = (corners[0] + corners[2]) * 0.5f;
+            // For Screen Space Overlay the corners are screen pixels (z=0); convert to world
+            screenCenter.z = -Camera.main.transform.position.z;
+            mergeParticles.transform.position = Camera.main.ScreenToWorldPoint(screenCenter);
+        }
     }
 
     // ── Refresh list ─────────────────────────────────────────────────────────
@@ -295,6 +377,7 @@ public class MergeRitualUI : MonoBehaviour
                 btn.targetGraphic = row.bg;
                 SpellData captured = spell;
                 btn.onClick.AddListener(() => ToggleSelection(captured));
+                row.rt.gameObject.AddComponent<UIButtonHover>();
             }
 
             rows.Add(row);
@@ -323,6 +406,12 @@ public class MergeRitualUI : MonoBehaviour
         bool valid = selected.Count >= 2;
         mergeBtn.interactable = valid;
         mergeBtnText.color = valid ? Color.white : new Color(1f, 1f, 1f, 0.3f);
+
+        if (mergeParticles != null)
+        {
+            if (valid && !mergeParticles.isPlaying) mergeParticles.Play();
+            else if (!valid && mergeParticles.isPlaying) { mergeParticles.Stop(); mergeParticles.Clear(); }
+        }
 
         if (!valid)
         {

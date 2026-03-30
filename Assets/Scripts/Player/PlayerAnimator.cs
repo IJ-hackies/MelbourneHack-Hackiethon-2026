@@ -12,6 +12,9 @@ public class PlayerAnimator : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         movement = GetComponentInParent<PlayerMovement>();
+
+        if (GetComponent<PlayerOutline>() == null)
+            gameObject.AddComponent<PlayerOutline>();
     }
 
     private void Update()
