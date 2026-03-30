@@ -42,7 +42,13 @@
       "Bash(grep -iE \"\\\\.\\(prefab|unity\\)$\")",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(find C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026Assets -type f \\\\\\(-name *.vfx -o -name *Particle* \\\\\\))",
-      "Bash(grep -r \"Material.*Particle\\\\|Shader.*Particle\\\\|m_EmitterVelocityMode\" C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026AssetsPrefabs --include=*.prefab)"
+      "Bash(grep -r \"Material.*Particle\\\\|Shader.*Particle\\\\|m_EmitterVelocityMode\" C:UserszonesDesktopProjectsMelbourneHack-Hackiethon-2026AssetsPrefabs --include=*.prefab)",
+      "Bash(grep -v '\\\\.meta$')",
+      "Bash(find /c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/Assets -name *Camera* -o -name *Cinemachine*)",
+      "Bash(grep -E \"\\\\.\\(prefab|unity\\)$\")",
+      "Bash(for dir:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/$dir/**)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"

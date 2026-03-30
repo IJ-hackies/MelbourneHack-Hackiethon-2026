@@ -27,10 +27,10 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] [Range(0.3f, 0.9f)] private float scrollWidthPct = 0.5f;
     [Tooltip("Scroll height as fraction of screen height (0-1)")]
     [SerializeField] [Range(0.4f, 0.98f)] private float scrollHeightPct = 0.88f;
-    [SerializeField] private float titleFontSize = 36f;
-    [SerializeField] private float messageFontSize = 26f;
-    [SerializeField] private float spellNameFontSize = 30f;
-    [SerializeField] private float bodyFontSize = 20f;
+    [SerializeField] private float titleFontSize = 72f;
+    [SerializeField] private float messageFontSize = 64f;
+    [SerializeField] private float spellNameFontSize = 60f;
+    [SerializeField] private float bodyFontSize = 40f;
 
     [Header("Transition Timing")]
     [SerializeField] private float fadeToBlackDuration = 0.7f;
@@ -228,8 +228,8 @@ public class StageTransitionUI : MonoBehaviour
         // "STAGE CLEARED" text centered on screen (shown during black screen)
         stageClearedText = MakeTMP("StageClearedText", (RectTransform)canvasGO.transform,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(600f, 80f),
-            "STAGE CLEARED", 48f, Color.white, TextAlignmentOptions.Center);
+            Vector2.zero, new Vector2(800f, 100f),
+            "STAGE CLEARED", 80f, Color.white, TextAlignmentOptions.Center);
         stageClearedText.fontStyle = FontStyles.Bold;
         SetTextAlpha(stageClearedText, 0f);
 
@@ -271,7 +271,7 @@ public class StageTransitionUI : MonoBehaviour
         titleText = MakeTMP("Title", contentRT,
             new Vector2(0f, 0.82f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
             Vector2.zero, Vector2.zero,
-            "", titleFontSize, Color.white, TextAlignmentOptions.Center);
+            "", titleFontSize, Color.black, TextAlignmentOptions.Center);
         titleText.GetComponent<RectTransform>().offsetMin = Vector2.zero;
         titleText.GetComponent<RectTransform>().offsetMax = Vector2.zero;
 
@@ -287,10 +287,10 @@ public class StageTransitionUI : MonoBehaviour
 
         // Chronicle message — fills area between divider and bottom
         messageText = MakeTMP("Message", contentRT,
-            new Vector2(0.05f, 0f), new Vector2(0.95f, 0.75f),
+            new Vector2(0.10f, 0f), new Vector2(0.90f, 0.75f),
             new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero,
-            "", messageFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+            "", Mathf.Max(messageFontSize, 40f), new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         messageText.fontStyle = FontStyles.Italic;
         messageText.textWrappingMode = TMPro.TextWrappingModes.Normal;
         messageText.GetComponent<RectTransform>().offsetMin = Vector2.zero;
@@ -298,13 +298,13 @@ public class StageTransitionUI : MonoBehaviour
 
         // Attribution — near bottom of scroll
         attributionText = MakeTMP("Attribution", scrollRT,
-            new Vector2(0.5f, 0.08f), new Vector2(0.5f, 0.08f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(300f, 30f),
-            "— The Chronicle", 16f, new Color(0.53f, 0.18f, 0.61f, 0.7f), TextAlignmentOptions.Center);
+            new Vector2(0.5f, 0.05f), new Vector2(0.5f, 0.05f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(400f, 50f),
+            "— The Chronicle", 32f, new Color(0.53f, 0.18f, 0.61f, 0.7f), TextAlignmentOptions.Center);
 
         // Next page button
         var nextRT = MakeRT("NextBtn", scrollRT,
-            new Vector2(0.92f, 0.06f), new Vector2(0.92f, 0.06f), new Vector2(0.5f, 0.5f),
+            new Vector2(0.88f, 0.10f), new Vector2(0.88f, 0.10f), new Vector2(0.5f, 0.5f),
             Vector2.zero, new Vector2(60f, 60f));
         var nextImg = nextRT.gameObject.AddComponent<Image>();
         nextImg.sprite = nextPageArrow;
@@ -349,15 +349,15 @@ public class StageTransitionUI : MonoBehaviour
         // "~ New Spell ~" header
         MakeTMP("NewSpellHeader", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(400f, 40f),
-            "~ New Spell ~", 24f, Color.white, TextAlignmentOptions.Center);
-        yOffset -= 50f;
+            new Vector2(0f, yOffset), new Vector2(500f, 60f),
+            "~ New Spell ~", 48f, Color.black, TextAlignmentOptions.Center);
+        yOffset -= 70f;
 
         // Spell card
         var cardRT = MakeRT("SpellCard", contentRT,
             new Vector2(0.05f, 1f), new Vector2(0.95f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(0f, 260f));
-        cardRT.offsetMin = new Vector2(cardRT.offsetMin.x, cardRT.offsetMax.y - 260f);
+            new Vector2(0f, yOffset), new Vector2(0f, 440f));
+        cardRT.offsetMin = new Vector2(cardRT.offsetMin.x, cardRT.offsetMax.y - 440f);
         var cardImg = cardRT.gameObject.AddComponent<Image>();
         cardImg.sprite = boxSprite;
         cardImg.type = Image.Type.Sliced;
@@ -366,7 +366,7 @@ public class StageTransitionUI : MonoBehaviour
         // Spell icon at the top of the card
         var iconRT = MakeRT("SpellIcon", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -10f), new Vector2(64f, 64f));
+            new Vector2(0f, -12f), new Vector2(64f, 64f));
         spellIconImage = iconRT.gameObject.AddComponent<Image>();
         spellIconImage.preserveAspect = true;
         spellIconImage.raycastTarget = false;
@@ -375,69 +375,68 @@ public class StageTransitionUI : MonoBehaviour
         // Loading indicator — shown while icon is generating
         brewingText = MakeTMP("BrewingText", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -42f), new Vector2(200f, 24f),
+            new Vector2(0f, -55f), new Vector2(300f, 40f),
             "Brewing spell...", bodyFontSize * 0.85f, new Color(0.55f, 0.4f, 0.7f), TextAlignmentOptions.Center);
         brewingText.fontStyle = FontStyles.Italic;
         brewingText.gameObject.SetActive(false);
 
         spellNameText = MakeTMP("SpellName", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -80f), new Vector2(350f, 35f),
-            "", spellNameFontSize, Color.white, TextAlignmentOptions.Center);
+            new Vector2(0f, -95f), new Vector2(450f, 55f),
+            "", spellNameFontSize, new Color(0.35f, 0.1f, 0.55f), TextAlignmentOptions.Center);
 
         spellFlavorText = MakeTMP("SpellFlavor", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -115f), new Vector2(350f, 55f),
+            new Vector2(0f, -155f), new Vector2(430f, 80f),
             "", bodyFontSize, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
         spellFlavorText.fontStyle = FontStyles.Italic;
         spellFlavorText.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
         spellTagsText = MakeTMP("SpellTags", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -170f), new Vector2(350f, 30f),
+            new Vector2(0f, -250f), new Vector2(430f, 50f),
             "", bodyFontSize, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
 
         spellStatsText = MakeTMP("SpellStats", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -200f), new Vector2(350f, 30f),
+            new Vector2(0f, -310f), new Vector2(430f, 50f),
             "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
 
-        yOffset -= 280f;
+        yOffset -= 460f;
 
         // Corruption section
         corruptionSection = MakeRT("CorruptionSection", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(400f, 130f));
+            new Vector2(0f, yOffset), new Vector2(500f, 160f));
 
         MakeTMP("CorruptHeader", corruptionSection,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, 0f), new Vector2(400f, 30f),
-            "~ Corrupted Spells ~", 20f, new Color(0.79f, 0.17f, 0.17f), TextAlignmentOptions.Center);
+            new Vector2(0f, 0f), new Vector2(500f, 50f),
+            "~ Corrupted Spells ~", 40f, new Color(0.79f, 0.17f, 0.17f), TextAlignmentOptions.Center);
 
         corruptionText = MakeTMP("CorruptBody", corruptionSection,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -35f), new Vector2(380f, 85f),
+            new Vector2(0f, -55f), new Vector2(450f, 100f),
             "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
         corruptionText.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
-        yOffset -= 145f;
+        yOffset -= 180f;
 
-        // HP delta
-        MakeTMP("StatsHeader", contentRT,
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(400f, 30f),
-            "~ Your Stats ~", 20f, Color.white, TextAlignmentOptions.Center);
-        yOffset -= 35f;
+        // HP delta — anchored above the begin button
+        MakeTMP("StatsHeader", scrollRT,
+            new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(500f, 50f),
+            "~ Your Stats ~", 40f, Color.white, TextAlignmentOptions.Center);
 
-        hpDeltaText = MakeTMP("HPDelta", contentRT,
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(400f, 35f),
-            "", 18f, new Color(0.18f, 0.62f, 0.27f), TextAlignmentOptions.Center);
+        hpDeltaText = MakeTMP("HPDelta", scrollRT,
+            new Vector2(0.5f, 0.23f), new Vector2(0.5f, 0.23f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(500f, 50f),
+            "", 36f, new Color(0.18f, 0.62f, 0.27f), TextAlignmentOptions.Center);
 
         // Begin button — anchored to bottom of scroll
         var beginRT = MakeRT("BeginBtn", scrollRT,
-            new Vector2(0.5f, 0.04f), new Vector2(0.5f, 0.04f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(180f, 58f));
+            new Vector2(0.5f, 0.17f), new Vector2(0.5f, 0.17f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(240f, 70f));
         var beginImg = beginRT.gameObject.AddComponent<Image>();
         beginImg.sprite = buttonSprite;
         beginImg.type = Image.Type.Sliced;
@@ -449,7 +448,7 @@ public class StageTransitionUI : MonoBehaviour
         MakeTMP("BeginText", beginRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero,
-            "BEGIN", 24f, Color.white, TextAlignmentOptions.Center);
+            "BEGIN", 48f, Color.white, TextAlignmentOptions.Center);
     }
 
     // ── Populate ─────────────────────────────────────────────────────────────
@@ -497,25 +496,8 @@ public class StageTransitionUI : MonoBehaviour
                                   $"CD: {manifest.new_spell.cooldown:F1}";
         }
 
-        // Corruptions
-        if (manifest.corrupted_spells != null && manifest.corrupted_spells.Length > 0)
-        {
-            corruptionSection.gameObject.SetActive(true);
-            string corruptText = "";
-            foreach (var c in manifest.corrupted_spells)
-            {
-                corruptText += c.spell_name + "\n";
-                if (c.added_tags != null)
-                    foreach (var t in c.added_tags) corruptText += $"  + {t}\n";
-                if (c.removed_tags != null)
-                    foreach (var t in c.removed_tags) corruptText += $"  - {t}\n";
-            }
-            corruptionText.text = corruptText.TrimEnd();
-        }
-        else
-        {
-            corruptionSection.gameObject.SetActive(false);
-        }
+        // Corruption section — only shown if the new spell itself is cursed
+        corruptionSection.gameObject.SetActive(false);
 
         // HP delta
         hpDeltaText.text = $"HP: {Mathf.CeilToInt(prevHp)} → {Mathf.CeilToInt(newHp)}";

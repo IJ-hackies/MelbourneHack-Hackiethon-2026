@@ -1,66 +1,95 @@
-# Hackiethon
+# Everchanging Grimoire
 
-A 2D game built in Unity for Hackiethon.
+A 2D top-down roguelite dungeon crawler built in Unity for **Melbourne Hackiethon 2026** (theme: *Integrate an LLM into a Game*).
+
+The dungeon is a sentient, hungry book called the Grimoire. You are a Seeker — drawn by the promise of power, now trapped inside its pages. After every floor, the **Gemini API** reads how you played and generates the next floor's theme, enemies, and a new spell designed to counter your playstyle. The game runs indefinitely with escalating difficulty. There are no boss stages — just continuous escalation.
 
 ---
 
-## Folder Structure
+## How the LLM Works
+
+The game uses **Gemini's function calling** (structured tool use) to enforce strict JSON schema responses.
+
+**After each floor, the game sends Gemini:**
+- Stage number, combat style, dominant element, damage sources
+- HP remaining/lost, time spent clearing the floor
+- Full details of every equipped spell (name, tags, damage, speed, cooldown, element)
+- The previous floor's manifest (for narrative continuity)
+
+**Gemini returns a Floor Manifest containing:**
+- Floor name and tileset
+- Enemy spawns (archetype IDs + modifier flags like `armored`, `berserk`, `elemental_immune`)
+- A new spell with composed behavior tags
+- A narrative `stage_message` from the Chronicle (the Grimoire's voice)
+- Player HP scaling
+
+Stage 1 is always a fixed handcrafted floor so the first Gemini call has real session data to react to.
+
+**Spell icons** are generated via Nano Banana (Gemini image generation) from each spell's name, tags, and element.
+
+---
+
+## Spell System
+
+Spells are pure data — no runtime code generation. The engine has handlers for ~60 behavior tags across movement types, trajectory modifiers, on-impact effects, status effects, and corruption tags. The LLM creates novel spells by composing new *combinations* of tags, producing emergent behaviors.
+
+- **3 active spell slots** — quickswap with 1, 2, 3
+- **Cursed spells** — powerful stats with a built-in downside (e.g. `SELF_DAMAGE`, `ENEMY_HOMING`)
+- **Spell merging** — every 5 floors, fuse 2-3 spells into one that fires all components simultaneously
+
+---
+
+## Enemy System
+
+Enemies are a fixed library of archetypes with coded behavior (melee charger, ranged sentinel, tank brute, fast skitter, exploder, shield bearer, healer drone, mimic shade, and more). The LLM decides *which* enemies appear, *how many*, and *what modifiers* to apply based on how you've been playing.
+
+---
+
+## Map System
+
+Floors are assembled from handcrafted **20x20 chamber prefabs** in a **4x2 grid** (80x40 total). Each of the 10 tilesets (acid, bubblegum, dungeon, flames, forest, frozen, honey, ocean, rocky, techy) has 8 unique chambers. Gemini picks the tileset; chambers are randomized from that set.
+
+---
+
+## Tech Stack
+
+- **Engine:** Unity (C#), 2D top-down
+- **LLM:** Google Gemini API with function calling
+- **Art:** PixelLab 32x32 tileset assets
+- **Spell icons:** Nano Banana (Gemini image generation)
+- **Chamber tooling:** Python (`generate_chambers.py`) + Unity Editor tools
+
+---
+
+## Project Structure
 
 ```
 Assets/
 ├── Art/
-│   ├── Sprites/          # Individual sprite frames
-│   ├── Spritesheets/     # Raw spritesheet textures
-│   └── UI/               # UI-specific images and icons
+│   ├── Sprites/                # Individual sprite frames
+│   ├── Spritesheets/           # Spritesheets and tilesets
+│   └── UI/                     # UI images and icons
 ├── Animations/
-│   ├── Clips/            # .anim files
-│   └── Controllers/      # .controller (Animator) files
+│   ├── Clips/                  # .anim files
+│   └── Controllers/            # Animator controllers
 ├── Audio/
-│   ├── Music/            # Background music tracks
-│   └── SFX/              # Sound effects
-├── Fonts/
+│   ├── Music/                  # Background music
+│   └── SFX/                    # Sound effects
+├── Chambers/                   # Chamber prefabs and layouts per tileset
+│   ├── dungeon/
+│   ├── acid/
+│   └── ...                     # 10 tilesets total
 ├── Prefabs/
 ├── Scenes/
 └── Scripts/
-```
-
----
-
-## Naming Conventions
-
-### General Rules
-- Use **PascalCase** for all asset and file names
-- Use **underscores `_`** to separate descriptors (subject, action, variant)
-- Use **zero-padded numbers** for frames or ordered variants (`_01`, `_02`)
-- No spaces in any file or folder name
-
-### By Asset Type
-
-| Asset | Convention | Example |
-|---|---|---|
-| Script | `PascalCase` | `PlayerController.cs` |
-| Scene | `PascalCase` | `MainMenu.unity`, `Level01.unity` |
-| Prefab | `PascalCase` | `InsectEnemy.prefab` |
-| Animation clip | `Subject_Action` | `Insect_Attack.anim` |
-| Animator controller | `SubjectAnimator` | `InsectAnimator.controller` |
-| Spritesheet | `Subject_Action_Sheet` | `Insect_Attack_Sheet.png` |
-| Sprite / frame | `Subject_Action_##` | `Insect_Attack_01.png` |
-| Music | `TrackName_Music` | `Forest_Music.wav` |
-| Sound effect | `Subject_Action_SFX` | `Insect_Attack_SFX.wav` |
-| Font | `FontName` | `PixelMono.ttf` |
-
-### Example: "Insect Attack Animation"
-
-```
-Assets/Art/Spritesheets/    Insect_Attack_Sheet.png
-Assets/Art/Sprites/         Insect_Attack_01.png
-                            Insect_Attack_02.png
-                            Insect_Attack_03.png
-Assets/Animations/Clips/    Insect_Attack.anim
-Assets/Animations/Controllers/  InsectAnimator.controller
-Assets/Audio/SFX/           Insect_Attack_SFX.wav
-Assets/Prefabs/             InsectEnemy.prefab
-Assets/Scripts/             InsectController.cs
+    ├── Level/                  # StageDirector, StageLoader, FloorAssembler, GeminiClient, SessionLogger
+    ├── Spells/                 # SpellExecutor, Grimoire, SpellDTO, ProjectileHandler, Behaviors/
+    ├── Enemies/                # EnemyBase, archetype AIs, EnemySpawner, StatusEffectHandler
+    ├── Player/                 # PlayerMovement, PlayerAnimator, PlayerHUD
+    ├── UI/                     # StageTransitionUI, GrimoireUI, MergeRitualUI, SpellHotbar
+    ├── Camera/                 # CameraFollow, MapBoundsMarker
+    ├── Cutscene/               # IntroCutscene, CutscenePlayer
+    └── Audio/                  # MusicManager, SFXManager
 ```
 
 ---

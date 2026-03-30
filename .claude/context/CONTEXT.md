@@ -22,16 +22,25 @@ At the end of each floor, the game assembles a Session Log and sends it to Gemin
   "combat_style": "aggressive",
   "primary_element": "fire",
   "most_damage_taken_from": "ranged_enemies",
-  "last_word": "ember",
-  "spells_used": ["Crying Cinder", "Void Shard"]
+  "hp_remaining": 65.0,
+  "hp_lost": 35.0,
+  "time_spent_seconds": 42.5,
+  "equipped_spells": [
+    { "name": "Crying Cinder", "tags": ["PROJECTILE", "ORBITAL", "LIFESTEAL"], "damage": 28, "speed": 4.5, "cooldown": 0.8, "element": "fire", "is_merged": false },
+    { "name": "Void Shard", "tags": ["PROJECTILE"], "damage": 20, "speed": 8.0, "cooldown": 0.4, "element": "", "is_merged": false }
+  ]
 }
 ```
 
 - **Combat Style:** Derived from how much the player moved, how close they got to enemies
 - **Affinity:** Which element/damage type was used most
 - **Trauma:** The enemy type or trap that dealt the most damage this floor
-- **The "Last Word":** A single word the player chooses at the end of a floor to "seal" it — flavour + context for the LLM
+- **HP Remaining / HP Lost:** How much health the player has and how much they lost this floor
+- **Time Spent:** How long the player took to clear the floor (seconds)
+- **Equipped Spells:** Full details of every spell the player owns — name, tags, damage, speed, cooldown, element, merge status. Lets Gemini make informed decisions about countering the player's toolkit
 - **Stage Number:** Tells Gemini how hard to make the next floor
+
+Gemini also receives the previous stage's full floor manifest (the output from the last Gemini call) so it can avoid repetition and build on narrative continuity.
 
 ### The Output: Floor Manifest (via function calling)
 
@@ -58,15 +67,7 @@ Gemini returns a single structured `generate_floor` response:
     "element": "",
     "is_merged": false,
     "merged_from": []
-  },
-  "corrupted_spells": [
-    {
-      "spell_name": "Crying Cinder",
-      "added_tags": ["SELF_DAMAGE"],
-      "removed_tags": ["LIFESTEAL"],
-      "new_flavor": "The cinder no longer distinguishes friend from foe."
-    }
-  ]
+  }
 }
 ```
 
@@ -172,8 +173,7 @@ Grid  (Unity Grid component, Cell Size = 1 × 1)
     "damage": 20,
     "speed": 8.0,
     "cooldown": 0.4
-  },
-  "corrupted_spells": []
+  }
 }
 ```
 
@@ -269,7 +269,7 @@ Gemini only specifies the tileset. **Chamber selection is not part of Gemini's o
 4. Spawns 4 invisible `BoxCollider2D` boundary walls around the full map perimeter (keeps enemies and player inside)
 5. Calls `EnemySpawner.SpawnFloor(enemySpawns, origin)` to begin the staggered enemy spawn sequence
 
-Floor assembly is driven by `StageLoader.cs` (not auto-assembled on `Start`). `StageLoader` parses the manifest JSON, calls `FloorAssembler.LoadManifest()`, then handles Grimoire spell additions and corruptions. The manifest JSON is set via a `[TextArea]` Inspector field; leaving it blank loads the hardcoded Stage 1 manifest.
+Floor assembly is driven by `StageLoader.cs` (not auto-assembled on `Start`). `StageLoader` parses the manifest JSON, calls `FloorAssembler.LoadManifest()`, then handles Grimoire spell additions. The manifest JSON is set via a `[TextArea]` Inspector field; leaving it blank loads the hardcoded Stage 1 manifest.
 
 ### Tileset Integration (PixelLab Assets)
 All 32×32 tilesets are PixelLab assets. The 10 available tilesets are:
@@ -288,7 +288,7 @@ The `tileset_id` in the Floor Manifest tells `FloorAssembler` which set of prefa
 Stage number is always passed in the session log. Difficulty scales via:
 - **Enemy stats:** `base_stat * (1 + stage * 0.08)` — tunable curve, Gemini is prompted to increase density and modifier count
 - **Player HP:** grows each stage at a slower rate than enemies — deliberate difficulty creep. Gemini returns a `player_hp_increase_pct` float (e.g. `0.05` = +5%) in the Floor Manifest; the client applies `newHp = currentHp * (1 + player_hp_increase_pct)`. Shown as a before/after delta on the Stage Transition scroll (Page 2). Prompt engineering keeps this value lower than the enemy stat growth rate.
-- Spell corruption rate increases with stage (more tags mutated per floor)
+- Cursed spell frequency increases with stage (more likely to receive powerful-but-cursed spells)
 
 ---
 
@@ -421,18 +421,10 @@ Gemini may generate a **cursed spell**: a particularly powerful spell that inclu
 }
 ```
 
-### Spell Corruption (Decay System)
-Two distinct mechanisms exist for corruption:
+### Spell Corruption (Cursed Spells)
+Corruption is intrinsic to the spell itself — it is a possible drawback of a new spell that makes it significantly more powerful in exchange for a curse. The new spell given by the dungeon may include one corruption tag (`SELF_DAMAGE`, `ENEMY_HOMING`, or `REVERSED_CONTROLS`) baked into its `tags` array, with `corruption_flavor` set to explain the trade-off. The player chooses to equip it or not.
 
-**1. Cursed spells (intrinsic):** The new spell given by the dungeon is itself corrupted — powerful stats, but corruption tags baked in at creation. The `corruption_flavor` field is set. The player chooses to equip it or not.
-
-**2. Existing spell mutation (external):** The `corrupted_spells` array in the Floor Manifest mutates spells already in the player's Grimoire:
-- Adds degrading tags (`SELF_DAMAGE`, `ENEMY_HOMING`)
-- Removes beneficial tags (`LIFESTEAL`, `HOMING`)
-- Updates `flavor` text to reflect the corruption narratively
-- This is how the dungeon "fights back" against the player's best weapons
-
-Gemini may use either or both per floor, depending on how aggressively it wants to counter the player. Later stages will more frequently combine both.
+There is no external corruption of existing spells — what the Grimoire gives, it does not take back. Instead, the dungeon counters the player by generating enemies and modifiers that exploit the player's current spell loadout (which Gemini receives in full detail via the session log).
 
 ---
 
@@ -490,7 +482,7 @@ Between every floor, a full-screen **scroll popup** is shown before the next flo
 ### Page 1 — The Chronicle Speaks
 The scroll unfurls to show the `stage_message`: a short paragraph (2–4 sentences) generated by Gemini in the voice of the Chronicle. Ominous, taunting, or poetic — never neutral. Displayed as handwritten-style text on the scroll.
 
-Gemini is prompted to write in second person, referencing `combat_style`, `primary_element`, `most_damage_taken_from`, and the `last_word` the player chose.
+Gemini is prompted to write in second person, referencing `combat_style`, `primary_element`, `most_damage_taken_from`, `hp_lost`, and `time_spent_seconds`.
 
 **Examples:**
 - Aggressive fire player: *"You have been very aggressive, haven't you? Burning everything you touch, rushing in before the ash settles. Let's see how that hunger holds up when the sentinels don't stop coming — and they're immune to your fire."*
@@ -503,7 +495,7 @@ The scroll's second page shows the mechanical summary of what's incoming:
 
 - **Stage title** — `floor_name` displayed prominently
 - **New spell card** — name, flavor, `corruption_flavor` (if any), tags, stats. Visually distinct (dark border, cursed glow) if the spell carries corruption tags.
-- **Spell corruptions** — any spells from `corrupted_spells` are listed with what changed (tags added/removed, new flavor)
+- **Cursed spell warning** — if the new spell has corruption tags, clearly shows the trade-off via `corruption_flavor`
 - **Player stat changes** — shows the player's updated stats for this stage (HP, etc.) as a delta (e.g. `HP: 100 → 115`). Both player HP and enemy stats scale with stage number; player HP grows at a slower rate than enemies, creating deliberate difficulty creep.
 
 ### `stage_message` in the Floor Manifest
@@ -569,7 +561,6 @@ Spell visual behavior is driven by its tags — `ORBITAL` triggers the orbital r
    │                                             │
 [StageLoader → FloorAssembler]                    [StageLoader → Grimoire]
 [Look up IDs in tilesetLibraries[activeTilesetId]] [Add new spell]
-                                                   [Corrupt existing spells]
 [Instantiate chambers per grid]
 [Spawn boundary wall colliders]
 [Apply palette_override to materials]

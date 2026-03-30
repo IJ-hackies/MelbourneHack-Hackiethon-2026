@@ -113,9 +113,10 @@ public static class ChamberPainter
         if (isHex)
         {
             floorBaseIdx = tc.floor_base;
-            // Everything except the floor base is a wall
-            for (int i = 0; i < 16; i++)
-                if (i != floorBaseIdx) wallSet.Add(i);
+            if (tc.wall_indices != null)
+                foreach (int idx in tc.wall_indices) wallSet.Add(idx);
+            if (tc.detail_indices != null)
+                foreach (int idx in tc.detail_indices) detailSet.Add(idx);
         }
         else
         {

@@ -267,6 +267,7 @@ GameObject:
   - component: {fileID: 75030475}
   - component: {fileID: 75030474}
   - component: {fileID: 75030478}
+  - component: {fileID: 75030479}
   m_Layer: 0
   m_Name: GameDirector
   m_TagString: Untagged
@@ -349,6 +350,19 @@ MonoBehaviour:
   model: gemini-3-pro-image-preview
   timeoutSeconds: 60
   iconSize: 64
+--- !u!114 &75030479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75030473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 575e78aedd1116543a7b7245f00397c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CutscenePlayer
+  uiFont: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
 --- !u!1 &196946237
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,7 +684,7 @@ MonoBehaviour:
   floorAssembler: {fileID: 1457820987}
   transitionUI: {fileID: 0}
   manifestJson: "{\r\n  \"floor_name\": \"The Ashen Gauntlet\",\r\n  \"tileset_id\":
-    \"dungeon\",\r\n  \"palette_override\": [\"#8B1A1A\", \"#C05020\", \"#1A0A00\"],\r\n 
+    \"rocky\",\r\n  \"palette_override\": [\"#8B1A1A\", \"#C05020\", \"#1A0A00\"],\r\n 
     \"environmental_modifier\": \"\",\r\n  \"stage_message\": \"Fire again. Always
     fire. You wrap yourself in it like armour, don't you? The sentinels have noticed.
     They've had time to prepare.\",\r\n  \"enemy_spawns\": [\r\n    { \"enemy_id\":
@@ -954,7 +968,6 @@ MonoBehaviour:
   font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
   slotSize: 80
   slotGap: 8
-  bottomPad: 20
   keyLabelY: 8
   nameFontSize: 12
   keyFontSize: 14

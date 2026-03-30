@@ -175,54 +175,6 @@ public class Grimoire : MonoBehaviour
     /// <summary>Call at the start of each new floor to reset the usage record.</summary>
     public void ResetUsedSpells() => usedSpellNames.Clear();
 
-    // --- Floor Manifest: spell corruption ---
-
-    /// <summary>
-    /// Applies a corruption entry from the Floor Manifest to an existing spell.
-    /// Adds/removes tags and updates flavor text in-place on the runtime SpellData.
-    /// </summary>
-    public void ApplyCorruption(CorruptionDTO dto)
-    {
-        SpellData target = null;
-        foreach (var s in library)
-        {
-            if (s.spellName == dto.spell_name) { target = s; break; }
-        }
-
-        if (target == null)
-        {
-            Debug.LogWarning($"Grimoire.ApplyCorruption: spell '{dto.spell_name}' not found.");
-            return;
-        }
-
-        var tagList = new List<SpellTag>(target.tags ?? Array.Empty<SpellTag>());
-
-        if (dto.added_tags != null)
-        {
-            foreach (string t in dto.added_tags)
-            {
-                if (Enum.TryParse(t, ignoreCase: true, out SpellTag tag) && !tagList.Contains(tag))
-                    tagList.Add(tag);
-                else if (!Enum.IsDefined(typeof(SpellTag), t))
-                    Debug.LogWarning($"Grimoire.ApplyCorruption: unknown tag '{t}' in added_tags — skipped.");
-            }
-        }
-
-        if (dto.removed_tags != null)
-        {
-            foreach (string t in dto.removed_tags)
-            {
-                if (Enum.TryParse(t, ignoreCase: true, out SpellTag tag))
-                    tagList.Remove(tag);
-            }
-        }
-
-        target.tags = tagList.ToArray();
-
-        if (!string.IsNullOrEmpty(dto.new_flavor))
-            target.flavor = dto.new_flavor;
-    }
-
     // --- Merge Ritual ---
 
     /// <summary>

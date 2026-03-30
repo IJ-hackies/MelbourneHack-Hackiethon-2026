@@ -44,10 +44,12 @@ public class GeminiClient : MonoBehaviour
     /// Sends session log to Gemini and returns a FloorManifestDTO via callback.
     /// On failure, callback receives null and error is logged.
     /// </summary>
+    /// <param name="previousManifestJson">JSON of the previous stage's manifest (null for first Gemini call).</param>
     public void GenerateFloor(string sessionLogJson, int nextStageNumber,
+                              string previousManifestJson,
                               Action<FloorManifestDTO> onComplete)
     {
-        StartCoroutine(GenerateFloorCoroutine(sessionLogJson, nextStageNumber, onComplete));
+        StartCoroutine(GenerateFloorCoroutine(sessionLogJson, nextStageNumber, previousManifestJson, onComplete));
     }
 
     /// <summary>Returns true if an API key is configured.</summary>
@@ -59,6 +61,7 @@ public class GeminiClient : MonoBehaviour
     // ── Coroutine ────────────────────────────────────────────────────────────
 
     private IEnumerator GenerateFloorCoroutine(string sessionLogJson, int nextStageNumber,
+                                               string previousManifestJson,
                                                Action<FloorManifestDTO> onComplete)
     {
         if (string.IsNullOrEmpty(apiKey))
@@ -68,7 +71,7 @@ public class GeminiClient : MonoBehaviour
             yield break;
         }
 
-        string prompt = BuildPrompt(sessionLogJson, nextStageNumber);
+        string prompt = BuildPrompt(sessionLogJson, nextStageNumber, previousManifestJson);
         string requestBody = BuildRequestJson(prompt);
 
         using var request = new UnityWebRequest(Endpoint, "POST");
@@ -101,47 +104,159 @@ public class GeminiClient : MonoBehaviour
 
     // ── Prompt ────────────────────────────────────────────────────────────────
 
-    private string BuildPrompt(string sessionLogJson, int nextStageNumber)
+    private string BuildPrompt(string sessionLogJson, int nextStageNumber,
+                               string previousManifestJson)
     {
-        return $@"You are the Chronicle — the sentient, omniscient narrator of an ever-changing dungeon in a 2D roguelite game called ""Everchanging Grimoire"".
+        string previousContext = string.IsNullOrEmpty(previousManifestJson)
+            ? "This is the first Gemini-generated stage. The player just finished the hardcoded tutorial floor."
+            : $@"Here is the manifest you generated for the previous stage (stage {nextStageNumber - 1}):
+{previousManifestJson}
+Use this to understand what the player just faced — avoid repeating the same tileset, enemy composition, or spell archetype unless there is a strong thematic reason.";
 
-The player just completed stage {nextStageNumber - 1}. Here is their session log:
+        return $@"You are the Chronicle — the sentient, omniscient narrator of a living dungeon in a 2D roguelite called ""Everchanging Grimoire"". The dungeon is the inside of a sentient, hungry book. The player is a Seeker — drawn by the promise of power, now trapped. You are the book's voice: collector, curator, predator. Each spell you offer once belonged to a Seeker who came before.
+
+## Context
+
+The player just completed stage {nextStageNumber - 1}. Here is their session log — it includes their playstyle, HP, time taken, and the FULL details of every spell they own (including tags and stats):
 {sessionLogJson}
 
-Generate the next floor (stage {nextStageNumber}) by calling the generate_floor function. Your goal:
+{previousContext}
 
-1. **Adapt to the player**: Counter their dominant strategy. If they use fire, spawn fire-immune enemies. If they're aggressive, use ranged enemies and open arenas. If passive, use fast rushdown enemies.
+## Instructions
 
-2. **Difficulty scaling**: Stage {nextStageNumber} should be harder than the last. Scale enemy counts and use modifiers. Formula guide: base_stat * (1 + {nextStageNumber} * 0.08).
+Generate stage {nextStageNumber} by calling the generate_floor function. Follow ALL of these directives:
 
-3. **New spell**: Create ONE new spell with a creative name and flavor text. Compose behavior from these tags (pick 2-5):
-   Movement (exactly ONE): PROJECTILE, ORBITAL, BEAM, CHANNELED
-   Trajectory: HOMING, WALL_BOUNCE, REFLECTING, PIERCE_WALLS, SPIRAL, STUTTER_MOTION, BOOMERANG, SURFACE_CRAWLING, SKIPPING, DELAYED_ARC, SENTIENT, DELAYED, PHASING, PERSISTENT
-   Caster: DOUBLE_HIT, MIRRORED, GHOST_CAST, SACRIFICE, ECHOING
-   On-impact: CHAIN, FRAGMENTING, AOE_BURST, PIERCE, LIFESTEAL, PUSH, PULL, DETONATING, LINGERING, SWAPPING, CONTAGIOUS, BURROWING, TETHERED
-   Status (zero or one): SLOW, BURN, FREEZE, STUN, POISON, BLEED, ROOT, WEAKNESS, CURSE, BLIND
-   Corruption (maximum 1): SELF_DAMAGE, ENEMY_HOMING, REVERSED_CONTROLS
+### 1. Adapt to the Player
+Study the session log carefully. The equipped_spells array shows you EVERY spell the player owns, including all their tags, damage, speed, cooldown, and element. Use this to make informed decisions:
+- If their spells are ranged (PROJECTILE, BEAM), send fast melee rushdown enemies.
+- If they rely on LIFESTEAL, spawn berserk enemies that can burst them down before they heal.
+- If they have AOE_BURST or CHAIN, use fewer but tankier enemies instead of swarms.
+- If they took heavy damage (high hp_lost), the dungeon smells blood — press the advantage.
+- If they cleared quickly (low time_spent_seconds), they're too comfortable — shake up the formula.
+- If they barely survived (low hp_remaining), taunt them about it in the stage_message but don't necessarily ease up.
 
-   The spell should be thematically interesting and counter or complement the player's style.
-   If creating a cursed spell, set corruption_flavor to explain the trade-off.
+### 2. Difficulty Scaling
+Stage {nextStageNumber} should feel like a meaningful escalation. Enemy stat formula: base_stat * (1 + {nextStageNumber} * 0.08). Scale enemy counts and modifier usage with stage number. Early stages should feel exploratory; later stages should feel relentless.
 
-3b. **Spell visuals**: Make each spell LOOK unique and powerful. Set these visual parameters:
-   - projectile_color: hex color for the main glow (e.g. ""#FF4400"" for fiery orange, ""#00FFCC"" for spectral cyan)
-   - secondary_color: hex color for trail/gradient endpoint (different from primary for richer look)
-   - projectile_scale: 0.5 (tiny shard) to 3.0 (massive orb). Scale up for powerful or slow spells.
-   - glow_size: 0.2 (subtle) to 1.5 (blazing aura). Bigger = more imposing.
-   - trail_length: 0.0 (no trail) to 0.5 (long streaking tail). Fast spells should have trails.
-   - trail_width: 0.05 (thin wisp) to 0.5 (thick ribbon).
-   - burst_count: 1 (single shot) to 5 (shotgun spread). More = wider spread pattern.
-   Be creative! A poison spell might be small, bright green with a long thin trail. A void cannon might be huge, dark purple with a wide short trail and burst_count 1. A frost barrage might be small icy blue with burst_count 4.
+### 3. New Spell — BE CREATIVE AND BALANCED
+Create ONE new spell. This is the heart of the game — every spell should feel like a unique artifact with its own identity, not a generic ""fire bolt"" or ""ice shard"".
 
-4. **Spell corruption**: Optionally corrupt 0-2 of the player's existing spells by adding/removing tags. Use this to weaken their strongest tools. Only corrupt spells listed in spells_used.
+**Creativity guidelines:**
+- Give spells evocative, poetic names that hint at their behavior (e.g. ""The Weeping Spiral"", ""Shattered Lullaby"", ""Marrow Lance"").
+- Write flavor text as if this spell was ripped from a dead Seeker's soul. It should have personality and history.
+- Combine tags in unexpected ways. ORBITAL + FRAGMENTING = a spinning shield that explodes into shrapnel. BEAM + BOOMERANG doesn't make sense — be thoughtful about which tags synergize.
+- Avoid generic single-tag spells. Every spell should have at least 2-3 tags that create emergent behavior.
+- The spell should sometimes complement the player's style (reward) and sometimes counter it (challenge them to adapt).
 
-5. **stage_message**: Write 2-4 sentences in second person as the Chronicle. Ominous, taunting, or poetic — never neutral. Reference the player's combat_style, primary_element, and most_damage_taken_from.
+**Balance guidelines — THIS IS CRITICAL:**
+- Spells will eventually be merged (2-3 spells fused into one). Merged spells inherit ALL tags and sum damage. So individual spells must be balanced conservatively:
+  - Damage: 15-40 for stages 2-5, 25-55 for stages 6-10, 35-70 for stages 11+. Never exceed 70 base damage.
+  - Cooldown: 0.4-2.0 seconds. Powerful tag combos need longer cooldowns (1.2+). Simple spells can be fast (0.4-0.8).
+  - Speed: 4.0-12.0. Homing/sentient spells should be slower (4-7). Direct projectiles faster (8-12).
+  - burst_count above 2 must have proportionally lower damage (divide by burst_count).
+  - SACRIFICE spells should have genuinely high power to justify the HP cost.
+  - Avoid stacking too many on-impact tags (max 2) — merged spells will add more.
+- If a tag combination would be too powerful, add a corruption tag (SELF_DAMAGE, ENEMY_HOMING, or REVERSED_CONTROLS) to create a cursed spell. Set corruption_flavor to explain the trade-off narratively. Cursed spells are powerful but risky — the dungeon offering power at a cost.
 
-6. **Tileset**: Pick from: acid, bubblegum, dungeon, flames, forest, frozen, honey, ocean, rocky, techy. Match the floor's theme.
+**Tag vocabulary:**
+Movement (exactly ONE required): PROJECTILE, ORBITAL, BEAM, CHANNELED
+Trajectory: HOMING, WALL_BOUNCE, REFLECTING, PIERCE_WALLS, SPIRAL, STUTTER_MOTION, BOOMERANG, SURFACE_CRAWLING, SKIPPING, DELAYED_ARC, SENTIENT, DELAYED, PHASING, PERSISTENT
+Caster: DOUBLE_HIT, MIRRORED, GHOST_CAST, SACRIFICE, ECHOING
+On-impact: CHAIN, FRAGMENTING, AOE_BURST, PIERCE, LIFESTEAL, PUSH, PULL, DETONATING, LINGERING, SWAPPING, CONTAGIOUS, BURROWING, TETHERED
+Status (zero or one): SLOW, BURN, FREEZE, STUN, POISON, BLEED, ROOT, WEAKNESS, CURSE, BLIND
+Corruption (zero or one, for cursed spells only): SELF_DAMAGE, ENEMY_HOMING, REVERSED_CONTROLS
 
-7. **Enemy spawns**: Use these enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard. Modifiers: armored, berserk, regenerating. Total enemies should be {4 + nextStageNumber} to {6 + nextStageNumber * 2} (capped at 30).";
+### 3b. Spell Visuals
+Make each spell LOOK unique. Set these visual parameters thoughtfully — they should match the spell's theme:
+- projectile_color: hex color for main glow (e.g. ""#FF4400"" fiery, ""#00FFCC"" spectral, ""#8B00FF"" void)
+- secondary_color: hex for trail/gradient endpoint (pick a complementary or contrasting color)
+- projectile_scale: 0.5 (tiny shard) to 3.0 (massive orb). Match to spell power/speed.
+- glow_size: 0.2 (subtle) to 1.5 (blazing). Bigger = more imposing.
+- trail_length: 0.0 to 0.5. Fast spells need longer trails.
+- trail_width: 0.05 (wisp) to 0.5 (ribbon).
+- burst_count: 1 (single) to 5 (shotgun). Higher burst = lower per-projectile damage.
+
+### 4. Stage Message
+Write 2-4 sentences as the Chronicle in second person. The Chronicle is not a generic narrator — it is a predator studying its prey. It should:
+- Reference specific details from the session log (combat_style, primary_element, hp_lost, time_spent).
+- Taunt, mock, or warn — never be neutral or encouraging.
+- Occasionally reference the Seeker's fate: they are becoming part of the collection.
+- Vary tone: sometimes coldly analytical, sometimes gleefully cruel, sometimes eerily poetic.
+
+### 5. Tileset
+Pick from: acid, bubblegum, dungeon, flames, forest, frozen, honey, ocean, rocky, techy.
+Match the floor's narrative theme. Avoid repeating the previous stage's tileset.
+
+### 6. Enemy Spawns
+Available enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard.
+Available modifiers: armored, berserk, regenerating.
+Total enemies: {4 + nextStageNumber} to {6 + nextStageNumber * 2} (capped at 30).
+Compose enemy groups that counter the player's equipped spells and playstyle. Use modifiers sparingly at early stages, more liberally later.
+
+### 7. Cutscene Steps — The Chronicle Speaks from the Void
+Generate a cutscene sequence (5–12 steps) that plays on a DARK SCREEN when the player finishes the current floor. The game world is NOT visible — this is a pure atmospheric narrative moment. The Chronicle addresses the player from a dark void with floating particles, colored light washes, and dramatic text.
+
+**Available actions:**
+- TYPEWRITER (text, speed 0.04–0.08) — reveal Chronicle narration character by character on a dark screen. The text appears gold/amber, centered, with a soft purple glow behind it.
+- CLEAR_TEXT (duration 0.3–0.8) — fade out the displayed text
+- FLASH (color hex) — sharp full-screen flash of color, then fade. Use for punctuation: a reveal, a threat, a transition.
+- WAIT (duration 0.3–1.5) — dramatic pause. Essential for pacing — let moments breathe.
+- SCREEN_TINT (color hex, duration 1.0–3.0) — wash the dark background with a color that fades in and out. Use to set mood: deep red for blood/danger, purple for void/magic, cold blue for frost/dread, sickly green for poison/corruption.
+- PARTICLES_BURST (color hex, count 15–50) — explosion of glowing particles from center. Dramatic punctuation for reveals or threats.
+- PARTICLES_DRIFT (color hex, count 8–20, duration 3.0–6.0) — slow-drifting ambient motes across the screen. Sets atmosphere without demanding attention.
+- TEXT_SHAKE (intensity 3–12, duration 0.3–0.8) — the displayed text trembles. Use when the Chronicle is angry, the dungeon is unstable, or something ominous happens.
+- PULSE (intensity 0.05–0.2, count 2–5, duration 1.5–4.0) — the dark background rhythmically brightens and dims, like a heartbeat. Creates dread and tension.
+- GLITCH (duration 0.2–0.6) — brief visual corruption: random color shifts, white flicker, text displacement. The dungeon glitching. Use sparingly for shock.
+
+**Structure rules:**
+1. Start with atmosphere: SCREEN_TINT, PARTICLES_DRIFT, or PULSE to establish mood before any text appears.
+2. Include 1–2 TYPEWRITER steps. Each should be 1–2 sentences max. The Chronicle is terse and menacing — every word matters. This text is DIFFERENT from stage_message (which appears on the scroll later). This is a fleeting whisper in the dark.
+3. Use WAIT between major beats. Silence is powerful.
+4. Use FLASH, PARTICLES_BURST, TEXT_SHAKE, or GLITCH for dramatic punctuation — but don't overdo it. One or two per cutscene.
+5. End with CLEAR_TEXT. The system handles the final fade to black automatically.
+6. Total feeling: 6–12 seconds. This should feel like a haunted pause, not a loading screen.
+
+**Example sequences (vary structure every stage — NEVER repeat the same pattern):**
+
+Taunting (player did well):
+```json
+[
+  {{ ""action"": ""PARTICLES_DRIFT"", ""color"": ""#6633AA"", ""count"": 12, ""duration"": 5.0 }},
+  {{ ""action"": ""WAIT"", ""duration"": 0.8 }},
+  {{ ""action"": ""TYPEWRITER"", ""text"": ""Impressive. The last one burned just as brightly..."", ""speed"": 0.055 }},
+  {{ ""action"": ""WAIT"", ""duration"": 0.5 }},
+  {{ ""action"": ""TYPEWRITER"", ""text"": ""...before the dark swallowed them whole."", ""speed"": 0.06 }},
+  {{ ""action"": ""PARTICLES_BURST"", ""color"": ""#9944FF"", ""count"": 30 }},
+  {{ ""action"": ""WAIT"", ""duration"": 0.4 }},
+  {{ ""action"": ""CLEAR_TEXT"", ""duration"": 0.6 }}
+]
+```
+
+Menacing (player barely survived):
+```json
+[
+  {{ ""action"": ""PULSE"", ""intensity"": 0.12, ""count"": 3, ""duration"": 2.5 }},
+  {{ ""action"": ""SCREEN_TINT"", ""color"": ""#440000"", ""duration"": 2.0 }},
+  {{ ""action"": ""TYPEWRITER"", ""text"": ""I can smell it on you. The fear."", ""speed"": 0.065 }},
+  {{ ""action"": ""TEXT_SHAKE"", ""intensity"": 5, ""duration"": 0.4 }},
+  {{ ""action"": ""WAIT"", ""duration"": 0.6 }},
+  {{ ""action"": ""FLASH"", ""color"": ""#FF2200"" }},
+  {{ ""action"": ""CLEAR_TEXT"", ""duration"": 0.5 }}
+]
+```
+
+Eerie (mid-game, player using fire):
+```json
+[
+  {{ ""action"": ""SCREEN_TINT"", ""color"": ""#221133"", ""duration"": 2.5 }},
+  {{ ""action"": ""PARTICLES_DRIFT"", ""color"": ""#FF6600"", ""count"": 10, ""duration"": 4.0 }},
+  {{ ""action"": ""WAIT"", ""duration"": 1.0 }},
+  {{ ""action"": ""TYPEWRITER"", ""text"": ""Your flames are borrowed. The Grimoire remembers who they belonged to."", ""speed"": 0.05 }},
+  {{ ""action"": ""WAIT"", ""duration"": 0.8 }},
+  {{ ""action"": ""GLITCH"", ""duration"": 0.3 }},
+  {{ ""action"": ""CLEAR_TEXT"", ""duration"": 0.5 }}
+]
+```";
     }
 
     // ── Request JSON ──────────────────────────────────────────────────────────
@@ -174,10 +289,10 @@ Generate the next floor (stage {nextStageNumber}) by calling the generate_floor 
               ""environmental_modifier"":  {{ ""type"": ""string"",  ""description"": ""Optional environmental effect ID"" }},
               ""stage_message"":           {{ ""type"": ""string"",  ""description"": ""The Chronicle's message to the player (2-4 sentences, second person, ominous/taunting)"" }},
               ""enemy_spawns"":            {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""enemy_id"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }}, ""modifiers"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }} }}, ""required"": [""enemy_id"", ""count""] }}, ""description"": ""Array of enemy spawn entries"" }},
-              ""new_spell"":               {{ ""type"": ""object"",  ""properties"": {{ ""name"": {{ ""type"": ""string"" }}, ""flavor"": {{ ""type"": ""string"" }}, ""corruption_flavor"": {{ ""type"": ""string"" }}, ""tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""damage"": {{ ""type"": ""number"" }}, ""speed"": {{ ""type"": ""number"" }}, ""cooldown"": {{ ""type"": ""number"" }}, ""element"": {{ ""type"": ""string"" }}, ""is_merged"": {{ ""type"": ""boolean"" }}, ""merged_from"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""projectile_color"": {{ ""type"": ""string"", ""description"": ""Hex color for main glow, e.g. #FF4400"" }}, ""secondary_color"": {{ ""type"": ""string"", ""description"": ""Hex color for trail gradient endpoint"" }}, ""projectile_scale"": {{ ""type"": ""number"", ""description"": ""Size multiplier 0.5-3.0"" }}, ""glow_size"": {{ ""type"": ""number"", ""description"": ""Glow radius 0.2-1.5"" }}, ""trail_length"": {{ ""type"": ""number"", ""description"": ""Trail time 0.0-0.5 seconds"" }}, ""trail_width"": {{ ""type"": ""number"", ""description"": ""Trail width 0.05-0.5"" }}, ""burst_count"": {{ ""type"": ""integer"", ""description"": ""Projectiles per cast 1-5"" }} }}, ""required"": [""name"", ""flavor"", ""tags"", ""damage"", ""speed"", ""cooldown"", ""projectile_color"", ""projectile_scale"", ""glow_size"", ""trail_length"", ""burst_count""], ""description"": ""The new spell given to the player"" }},
-              ""corrupted_spells"":        {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""spell_name"": {{ ""type"": ""string"" }}, ""added_tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""removed_tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""new_flavor"": {{ ""type"": ""string"" }} }}, ""required"": [""spell_name""] }}, ""description"": ""Existing spells to corrupt"" }}
+              ""new_spell"":               {{ ""type"": ""object"",  ""properties"": {{ ""name"": {{ ""type"": ""string"" }}, ""flavor"": {{ ""type"": ""string"" }}, ""corruption_flavor"": {{ ""type"": ""string"", ""description"": ""Set ONLY for cursed spells — explains the trade-off of built-in corruption tags"" }}, ""tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""damage"": {{ ""type"": ""number"" }}, ""speed"": {{ ""type"": ""number"" }}, ""cooldown"": {{ ""type"": ""number"" }}, ""element"": {{ ""type"": ""string"" }}, ""is_merged"": {{ ""type"": ""boolean"" }}, ""merged_from"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""projectile_color"": {{ ""type"": ""string"", ""description"": ""Hex color for main glow, e.g. #FF4400"" }}, ""secondary_color"": {{ ""type"": ""string"", ""description"": ""Hex color for trail gradient endpoint"" }}, ""projectile_scale"": {{ ""type"": ""number"", ""description"": ""Size multiplier 0.5-3.0"" }}, ""glow_size"": {{ ""type"": ""number"", ""description"": ""Glow radius 0.2-1.5"" }}, ""trail_length"": {{ ""type"": ""number"", ""description"": ""Trail time 0.0-0.5 seconds"" }}, ""trail_width"": {{ ""type"": ""number"", ""description"": ""Trail width 0.05-0.5"" }}, ""burst_count"": {{ ""type"": ""integer"", ""description"": ""Projectiles per cast 1-5"" }} }}, ""required"": [""name"", ""flavor"", ""tags"", ""damage"", ""speed"", ""cooldown"", ""projectile_color"", ""projectile_scale"", ""glow_size"", ""trail_length"", ""burst_count""], ""description"": ""The new spell given to the player. For cursed spells, include a corruption tag in tags[] and set corruption_flavor."" }},
+              ""cutscene_steps"":          {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""action"": {{ ""type"": ""string"", ""description"": ""One of: TYPEWRITER, CLEAR_TEXT, FLASH, WAIT, SCREEN_TINT, PARTICLES_BURST, PARTICLES_DRIFT, TEXT_SHAKE, PULSE, GLITCH"" }}, ""text"": {{ ""type"": ""string"" }}, ""speed"": {{ ""type"": ""number"" }}, ""duration"": {{ ""type"": ""number"" }}, ""intensity"": {{ ""type"": ""number"" }}, ""color"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }} }}, ""required"": [""action""] }}, ""description"": ""Dark-screen atmospheric cutscene sequence (5-12 steps). The Chronicle speaks from a dark void with particles, color washes, and dramatic text. Must end with CLEAR_TEXT."" }}
             }},
-            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell""]
+            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell"", ""cutscene_steps""]
           }}
         }}
       ]
@@ -222,13 +337,22 @@ Generate the next floor (stage {nextStageNumber}) by calling the generate_floor 
             int braceStart = responseJson.IndexOf('{', argsIdx + 6);
             if (braceStart < 0) return null;
 
-            // Find the matching closing brace
+            // Find the matching closing brace (string-aware — skip braces inside "...")
             int depth = 0;
             int braceEnd = -1;
+            bool inString = false;
             for (int i = braceStart; i < responseJson.Length; i++)
             {
-                if (responseJson[i] == '{') depth++;
-                else if (responseJson[i] == '}') { depth--; if (depth == 0) { braceEnd = i; break; } }
+                char c = responseJson[i];
+                if (inString)
+                {
+                    if (c == '\\') { i++; continue; } // skip escaped char
+                    if (c == '"') inString = false;
+                    continue;
+                }
+                if (c == '"') { inString = true; continue; }
+                if (c == '{') depth++;
+                else if (c == '}') { depth--; if (depth == 0) { braceEnd = i; break; } }
             }
 
             if (braceEnd < 0) return null;
@@ -236,7 +360,28 @@ Generate the next floor (stage {nextStageNumber}) by calling the generate_floor 
             string argsJson = responseJson.Substring(braceStart, braceEnd - braceStart + 1);
             Debug.Log($"[GeminiClient] Extracted manifest JSON:\n{argsJson}");
 
-            return JsonUtility.FromJson<FloorManifestDTO>(argsJson);
+            var manifest = JsonUtility.FromJson<FloorManifestDTO>(argsJson);
+
+            // Validate critical fields — JsonUtility silently returns defaults on mismatches
+            if (manifest != null)
+            {
+                if (string.IsNullOrEmpty(manifest.floor_name))
+                    Debug.LogWarning("[GeminiClient] Parsed manifest has empty floor_name — JSON structure may not match FloorManifestDTO.");
+                if (string.IsNullOrEmpty(manifest.tileset_id))
+                    Debug.LogWarning("[GeminiClient] Parsed manifest has empty tileset_id.");
+                if (manifest.enemy_spawns == null || manifest.enemy_spawns.Length == 0)
+                    Debug.LogWarning("[GeminiClient] Parsed manifest has no enemy_spawns.");
+                if (manifest.new_spell == null || string.IsNullOrEmpty(manifest.new_spell?.name))
+                    Debug.LogWarning("[GeminiClient] Parsed manifest has no new_spell.");
+
+                Debug.Log($"[GeminiClient] Parsed manifest: floor_name=\"{manifest.floor_name}\", " +
+                          $"tileset_id=\"{manifest.tileset_id}\", " +
+                          $"enemy_spawns={manifest.enemy_spawns?.Length ?? 0}, " +
+                          $"new_spell=\"{manifest.new_spell?.name}\", " +
+                          $"cutscene_steps={manifest.cutscene_steps?.Length ?? 0}");
+            }
+
+            return manifest;
         }
         catch (Exception e)
         {

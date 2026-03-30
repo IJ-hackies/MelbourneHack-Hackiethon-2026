@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,6 +22,10 @@ public class SessionLogger : MonoBehaviour
     private Vector2 lastPosition;
     private const float NearEnemyThreshold = 4f;
 
+    // HP tracking
+    private float hpAtFloorStart;
+    private Health playerHealth;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(this); return; }
@@ -30,6 +35,7 @@ public class SessionLogger : MonoBehaviour
     private void Start()
     {
         lastPosition = transform.position;
+        playerHealth = GetComponent<Health>();
     }
 
     private void Update()
@@ -77,15 +83,20 @@ public class SessionLogger : MonoBehaviour
         string combatStyle = DeriveCombatStyle();
         string primaryElement = DerivePrimaryElement();
         string mostDamageFrom = DeriveMostDamageFrom();
-        string[] spellsUsed = GetSpellsUsed();
+
+        float hpRemaining = playerHealth != null ? playerHealth.Current : 0f;
+        float hpLost = hpAtFloorStart - hpRemaining;
 
         var log = new SessionLogDTO
         {
-            stage_number          = stageNumber,
-            combat_style          = combatStyle,
-            primary_element       = primaryElement,
+            stage_number           = stageNumber,
+            combat_style           = combatStyle,
+            primary_element        = primaryElement,
             most_damage_taken_from = mostDamageFrom,
-            spells_used           = spellsUsed
+            hp_remaining           = Mathf.Round(hpRemaining * 10f) / 10f,
+            hp_lost                = Mathf.Round(Mathf.Max(0f, hpLost) * 10f) / 10f,
+            time_spent_seconds     = Mathf.Round(totalFloorTime * 10f) / 10f,
+            equipped_spells        = BuildEquippedSpells()
         };
 
         return JsonUtility.ToJson(log);
@@ -99,6 +110,7 @@ public class SessionLogger : MonoBehaviour
         damageByElement.Clear();
         damageTakenByEnemy.Clear();
         lastPosition = transform.position;
+        hpAtFloorStart = playerHealth != null ? playerHealth.Current : 100f;
         Grimoire.Instance?.ResetUsedSpells();
     }
 
@@ -146,28 +158,64 @@ public class SessionLogger : MonoBehaviour
         return worst;
     }
 
-    private string[] GetSpellsUsed()
+    private EquippedSpellDTO[] BuildEquippedSpells()
     {
         var grimoire = Grimoire.Instance;
-        if (grimoire == null) return System.Array.Empty<string>();
+        if (grimoire == null) return Array.Empty<EquippedSpellDTO>();
 
-        var names = grimoire.GetUsedSpellNames();
-        var arr   = new string[names.Count];
-        int i     = 0;
-        foreach (var n in names) arr[i++] = n;
-        return arr;
+        var result = new List<EquippedSpellDTO>();
+        foreach (var spell in grimoire.AllSpells)
+        {
+            if (spell == null) continue;
+
+            var tagNames = new List<string>();
+            if (spell.tags != null)
+                foreach (var t in spell.tags)
+                    tagNames.Add(t.ToString());
+
+            result.Add(new EquippedSpellDTO
+            {
+                name     = spell.spellName,
+                tags     = tagNames.ToArray(),
+                damage   = spell.damage,
+                speed    = spell.speed,
+                cooldown = spell.cooldown,
+                element  = spell.element ?? "",
+                is_merged = spell.isMerged
+            });
+        }
+        return result.ToArray();
     }
 }
 
 /// <summary>
 /// Plain serializable class for the session log JSON sent to Gemini.
 /// </summary>
-[System.Serializable]
+[Serializable]
 public class SessionLogDTO
 {
     public int      stage_number;
     public string   combat_style;
     public string   primary_element;
     public string   most_damage_taken_from;
-    public string[] spells_used;
+    public float    hp_remaining;
+    public float    hp_lost;
+    public float    time_spent_seconds;
+    public EquippedSpellDTO[] equipped_spells;
+}
+
+/// <summary>
+/// Serializable spell summary included in the session log so Gemini knows
+/// the full details of the player's current spell library.
+/// </summary>
+[Serializable]
+public class EquippedSpellDTO
+{
+    public string   name;
+    public string[] tags;
+    public float    damage;
+    public float    speed;
+    public float    cooldown;
+    public string   element;
+    public bool     is_merged;
 }

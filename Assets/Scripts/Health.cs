@@ -34,9 +34,11 @@ public class Health : MonoBehaviour
         currentHealth = rescaleCurrent ? maxHealth * ratio : maxHealth;
     }
 
+    public bool IsInvulnerable { get; set; }
+
     public void TakeDamage(float amount)
     {
-        if (IsDead) return;
+        if (IsDead || IsInvulnerable) return;
         currentHealth = Mathf.Max(0f, currentHealth - amount * DamageMultiplier);
         OnDamaged.Invoke(amount);
         if (IsDead)

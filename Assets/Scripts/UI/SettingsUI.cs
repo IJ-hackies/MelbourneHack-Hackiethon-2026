@@ -247,6 +247,7 @@ public class SettingsUI : MonoBehaviour
             ("Spell 1",    "Slot1"),
             ("Spell 2",    "Slot2"),
             ("Spell 3",    "Slot3"),
+            ("Dash",       "Dash"),
             ("Toggle Map", "ToggleMap"),
         };
 
@@ -540,6 +541,7 @@ public class SettingsUI : MonoBehaviour
         "Slot1"     => SettingsData.Slot1,
         "Slot2"     => SettingsData.Slot2,
         "Slot3"     => SettingsData.Slot3,
+        "Dash"      => SettingsData.Dash,
         "ToggleMap" => SettingsData.ToggleMap,
         _           => KeyCode.None,
     };
