@@ -95,7 +95,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 285542781
   m_SortingLayer: 2
-  m_SortingOrder: -2770
+  m_SortingOrder: -2170
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1808982527863717971, guid: cd054dfaeb4604f088d7c43cba00b191, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -147,6 +147,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 5
+  dashDistance: 3
+  dashDuration: 0.12
+  dashCooldown: 1.5
+  iFrameDuration: 0.25
 --- !u!95 &2565424070854832101
 Animator:
   serializedVersion: 7
@@ -263,8 +267,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.007151561, y: -0.20477648}
-  m_Size: {x: 0.0874404, y: 0.06899188}
+  m_Offset: {x: 0.0019851257, y: -0.20477663}
+  m_Size: {x: 0.23222703, y: 0.06899192}
   m_Direction: 1
 --- !u!114 &3219586476747754627
 MonoBehaviour:
@@ -297,7 +301,6 @@ MonoBehaviour:
   bleedIconPrefab: {fileID: 7012058873730672359, guid: 1831ba10ca06a4dbeb009b24dff8ec0c, type: 3}
   slowIconPrefab: {fileID: 4206263808547117881, guid: aa94b60dde7a84446aef07bbb9a4c876, type: 3}
   alagardFont: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
-  heartPosition: {x: 20, y: -20}
   statusPosition: {x: 20, y: 20}
 --- !u!114 &8057779570072822142
 MonoBehaviour:

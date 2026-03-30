@@ -230,12 +230,8 @@ public class SettingsUI : MonoBehaviour
 
     private void BuildControlsContent(RectTransform panel)
     {
-        float topY  = -(HeaderH + 2f + TabBarH + 1f);
+        float topY   = -(HeaderH + 2f + TabBarH + 1f);
         float height = PanelH - HeaderH - 2f - TabBarH - 1f - 80f;
-
-        _controlsContent = MakeRT("ControlsContent", panel,
-            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-            new Vector2(0f, topY), new Vector2(0f, height)).gameObject;
 
         (string label, string action)[] rows =
         {
@@ -251,15 +247,76 @@ public class SettingsUI : MonoBehaviour
             ("Toggle Map", "ToggleMap"),
         };
 
-        var contentRT = _controlsContent.GetComponent<RectTransform>();
-        float y = 0f;
+        const float SbW = 10f; // scrollbar strip width
+
+        // ── ScrollRect container ──────────────────────────────────────────────
+        var scrollRT = MakeRT("ControlsContent", panel,
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+            new Vector2(0f, topY), new Vector2(0f, height));
+        _controlsContent = scrollRT.gameObject;
+
+        // Transparent backing image required by ScrollRect
+        var scrollBg   = _controlsContent.AddComponent<Image>();
+        scrollBg.color = new Color(0f, 0f, 0f, 0f);
+
+        var scroll               = _controlsContent.AddComponent<ScrollRect>();
+        scroll.horizontal        = false;
+        scroll.vertical          = true;
+        scroll.movementType      = ScrollRect.MovementType.Clamped;
+        scroll.inertia           = true;
+        scroll.decelerationRate  = 0.15f;
+        scroll.scrollSensitivity = 40f;
+
+        // ── Viewport (clips overflowing rows) ─────────────────────────────────
+        var vpRT = MakeRT("Viewport", scrollRT,
+            Vector2.zero, Vector2.one, new Vector2(0f, 1f),
+            Vector2.zero, new Vector2(-SbW - 2f, 0f)); // shrink right to make room for scrollbar
+        var vpImg   = vpRT.gameObject.AddComponent<Image>();
+        vpImg.color = Color.white; // must be opaque so the Mask stencil write reveals children
+        var vpMask  = vpRT.gameObject.AddComponent<Mask>();
+        vpMask.showMaskGraphic = false; // hides the white image visually, stencil still works
+        scroll.viewport = vpRT;
+
+        // ── Scrollable content (holds all rows) ───────────────────────────────
+        float contentH = rows.Length * RowH;
+        var contentRT  = MakeRT("Content", vpRT,
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+            Vector2.zero, new Vector2(0f, contentH));
+        scroll.content = contentRT;
 
         for (int i = 0; i < rows.Length; i++)
-        {
-            var (lbl, act) = rows[i];
-            BuildBindRow(contentRT, lbl, act, y, i % 2 == 0 ? ColRow : ColRowAlt);
-            y -= RowH;
-        }
+            BuildBindRow(contentRT, rows[i].label, rows[i].action, -i * RowH,
+                         i % 2 == 0 ? ColRow : ColRowAlt);
+
+        // ── Scrollbar ─────────────────────────────────────────────────────────
+        var sbRT  = MakeRT("ScrollbarV", scrollRT,
+            new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f),
+            Vector2.zero, new Vector2(SbW, 0f));
+        sbRT.gameObject.AddComponent<Image>().color = new Color(0.18f, 0.13f, 0.07f, 1f);
+
+        // Sliding area — inset 1px on each end so the handle doesn't touch the edges
+        var slideRT = MakeRT("SlidingArea", sbRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(0f, -2f));
+
+        var handleGO = new GameObject("Handle");
+        handleGO.transform.SetParent(slideRT, false);
+        var handleRT       = handleGO.AddComponent<RectTransform>();
+        handleRT.anchorMin = Vector2.zero;
+        handleRT.anchorMax = Vector2.one;
+        handleRT.offsetMin = Vector2.zero;
+        handleRT.offsetMax = Vector2.zero;
+        var handleImg  = handleGO.AddComponent<Image>();
+        handleImg.color = new Color(ColGold.r, ColGold.g, ColGold.b, 0.85f);
+
+        var sb           = sbRT.gameObject.AddComponent<Scrollbar>();
+        sb.handleRect    = handleRT;
+        sb.targetGraphic = handleImg;
+        sb.direction     = Scrollbar.Direction.BottomToTop;
+
+        scroll.verticalScrollbar           = sb;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+        scroll.verticalScrollbarSpacing    = 2f;
     }
 
     private void BuildBindRow(RectTransform parent, string label, string action, float yPos, Color rowColor)

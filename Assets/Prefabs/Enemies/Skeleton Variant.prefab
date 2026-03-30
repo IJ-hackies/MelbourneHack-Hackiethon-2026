@@ -227,6 +227,8 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 1, g: 1, b: 1, a: 1}
   hitColorB: {r: 0.4056604, g: 0.31955323, b: 0.34377086, a: 1}
+  attackSfxClip: {fileID: 8300000, guid: a3a52aa10740849cda61dc04196d9b92, type: 3}
+  attackSfxVolume: 0.33
   applyBleed: 0
   bleedDuration: 2
   bleedDamageMultiplier: 0.1
@@ -265,6 +267,6 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0019810589, y: -0.12688379}
-  m_Size: {x: 0.063710004, y: 0.063710004}
+  m_Offset: {x: -0.00053222507, y: -0.12688379}
+  m_Size: {x: 0.20110996, y: 0.063710004}
   m_Direction: 1

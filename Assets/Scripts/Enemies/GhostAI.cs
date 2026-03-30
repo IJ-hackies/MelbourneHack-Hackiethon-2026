@@ -120,6 +120,8 @@ public class GhostAI : EnemyBase
         damageDealt = false;
         currentDir  = DirectionToPlayer();
 
+        SFXManager.Instance?.PlayGhostThrow((Vector2)transform.position);
+
         Vector3 spawnPos = transform.position + (Vector3)(currentDir * 0.45f);
         activeProjectile = GhostGooProjectile.Conjure(spawnPos, AttackDamage,
                                projectileColorA, projectileColorB,

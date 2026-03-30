@@ -68,6 +68,7 @@ public class IntroCutscene : MonoBehaviour
     [SerializeField] private TMP_Text              titleText;
     [SerializeField] private UnityEngine.UI.Button skipButton;
     [SerializeField] private TMP_Text              skipText;
+    [SerializeField] private Sprite                heartSprite;
 
     [Header("Narrative")]
     [SerializeField] [TextArea(3, 6)]
@@ -77,11 +78,19 @@ public class IntroCutscene : MonoBehaviour
     [SerializeField] private string subtitleMessage =
         "rumoured to have taken the souls of all who seeks it...along with their spells";
 
+    [Header("Cutscene Audio")]
+    [SerializeField] private AudioClip footstepClip;
+    [SerializeField] private AudioClip grimoireReachClip;
+    [SerializeField] private AudioClip ambientClip;
+    [SerializeField] [Range(0f, 1f)] private float ambientVolume = 0.4f;
+
     [Header("Scene Transition")]
     [SerializeField] private string gameplaySceneName = "StageTest";
 
     // ── Runtime state ────────────────────────────────────────────────────────
     private Camera                mainCam;
+    private AudioSource           cutsceneAudio;
+    private AudioSource           ambientAudio;
     private CinemachineBrain      cinemachineBrain;
     private GameObject            playerObj;
     private List<GameObject>      spawnedEnemies = new();
@@ -92,6 +101,7 @@ public class IntroCutscene : MonoBehaviour
     private Light2D               grimoireLight;
     private ParticleSystem        grimoireParticles;
     private TMP_Text              subtitleText;
+    private Image                 heartImage;
 
     private const float GrimoireGlowStartDist = 5.5f;
     private const float RingRadius            = 7.5f;
@@ -123,6 +133,12 @@ public class IntroCutscene : MonoBehaviour
         mainCam.transform.position = new Vector3(0f, 0f, -10f);
         camObj.tag = "MainCamera";
         camObj.AddComponent<AudioListener>();
+        cutsceneAudio             = camObj.AddComponent<AudioSource>();
+        cutsceneAudio.playOnAwake = false;
+
+        ambientAudio              = camObj.AddComponent<AudioSource>();
+        ambientAudio.playOnAwake  = false;
+        ambientAudio.loop         = true;
 
         cinemachineBrain = camObj.AddComponent<CinemachineBrain>();
         cinemachineBrain.m_DefaultBlend = new CinemachineBlendDefinition(
@@ -228,6 +244,24 @@ public class IntroCutscene : MonoBehaviour
 
         skipText.text  = "SKIP";
         skipText.color = Color.white;
+
+        // Heart image — hidden until heartbeat pulses
+        {
+            var go = new GameObject("HeartImage");
+            go.transform.SetParent(cutsceneCanvas.transform, false);
+            heartImage               = go.AddComponent<Image>();
+            heartImage.sprite        = heartSprite;
+            heartImage.preserveAspect = true;
+            heartImage.raycastTarget = false;
+            heartImage.color         = new Color(1f, 1f, 1f, 0f);
+            var rt               = heartImage.rectTransform;
+            rt.anchorMin         = new Vector2(0.5f, 0.5f);
+            rt.anchorMax         = new Vector2(0.5f, 0.5f);
+            rt.pivot             = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta         = new Vector2(320f, 320f);
+            rt.anchoredPosition  = Vector2.zero;
+            go.SetActive(false);
+        }
     }
 
     private TMP_Text MakeUIText(string name, float size, FontStyles style, Vector2 aMin, Vector2 aMax)
@@ -254,6 +288,14 @@ public class IntroCutscene : MonoBehaviour
 
     private IEnumerator RunCutscene()
     {
+        // Start ambient background loop immediately
+        if (ambientAudio != null && ambientClip != null)
+        {
+            ambientAudio.clip   = ambientClip;
+            ambientAudio.volume = ambientVolume;
+            ambientAudio.Play();
+        }
+
         yield return new WaitForSeconds(0.3f);
 
         // ── ACT 1: Title card + subtitle ────────────────────────────────────
@@ -295,10 +337,19 @@ public class IntroCutscene : MonoBehaviour
         chronicleText.text  = "";
         chronicleText.color = new Color(chronicleText.color.r, chronicleText.color.g, chronicleText.color.b, 1f);
 
+        // Slow the walk animation to match the leisurely pace
+        var playerAnim = playerObj != null ? playerObj.GetComponentInChildren<Animator>() : null;
+        if (playerAnim != null) playerAnim.speed = 0.35f;
+
         // Walk and typewriter run concurrently — walk pace tuned to match text reveal
-        Coroutine typeRoutine = StartCoroutine(TypewriterReveal(chronicleText, chronicleMessage, 0.065f));
-        yield return MoveCharacter(playerObj, new Vector3(0f, -4f), new Vector3(0f, -1.2f), 8f, "walk_north");
-        // Player arrives — idle while remaining text finishes typewriting
+        Coroutine footstepRoutine = StartCoroutine(PlayFootsteps(14f, 1.0f));
+        Coroutine typeRoutine     = StartCoroutine(TypewriterReveal(chronicleText, chronicleMessage, 0.065f));
+        yield return MoveCharacter(playerObj, new Vector3(0f, -4f), new Vector3(0f, -0.3f), 14f, "walk_north");
+        StopCoroutine(footstepRoutine);
+
+        // Restore animator speed and switch to idle
+        if (playerAnim != null) playerAnim.speed = 1f;
+        // Player arrives at the Grimoire — idle while remaining text finishes typewriting
         PlayAnimation(playerObj, "idle_north");
         yield return typeRoutine;
 
@@ -311,6 +362,10 @@ public class IntroCutscene : MonoBehaviour
         // ── ACT 4: Chronicle fades; Grimoire floats up ───────────────────────
         yield return Wait(0.5f);
         yield return FadeTextAlpha(chronicleText, 1f, 0f, 0.7f);
+
+        // Grimoire reacts to the player's touch — sound plays before enemies appear
+        if (cutsceneAudio != null && grimoireReachClip != null)
+            cutsceneAudio.PlayOneShot(grimoireReachClip);
 
         Coroutine floatRoutine = StartCoroutine(AnimateGrimoireFloat());
 
@@ -367,34 +422,25 @@ public class IntroCutscene : MonoBehaviour
         }
         foreach (var r in ringRoutines) yield return r;
 
+        // Snap to idle facing the player and freeze on that frame
+        foreach (var enemy in spawnedEnemies)
+        {
+            if (enemy == null) continue;
+            string facing = GetWalkDirection(enemy.transform.position, pPos);
+            PlayAnimation(enemy, GetIdlePrefix(enemy) + "_" + facing);
+            var anim = enemy.GetComponentInChildren<Animator>();
+            if (anim != null) anim.speed = 0f;
+        }
+
         if (skipping) { yield return SkipToGameplay(); yield break; }
 
         // Brief standoff — enemies face the player
         yield return Wait(0.55f);
 
-        // ── ACT 7: Camera zooms in; all enemies charge simultaneously ────────
-        StartCoroutine(AnimateCameraSize(
-            playerVcam, baseCameraSize + 3.5f, baseCameraSize - 0.5f, 1.1f));
-
-        for (int i = 0; i < spawnedEnemies.Count; i++)
-        {
-            var enemy = spawnedEnemies[i];
-            if (enemy == null) continue;
-
-            Vector3 from      = enemy.transform.position;
-            Vector3 toDir     = (pPos - from).normalized;
-            Vector3 chargeEnd = pPos - toDir * 3.5f;  // stop 3.5 units short of player
-            string prefix  = GetAnimPrefix(enemy);
-            string dir     = GetWalkDirection(from, pPos);
-            StartCoroutine(MoveCharacter(enemy, from, chargeEnd, 2.2f, prefix + "_" + dir));
-        }
-
-        // Wait until enemies are mid-charge (~40 % through) then trigger slow-mo
-        yield return new WaitForSeconds(0.9f);
-
-        // ── ACT 8: Slow freeze → white flash → black → gameplay ──────────────
-        yield return SlowFreezeAndFlash();
-        SceneManager.LoadScene(gameplaySceneName);
+        // ── ACT 7: Heartbeat close-in sequence ───────────────────────────────
+        if (skipping) { yield return SkipToGameplay(); yield break; }
+        yield return HeartbeatCloseIn(playerVcam, pPos);
+        // Scene is loaded inside HeartbeatCloseIn on completion.
     }
 
     private IEnumerator SkipToGameplay()
@@ -519,6 +565,209 @@ public class IntroCutscene : MonoBehaviour
             yield return null;
         }
         grimoireObj.transform.position = end;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  HEARTBEAT CLOSE-IN
+    // ═════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 10 heartbeat cycles (flash → enemies closer → camera snap → reveal → heart pulse)
+    /// with decreasing duration — the last 4 hold at radius 1.5 for mounting tension —
+    /// then a final flash that puts enemies on top of the player, plays the ending sound,
+    /// and loads the gameplay scene.
+    /// Camera snaps to the new zoom level while the screen is black — never animated visibly.
+    /// </summary>
+    private IEnumerator HeartbeatCloseIn(CinemachineVirtualCamera vcam, Vector3 playerPos)
+    {
+        // 9 heartbeat cycles, last is final
+        // Final 4 heartbeat cycles close in at 1.4 → 1.38 → 1.36 → 1.34
+        float[] durations   = { 3.0f, 2.6f, 2.2f, 1.8f, 1.6f, 1.4f, 1.38f, 1.36f, 1.34f };
+        float[] radii       = { 6.5f, 5.5f, 4.5f, 3.5f, 2.5f, 2.0f, 1.5f,  1.5f,  1.5f  };
+        float[] camSizes    = { 7.8f, 7.1f, 6.4f, 5.7f, 5.0f, 4.5f, 4.0f,  4.0f,  4.0f  };
+        float[] shakeIntens = { 0.06f,0.09f,0.12f,0.15f,0.18f,0.22f,0.24f, 0.24f, 0.24f };
+
+        const float kFlash  = 0.10f;  // cut-to-black duration
+        const float kReveal = 0.12f;  // fade-from-black duration (non-final cycles)
+        const float kBreath = 0.50f;  // pause after reveal — long enough to see enemies clearly
+
+        for (int i = 0; i < durations.Length; i++)
+        {
+            if (skipping)
+            {
+                Time.timeScale = 1f;
+                if (fadeImage != null) fadeImage.color = Color.black;
+                SceneManager.LoadScene(gameplaySceneName);
+                yield break;
+            }
+
+            bool  isFinal   = i == durations.Length - 1;
+            float cycleDur  = durations[i];
+            float overhead  = kFlash + (isFinal ? 0f : kReveal + kBreath);
+            float blackHold = Mathf.Max(cycleDur - overhead, 0.08f);
+
+            // 1. Flash to black
+            yield return FadeOverlayUnscaled(0f, 1f, Color.black, kFlash);
+
+            // 2. Snap enemies to new radius, idle animation facing player — freeze animator
+            foreach (var enemy in spawnedEnemies)
+            {
+                if (enemy == null) continue;
+                Vector3 dir = (enemy.transform.position - playerPos).normalized;
+                enemy.transform.position = playerPos + dir * radii[i];
+                string facing = GetWalkDirection(enemy.transform.position, playerPos);
+                PlayAnimation(enemy, GetIdlePrefix(enemy) + "_" + facing);
+                var anim = enemy.GetComponentInChildren<Animator>();
+                if (anim != null) anim.speed = 0f;
+            }
+
+            // 3. Snap camera zoom instantly while screen is black
+            if (!isFinal)
+                vcam.m_Lens.OrthographicSize = camSizes[i];
+
+            // 4. Camera shake (concurrent)
+            StartCoroutine(ShakeCamera(shakeIntens[i], 0.28f));
+
+            // 5. Heart pulse + heartbeat sound pitched to match pulse duration (non-final only)
+            if (!isFinal)
+            {
+                float heartDur = blackHold * 0.80f;
+                StartCoroutine(HeartPulse(heartDur));
+                StartCoroutine(RedFlashAtHeartPeak(heartDur));
+                if (SFXManager.Instance != null) SFXManager.Instance.PlayHeartbeat(heartDur);
+            }
+
+            // 6. Hold black
+            yield return new WaitForSecondsRealtime(blackHold);
+
+            // 7. Final: ending sound → hold → load scene
+            if (isFinal)
+            {
+                if (SFXManager.Instance != null) SFXManager.Instance.PlayCutsceneEnding();
+                yield return new WaitForSecondsRealtime(0.6f);
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(gameplaySceneName);
+                yield break;
+            }
+
+            // 8. Reveal from black
+            yield return FadeOverlayUnscaled(1f, 0f, Color.black, kReveal);
+
+            // Subtle visible shake so the player feels the enemies' presence on reveal
+            StartCoroutine(ShakeCamera(0.035f, 0.22f));
+
+            // 9. Brief breath before next cycle
+            yield return new WaitForSecondsRealtime(kBreath);
+        }
+    }
+
+    /// <summary>Quick violent jolt — runs during the black screen so no visual artifact.</summary>
+    private IEnumerator ShakeCamera(float intensity, float duration)
+    {
+        if (mainCam == null) yield break;
+        cinemachineBrain.enabled = false;
+        Vector3 origin  = mainCam.transform.position;
+        float   elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float fade = 1f - EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            float ox = Random.Range(-intensity, intensity) * fade;
+            float oy = Random.Range(-intensity, intensity) * fade;
+            mainCam.transform.position = new Vector3(origin.x + ox, origin.y + oy, origin.z);
+            yield return null;
+        }
+        mainCam.transform.position = origin;
+        cinemachineBrain.enabled = true;
+    }
+
+    /// <summary>Fades in the heart sprite, does a single scale pulse, then fades out.</summary>
+    private IEnumerator HeartPulse(float totalDuration)
+    {
+        if (heartImage == null) yield break;
+        heartImage.gameObject.SetActive(true);
+        heartImage.transform.localScale = Vector3.one;
+
+        const float kFadeIn  = 0.10f;
+        const float kFadeOut = 0.12f;
+        float       pulseDur = Mathf.Max(totalDuration - kFadeIn - kFadeOut, 0.2f);
+
+        // Fade in
+        float elapsed = 0f;
+        while (elapsed < kFadeIn)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            heartImage.color = new Color(1f, 1f, 1f, Mathf.Clamp01(elapsed / kFadeIn));
+            yield return null;
+        }
+        heartImage.color = Color.white;
+
+        // Single scale pulse: grow to 1.35× then ease back to 1×
+        elapsed = 0f;
+        while (elapsed < pulseDur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t     = elapsed / pulseDur;
+            float scale = t < 0.45f
+                ? Mathf.Lerp(1f,    1.35f, EaseOutCubic(t / 0.45f))
+                : Mathf.Lerp(1.35f, 1f,    EaseInOutCubic((t - 0.45f) / 0.55f));
+            heartImage.transform.localScale = Vector3.one * scale;
+            yield return null;
+        }
+        heartImage.transform.localScale = Vector3.one;
+
+        // Fade out
+        elapsed = 0f;
+        while (elapsed < kFadeOut)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            heartImage.color = new Color(1f, 1f, 1f, 1f - Mathf.Clamp01(elapsed / kFadeOut));
+            yield return null;
+        }
+        heartImage.color = new Color(1f, 1f, 1f, 0f);
+        heartImage.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Fires concurrently with HeartPulse. Waits until the heart reaches peak scale then
+    /// briefly tints the black overlay red before fading back to black.
+    /// </summary>
+    private IEnumerator RedFlashAtHeartPeak(float heartDur)
+    {
+        if (fadeImage == null) yield break;
+
+        // Mirror HeartPulse timing constants
+        const float kFadeIn   = 0.10f;
+        const float kFadeOut  = 0.12f;
+        const float kGrowFrac = 0.45f;   // fraction of pulseDur spent growing
+        float pulseDur = Mathf.Max(heartDur - kFadeIn - kFadeOut, 0.2f);
+
+        // Wait until heart hits peak
+        yield return new WaitForSecondsRealtime(kFadeIn + pulseDur * kGrowFrac);
+
+        // Crossfade overlay color: black → red (keep alpha = 1)
+        const float kFlashIn  = 0.07f;
+        const float kFlashOut = 0.20f;
+
+        float elapsed = 0f;
+        while (elapsed < kFlashIn)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / kFlashIn);
+            fadeImage.color = new Color(t, 0f, 0f, 1f);
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < kFlashOut)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / kFlashOut);
+            fadeImage.color = new Color(1f - t, 0f, 0f, 1f);
+            yield return null;
+        }
+
+        fadeImage.color = new Color(0f, 0f, 0f, 1f); // restore pure black, alpha stays 1
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -701,6 +950,21 @@ public class IntroCutscene : MonoBehaviour
         return "walk";
     }
 
+    /// <summary>Returns the idle animation prefix for an enemy (mirrors GetAnimPrefix with "idle").</summary>
+    private static string GetIdlePrefix(GameObject enemy)
+    {
+        string n = enemy.name.ToLower();
+        if (n.Contains("dragonnewt")) return "dn_idle";
+        if (n.Contains("evilpaladin")) return "ep_idle";
+        if (n.Contains("firewizard"))  return "fw_idle";
+        if (n.Contains("icewizard"))   return "iw_idle";
+        if (n.Contains("vampire"))     return "vampire_idle";
+        if (n.Contains("zombie"))      return "zombie_idle";
+        if (n.Contains("skeleton"))    return "skeleton_idle";
+        if (n.Contains("ghost"))       return "ghost_idle";
+        return "idle";
+    }
+
     /// <summary>Returns an 8-direction string (e.g. "south_west") from a world-space vector.</summary>
     private static string GetWalkDirection(Vector3 from, Vector3 to)
     {
@@ -768,6 +1032,7 @@ public class IntroCutscene : MonoBehaviour
             textComp.text = fullText.Substring(0, i + 1);
             float delay = charDelay;
             char ch = fullText[i];
+            SFXManager.Instance?.PlayTypewriterTick(ch);
             if (ch == '.' || ch == '!' || ch == '?') delay *= 6f;
             else if (ch == ',')                       delay *= 3f;
             else if (ch == '\n')                      delay *= 4f;
@@ -846,6 +1111,79 @@ public class IntroCutscene : MonoBehaviour
         ps.Play();
     }
 
+    /// <summary>
+    /// Spawns a water-ripple ring at a world position — used on each footstep.
+    /// All particles burst from a near-point with an extremely tight speed range so
+    /// they travel outward in lockstep, forming one clean expanding circle.
+    /// Particles grow over lifetime to fill the ring as it widens, then fade to nothing.
+    /// Y scale squishes the system flat for a ground-plane perspective.
+    /// </summary>
+    private void SpawnFootstepRipple(Vector3 worldPos)
+    {
+        var go = new GameObject("FootstepRipple");
+        go.transform.position   = worldPos;
+        go.transform.localScale = new Vector3(1f, 0.22f, 1f);  // flatten — looks like it's on the floor
+
+        var ps  = go.AddComponent<ParticleSystem>();
+        var psr = go.GetComponent<ParticleSystemRenderer>();
+        psr.sortingLayerName = "Entities";
+        psr.sortingOrder     = 5;
+        ApplyParticleMaterial(psr);
+
+        var main           = ps.main;
+        main.loop          = false;
+        main.duration      = 0.9f;
+        // Extremely tight lifetime — all particles die together, ring stays sharp
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.88f, 0.90f);
+        // Extremely tight speed — they all travel outward at the same rate, forming one ring
+        main.startSpeed    = new ParticleSystem.MinMaxCurve(0.62f, 0.64f);
+        // Start small; sizeOverLifetime ramps them up so the ring thickens as it expands
+        main.startSize     = new ParticleSystem.MinMaxCurve(0.08f, 0.10f);
+        main.startColor    = new ParticleSystem.MinMaxGradient(
+                                 new Color(0.70f, 0.55f, 1.00f, 0.80f),
+                                 new Color(0.50f, 0.75f, 1.00f, 0.70f));
+        main.gravityModifier  = 0f;
+        main.simulationSpace  = ParticleSystemSimulationSpace.World;
+        main.stopAction       = ParticleSystemStopAction.Destroy;
+        main.maxParticles     = 48;
+
+        // All 44 particles fire at once — they start at the same point and race outward together
+        var emission = ps.emission;
+        emission.enabled = false;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 44, 44) });
+        emission.enabled = true;
+
+        // Near-point emitter — effectively zero radius so all particles start at the same spot
+        var shape             = ps.shape;
+        shape.enabled         = true;
+        shape.shapeType       = ParticleSystemShapeType.Circle;
+        shape.radius          = 0.01f;
+        shape.radiusThickness = 0f;   // edge only (direction is outward)
+
+        // Alpha: start visible, hold, then fade to nothing as the ring reaches full size
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        var g = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(new Color(0.72f, 0.62f, 1f), 0f),
+                    new GradientColorKey(new Color(0.50f, 0.82f, 1f), 1f) },
+            new[] { new GradientAlphaKey(0.80f, 0f),
+                    new GradientAlphaKey(0.45f, 0.35f),
+                    new GradientAlphaKey(0f,    0.85f) });
+        col.color = new ParticleSystem.MinMaxGradient(g);
+
+        // Size ramps up sharply then holds — ring thickens as it expands, giving a solid-circle feel
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size    = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+            new Keyframe(0f,   0.1f,  0f,  6f),
+            new Keyframe(0.35f, 1.0f, 2f,  0f),
+            new Keyframe(0.75f, 1.1f, 0f, -3f),
+            new Keyframe(1f,   0.3f, -4f,  0f)));
+
+        ps.Play();
+    }
+
     // ═════════════════════════════════════════════════════════════════════════
     //  UTILITY
     // ═════════════════════════════════════════════════════════════════════════
@@ -874,6 +1212,44 @@ public class IntroCutscene : MonoBehaviour
     {
         if (skipping) yield break;
         yield return new WaitForSeconds(seconds);
+    }
+
+    private IEnumerator PlayFootsteps(float totalDuration, float interval)
+    {
+        const float kFadeIn  = 0.15f;  // fraction of walk for fade-in
+        const float kFadeOut = 0.35f;  // fraction of walk for fade-out
+        const float kPitch   = 0.78f;  // lower pitch = softer, less sharp impact
+
+        // Start partway into the fade-in so the very first step is already audible (~50% vol)
+        float elapsed = totalDuration * kFadeIn * 0.25f;
+
+        while (elapsed < totalDuration)
+        {
+            if (skipping) yield break;
+            if (cutsceneAudio != null && footstepClip != null)
+            {
+                float t   = Mathf.Clamp01(elapsed / totalDuration);
+                float vol;
+                if (t < kFadeIn)
+                    vol = Mathf.Sqrt(t / kFadeIn);          // sqrt: audible from first step
+                else if (t > 1f - kFadeOut)
+                    vol = EaseInOutCubic((1f - t) / kFadeOut);
+                else
+                    vol = 1f;
+
+                cutsceneAudio.pitch = kPitch;
+                cutsceneAudio.PlayOneShot(footstepClip, vol);
+                cutsceneAudio.pitch = 1f;
+            }
+
+            if (playerObj != null)
+                SpawnFootstepRipple(playerObj.transform.position + new Vector3(0f, -0.85f, 0f));
+
+            yield return new WaitForSeconds(interval);
+            elapsed += interval;
+        }
+
+        if (cutsceneAudio != null) cutsceneAudio.pitch = 1f;
     }
 
     private static float EaseInOutCubic(float t) =>

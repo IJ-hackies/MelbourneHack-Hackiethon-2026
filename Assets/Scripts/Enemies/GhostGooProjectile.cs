@@ -164,6 +164,7 @@ public class GhostGooProjectile : MonoBehaviour
 
     private void Land(Vector2 pos)
     {
+        SFXManager.Instance?.PlayGhostSplat(pos);
         GhostFreezeZone.Spawn(new Vector3(pos.x, pos.y, 0f), zoneDuration, zoneRadius, damage);
         Destroy(gameObject);
     }

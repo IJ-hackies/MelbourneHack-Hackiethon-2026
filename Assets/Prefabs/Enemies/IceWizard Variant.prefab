@@ -215,10 +215,14 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.10791205, g: 0.32342142, b: 0.9150943, a: 1}
   hitColorB: {r: 0.07413671, g: 0.8121284, b: 0.9245283, a: 1}
+  attackSfxClip: {fileID: 0}
+  attackSfxVolume: 0.701
   applyBleed: 0
   bleedDuration: 2
   bleedDamageMultiplier: 0.1
   pathRefreshInterval: 0.3
+  shootSfxClip: {fileID: 8300000, guid: d91b22985082645ef93719092514b441, type: 3}
+  shootSfxVolume: 0.8
   projectileColorA: {r: 0, g: 0.96346426, b: 1, a: 1}
   projectileColorB: {r: 0.10196078, g: 0.5224983, b: 1, a: 1}
   projectileSpeed: 5
