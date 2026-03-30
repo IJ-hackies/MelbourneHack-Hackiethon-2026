@@ -725,6 +725,7 @@ GameObject:
   - component: {fileID: 1457820988}
   - component: {fileID: 1457820987}
   - component: {fileID: 1457820986}
+  - component: {fileID: 1457820990}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -998,6 +999,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1457820990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457820985}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b793eae0ab4e04ea882a758e2429e253, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DecoSpawner
+  BlueLampPrefab: {fileID: 5821044593375656823, guid: 29c071ecec67e49b0aa3500ce4881112, type: 3}
+  GreenLampPrefab: {fileID: 2923360445812422693, guid: 75a1631dc52b447e58ee294694a27285, type: 3}
+  OceanBlueLampPrefab: {fileID: 2084048204479651625, guid: f09edeabffe9d4b95a98f5a8b0d9e968, type: 3}
+  PinkLampPrefab: {fileID: 6790263291395670096, guid: c031d6f5bc6b24e609f4f1e873d43e2d, type: 3}
+  RedLampPrefab: {fileID: 4537287599708768931, guid: 99037400bf1f24910bff342c0c87bff4, type: 3}
+  TechLampPrefab: {fileID: 737484718204881424, guid: da4a8f69f53fe49f995ec2327390ec21, type: 3}
+  YellowLampPrefab: {fileID: 434384508873327451, guid: 8209411f7ce9944889eca46f421a830c, type: 3}
+  BarrelsPrefab: {fileID: 1929373739806264622, guid: c252079f2e2c941a6b59e06115bac19c, type: 3}
+  BonePilePrefab: {fileID: 1713193715769680346, guid: 4cb76623759cf4578930d3e4a7d8bd2c, type: 3}
+  WaterPoolPrefab: {fileID: 7714153022822380795, guid: a8065ef6fb21344fabd3b5fee99a2e52, type: 3}
+  PotPrefab: {fileID: 3769835392514901965, guid: 860ed201228d746bbb9f60b2f042cc44, type: 3}
+  AcidPoolPrefab: {fileID: 8608508398613333086, guid: e85ed2fe28057401a9eab14ceb2d53ee, type: 3}
+  CobwebPrefab: {fileID: 6196436029259478060, guid: a323cc77f7bae4ab28495d458028ead9, type: 3}
+  floorAssembler: {fileID: 1457820987}
 --- !u!1 &1620219321
 GameObject:
   m_ObjectHideFlags: 0
