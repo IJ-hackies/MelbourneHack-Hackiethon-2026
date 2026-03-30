@@ -140,7 +140,6 @@ public class CutscenePlayer : MonoBehaviour
 
         // ── Start ambient atmosphere: slow-drifting particles ────────────
         Coroutine ambientRoutine = StartCoroutine(AmbientParticleLoop());
-        Coroutine glowRoutine    = StartCoroutine(AmbientGlowPulse());
         StartScreenParticles();
 
         // ── Fade in from pure black ─────────────────────────────────────
@@ -188,19 +187,6 @@ public class CutscenePlayer : MonoBehaviour
         }
     }
 
-    private IEnumerator AmbientGlowPulse()
-    {
-        // Slow breathing pulse on the text glow
-        float t = 0f;
-        while (!skipping)
-        {
-            t += Time.unscaledDeltaTime * 0.8f;
-            float a = 0.04f + Mathf.Sin(t) * 0.03f;
-            textGlowImage.color = new Color(textGlowImage.color.r, textGlowImage.color.g,
-                                             textGlowImage.color.b, a);
-            yield return null;
-        }
-    }
 
     private void StartScreenParticles()
     {
