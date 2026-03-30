@@ -318,7 +318,11 @@ MonoBehaviour:
   enemySpawner: {fileID: 0}
   transitionUI: {fileID: 0}
   mergeRitualUI: {fileID: 0}
+  gameOverUI: {fileID: 0}
+  deathCutscene: {fileID: 0}
   starterSpellIcon: {fileID: 21300000, guid: b82b75f0324f46e4480d3df867213d0e, type: 3}
+  dungeonStartClip: {fileID: 8300000, guid: 26ca1bdaa4f9942578ba62960a67e592, type: 3}
+  dungeonStartVolume: 1
   pregenThreshold: 0.5
 --- !u!4 &75030477
 Transform:
@@ -479,6 +483,8 @@ MonoBehaviour:
   revealDuration: 0.6
   celebrationDuration: 1.2
   outroDuration: 0.5
+  ritualClip: {fileID: 8300000, guid: bc6b7071de09a49d7954f2586e227337, type: 3}
+  ritualVolume: 1
   iconSize: 220
   startSpread: 520
   particleCount: 24
@@ -487,6 +493,31 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2010832706498473804, guid: ad9bd740773bc4846a638419def8da27, type: 3}
   m_PrefabInstance: {fileID: 2063898647}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &552790286 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+  m_PrefabInstance: {fileID: 2063898647}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &552790302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552790286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 807e1df34f8ea4fd38d56b0d7120a6a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerParry
+  parryRadius: 4
+  parryCooldown: 10
+  parryWindow: 0.5
+  parrySuccessClip: {fileID: 8300000, guid: 043b735f3da5646c8906c055bca05993, type: 3}
+  parryFailClip: {fileID: 8300000, guid: 41b0240779586481fb3c75a4c33ada59, type: 3}
+  audioVolume: 1
+  cooldownTimer: 0
+  playerSR: {fileID: 0}
 --- !u!1 &1170421377
 GameObject:
   m_ObjectHideFlags: 0
@@ -643,7 +674,15 @@ MonoBehaviour:
   mergeSpellClip: {fileID: 8300000, guid: 024c953498c854fdeafdb4e2f76003ee, type: 3}
   mergeSpellVolume: 1
   playerHitClip: {fileID: 8300000, guid: 57adeb984a6c148ad8d2c8d545f9c9eb, type: 3}
-  playerHitVolume: 1
+  playerHitVolume: 0.948
+  enemyHitClip: {fileID: 8300000, guid: 7de20f07d5868439ba106edb78e1763e, type: 3}
+  enemyHitVolume: 0.215
+  enemyHitPitch: 0.662
+  enemyDeathClip: {fileID: 8300000, guid: d4da8fb3037da4594bf140f3bc6c033f, type: 3}
+  enemyDeathVolume: 0.403
+  wallHitClip: {fileID: 8300000, guid: bae0981a2fe594a57bc8d5214190afad, type: 3}
+  wallHitVolume: 0.254
+  wallHitPitch: 0.621
   scrollOpenClip: {fileID: 8300000, guid: 00c07f713c0bc4b838291ddd8c58c91a, type: 3}
   scrollOpenVolume: 1
   wordsAppearingClip: {fileID: 8300000, guid: 746456ba12242456e95b287732c0dc76, type: 3}
@@ -659,7 +698,7 @@ MonoBehaviour:
   vampireChargeUpClip: {fileID: 8300000, guid: 1d05efa101d294a8ebc724b21088f716, type: 3}
   vampireChargeUpVolume: 0.819
   vampireShootClip: {fileID: 8300000, guid: e8e12b414720b4bf484159105cdca4bf, type: 3}
-  vampireShootVolume: 0.821
+  vampireShootVolume: 0.609
 --- !u!114 &1416350751
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -919,6 +958,7 @@ MonoBehaviour:
   enemySpawner: {fileID: 69802697}
   enemySpawns: []
   activeTilesetId: dungeon
+  activeLampIds: []
   chamberGrid:
   - 
   - 
@@ -1319,10 +1359,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4613163548167859532, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      propertyPath: dashClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 7d1f14dae7a3743b8a7f631358e9c7d8, type: 3}
+    - target: {fileID: 8015149718092315317, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      propertyPath: maxHealth
+      value: 1000
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1844718356868029949, guid: ad9bd740773bc4846a638419def8da27, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 552790302}
   m_SourcePrefab: {fileID: 100100000, guid: ad9bd740773bc4846a638419def8da27, type: 3}
 --- !u!1001 &1849055940963223558
 PrefabInstance:
