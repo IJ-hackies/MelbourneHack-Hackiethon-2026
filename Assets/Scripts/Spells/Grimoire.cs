@@ -57,6 +57,13 @@ public class Grimoire : MonoBehaviour
         if (Input.GetKeyDown(SettingsData.Slot1)) SetActiveSlot(0);
         if (Input.GetKeyDown(SettingsData.Slot2)) SetActiveSlot(1);
         if (Input.GetKeyDown(SettingsData.Slot3)) SetActiveSlot(2);
+
+        // Scroll wheel cycling
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f)
+            SetActiveSlot((activeSlot + 1) % LoadoutSize);
+        else if (scroll < 0f)
+            SetActiveSlot((activeSlot - 1 + LoadoutSize) % LoadoutSize);
     }
 
     // --- Active spell (reads from loadout) ---
@@ -226,9 +233,14 @@ public class Grimoire : MonoBehaviour
         merged.tags = new SpellTag[tagSet.Count];
         tagSet.CopyTo(merged.tags);
 
-        merged.damage = totalDamage;                       // additive — raw power increases
-        merged.cooldown = maxCooldown * 1.5f;              // penalise for multi-fire
+        merged.damage = totalDamage * 0.5f;                // halved — looks OP but toned down
+        merged.cooldown = maxCooldown * 2f;                // heavy cooldown penalty
         merged.speed = totalSpeed / sources.Length;        // average
+
+        // Keep copies of source spells so SpellExecutor can fire each projectile
+        merged.mergedSourceSpells = new SpellData[sources.Length];
+        for (int i = 0; i < sources.Length; i++)
+            merged.mergedSourceSpells[i] = sources[i];
 
         foreach (var src in sources)
             RemoveSpell(src);

@@ -271,7 +271,7 @@ public class StageTransitionUI : MonoBehaviour
         titleText = MakeTMP("Title", contentRT,
             new Vector2(0f, 0.82f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
             Vector2.zero, Vector2.zero,
-            "", titleFontSize, Color.black, TextAlignmentOptions.Center);
+            "", 68f, Color.black, TextAlignmentOptions.Center);
         titleText.GetComponent<RectTransform>().offsetMin = Vector2.zero;
         titleText.GetComponent<RectTransform>().offsetMax = Vector2.zero;
 
@@ -305,7 +305,7 @@ public class StageTransitionUI : MonoBehaviour
         // Next page button
         var nextRT = MakeRT("NextBtn", scrollRT,
             new Vector2(0.88f, 0.10f), new Vector2(0.88f, 0.10f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(60f, 60f));
+            Vector2.zero, new Vector2(72f, 72f));
         var nextImg = nextRT.gameObject.AddComponent<Image>();
         nextImg.sprite = nextPageArrow;
         nextImg.preserveAspect = true;
@@ -346,27 +346,27 @@ public class StageTransitionUI : MonoBehaviour
 
         float yOffset = 0f;
 
-        // "~ New Spell ~" header
+        // "~ New Spell ~" header (hardcoded, ~15% above original 48)
         MakeTMP("NewSpellHeader", contentRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, yOffset), new Vector2(500f, 60f),
-            "~ New Spell ~", 48f, Color.black, TextAlignmentOptions.Center);
-        yOffset -= 70f;
+            "~ New Spell ~", 50f, Color.black, TextAlignmentOptions.Center);
+        yOffset -= 65f;
 
         // Spell card
         var cardRT = MakeRT("SpellCard", contentRT,
             new Vector2(0.05f, 1f), new Vector2(0.95f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, yOffset), new Vector2(0f, 440f));
-        cardRT.offsetMin = new Vector2(cardRT.offsetMin.x, cardRT.offsetMax.y - 440f);
+            new Vector2(0f, yOffset), new Vector2(0f, 460f));
+        cardRT.offsetMin = new Vector2(cardRT.offsetMin.x, cardRT.offsetMax.y - 460f);
         var cardImg = cardRT.gameObject.AddComponent<Image>();
         cardImg.sprite = boxSprite;
         cardImg.type = Image.Type.Sliced;
         cardImg.color = new Color(1f, 0.99f, 0.92f);
 
-        // Spell icon at the top of the card
+        // Spell icon at the top of the card (~15% above original 64)
         var iconRT = MakeRT("SpellIcon", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -12f), new Vector2(64f, 64f));
+            new Vector2(0f, -12f), new Vector2(72f, 72f));
         spellIconImage = iconRT.gameObject.AddComponent<Image>();
         spellIconImage.preserveAspect = true;
         spellIconImage.raycastTarget = false;
@@ -375,32 +375,32 @@ public class StageTransitionUI : MonoBehaviour
         // Loading indicator — shown while icon is generating
         brewingText = MakeTMP("BrewingText", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -55f), new Vector2(300f, 40f),
-            "Brewing spell...", bodyFontSize * 0.85f, new Color(0.55f, 0.4f, 0.7f), TextAlignmentOptions.Center);
+            new Vector2(0f, -58f), new Vector2(300f, 40f),
+            "Brewing spell...", 36f, new Color(0.55f, 0.4f, 0.7f), TextAlignmentOptions.Center);
         brewingText.fontStyle = FontStyles.Italic;
         brewingText.gameObject.SetActive(false);
 
         spellNameText = MakeTMP("SpellName", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -95f), new Vector2(450f, 55f),
-            "", spellNameFontSize, new Color(0.35f, 0.1f, 0.55f), TextAlignmentOptions.Center);
+            new Vector2(0f, -100f), new Vector2(450f, 55f),
+            "", 52f, new Color(0.35f, 0.1f, 0.55f), TextAlignmentOptions.Center);
 
         spellFlavorText = MakeTMP("SpellFlavor", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -155f), new Vector2(430f, 80f),
-            "", bodyFontSize, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
+            new Vector2(0f, -160f), new Vector2(430f, 80f),
+            "", 28f, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
         spellFlavorText.fontStyle = FontStyles.Italic;
         spellFlavorText.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
         spellTagsText = MakeTMP("SpellTags", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -250f), new Vector2(430f, 50f),
-            "", bodyFontSize, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
+            new Vector2(0f, -255f), new Vector2(430f, 50f),
+            "", 42f, new Color(0.1f, 0.44f, 0.76f), TextAlignmentOptions.Center);
 
         spellStatsText = MakeTMP("SpellStats", cardRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -310f), new Vector2(430f, 50f),
-            "", bodyFontSize, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+            new Vector2(0f, -315f), new Vector2(430f, 50f),
+            "", 42f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
 
         yOffset -= 460f;
 

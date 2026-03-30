@@ -21,6 +21,7 @@ public class ProjectileContext
     public Transform CasterTransform { get; }
     public Vector2 InitialDirection { get; }
     public ProjectileHandler Handler { get; }
+    public GameObject ProjectilePrefab { get; }
 
     public ProjectileContext(
         SpellData spell,
@@ -29,7 +30,8 @@ public class ProjectileContext
         Health playerHealth,
         Transform casterTransform,
         Vector2 initialDir,
-        ProjectileHandler handler)
+        ProjectileHandler handler,
+        GameObject projectilePrefab = null)
     {
         Spell            = spell;
         EffectiveTags    = effectiveTags;
@@ -38,6 +40,7 @@ public class ProjectileContext
         CasterTransform  = casterTransform;
         InitialDirection = initialDir;
         Handler          = handler;
+        ProjectilePrefab = projectilePrefab;
     }
 
     public bool HasTag(SpellTag tag) => EffectiveTags.Contains(tag);
