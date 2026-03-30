@@ -287,8 +287,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0b0036185bb9dd4db747392ecfd60ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GeminiClient
-  apiKey: AIzaSyCasTQxze-_waLPVAz3oe3RMrP_oUxWT8w
-  model: gemini-3.1-pro-preview
+  proxyUrl: https://grimoire-proxy.vercel.app/api/gemini
+  model: gemini-3-flash-preview
   timeoutSeconds: 60
 --- !u!114 &75030475
 MonoBehaviour:

@@ -16,27 +16,21 @@ public class NanoBananaClient : MonoBehaviour
     public static NanoBananaClient Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private string model = "gemini-2.0-flash-preview-image-generation";
+    [SerializeField] private string model = "gemini-3.1-flash-image-preview";
     [SerializeField] private int timeoutSeconds = 30;
     [SerializeField] private int iconSize = 64;
 
-    private string apiKey;
-
-    private string Endpoint =>
-        $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
+    private string proxyUrl;
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
-        // Share API key with GeminiClient (which may have it from Inspector or env var)
+        // Share proxy URL with GeminiClient
         var gemini = FindAnyObjectByType<GeminiClient>();
-        if (gemini != null && gemini.HasApiKey)
-            apiKey = gemini.ApiKey;
-
-        if (string.IsNullOrEmpty(apiKey))
-            apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? "";
+        if (gemini != null)
+            proxyUrl = gemini.ProxyUrl;
     }
 
     /// <summary>
@@ -44,9 +38,9 @@ public class NanoBananaClient : MonoBehaviour
     /// </summary>
     public void GenerateIcon(SpellData spell, Action<Sprite> onComplete)
     {
-        if (string.IsNullOrEmpty(apiKey))
+        if (string.IsNullOrEmpty(proxyUrl))
         {
-            Debug.LogWarning("[NanoBanana] No API key — skipping icon generation.");
+            Debug.LogWarning("[NanoBanana] No proxy URL — skipping icon generation.");
             onComplete?.Invoke(null);
             return;
         }
@@ -57,12 +51,12 @@ public class NanoBananaClient : MonoBehaviour
     private IEnumerator GenerateIconCoroutine(SpellData spell, Action<Sprite> onComplete)
     {
         string prompt = BuildPrompt(spell);
-        string requestBody = BuildRequestJson(prompt);
+        string geminiBody = BuildRequestJson(prompt);
+        string proxyPayload = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
 
-        using var request = new UnityWebRequest(Endpoint, "POST");
-        request.SetRequestHeader("x-goog-api-key", apiKey);
+        using var request = new UnityWebRequest(proxyUrl, "POST");
         request.SetRequestHeader("Content-Type", "application/json");
-        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestBody));
+        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(proxyPayload));
         request.downloadHandler = new DownloadHandlerBuffer();
         request.timeout         = timeoutSeconds;
 
