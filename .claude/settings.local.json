@@ -50,7 +50,9 @@
       "Bash(do echo:*)",
       "Read(//c/Users/zones/Desktop/Projects/MelbourneHack-Hackiethon-2026/$dir/**)",
       "Bash(grep -r \"AudioMixer\\\\|AudioListener\\\\|volume\\\\|Volume\" /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
-      "Bash(grep -E \"\\\\.\\(mp3|wav|ogg|flac\\)$\")"
+      "Bash(grep -E \"\\\\.\\(mp3|wav|ogg|flac\\)$\")",
+      "Bash(grep -v \".meta$\")",
+      "Bash(curl:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"

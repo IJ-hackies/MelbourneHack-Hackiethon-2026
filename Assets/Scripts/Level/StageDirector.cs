@@ -176,9 +176,9 @@ public class StageDirector : MonoBehaviour
 
     private void StartPregeneration()
     {
-        if (geminiClient == null || !geminiClient.HasApiKey)
+        if (geminiClient == null)
         {
-            Debug.LogWarning("[StageDirector] No GeminiClient or API key — will use fallback manifest.");
+            Debug.LogWarning("[StageDirector] No GeminiClient — will use fallback manifest.");
             pregenComplete = true;
             nextManifest   = BuildFallbackManifest(stageNumber + 1);
             return;

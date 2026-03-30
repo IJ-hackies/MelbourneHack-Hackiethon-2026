@@ -20,22 +20,16 @@ public class GeminiClient : MonoBehaviour
     public static GeminiClient Instance { get; private set; }
 
     [Header("API Settings")]
-    [SerializeField] private string apiKey;
-    [SerializeField] private string model = "gemini-2.5-flash-preview-05-20";
+    [SerializeField] private string proxyUrl = "https://grimoire-proxy.vercel.app/api/gemini";
+    [SerializeField] private string model = "gemini-3-flash-preview";
 
     [Header("Timeouts")]
     [SerializeField] private int timeoutSeconds = 60;
-
-    private string Endpoint =>
-        $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
-        if (string.IsNullOrEmpty(apiKey))
-            apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? "";
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -52,11 +46,8 @@ public class GeminiClient : MonoBehaviour
         StartCoroutine(GenerateFloorCoroutine(sessionLogJson, nextStageNumber, previousManifestJson, onComplete));
     }
 
-    /// <summary>Returns true if an API key is configured.</summary>
-    public bool HasApiKey => !string.IsNullOrEmpty(apiKey);
-
-    /// <summary>Returns the configured API key (for sharing with NanoBananaClient).</summary>
-    public string ApiKey => apiKey;
+    /// <summary>Returns the proxy URL for sharing with NanoBananaClient.</summary>
+    public string ProxyUrl => proxyUrl;
 
     // ── Coroutine ────────────────────────────────────────────────────────────
 
@@ -64,20 +55,13 @@ public class GeminiClient : MonoBehaviour
                                                string previousManifestJson,
                                                Action<FloorManifestDTO> onComplete)
     {
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            Debug.LogError("[GeminiClient] No API key set. Set GEMINI_API_KEY env var or assign in Inspector.");
-            onComplete?.Invoke(null);
-            yield break;
-        }
-
         string prompt = BuildPrompt(sessionLogJson, nextStageNumber, previousManifestJson);
-        string requestBody = BuildRequestJson(prompt);
+        string geminiBody = BuildRequestJson(prompt);
+        string proxyPayload = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
 
-        using var request = new UnityWebRequest(Endpoint, "POST");
-        request.SetRequestHeader("x-goog-api-key", apiKey);
+        using var request = new UnityWebRequest(proxyUrl, "POST");
         request.SetRequestHeader("Content-Type", "application/json");
-        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestBody));
+        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(proxyPayload));
         request.downloadHandler = new DownloadHandlerBuffer();
         request.timeout         = timeoutSeconds;
 
