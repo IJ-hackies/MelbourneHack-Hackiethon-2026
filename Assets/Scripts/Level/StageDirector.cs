@@ -314,28 +314,6 @@ public class StageDirector : MonoBehaviour
 
     private void OnTransitionComplete(float newHp)
     {
-        // Check if this is a merge stage — show merge ritual before loading
-        int nextStage = stageNumber + 1;
-        bool isMergeStage = nextStage >= 5 && nextStage % 5 == 0;
-
-        if (isMergeStage && mergeRitualUI != null)
-        {
-            // Show merge ritual; when it closes, load the next stage
-            mergeRitualUI.Open();
-            StartCoroutine(WaitForMergeClose(newHp));
-        }
-        else
-        {
-            AdvanceToNextStage(newHp);
-        }
-    }
-
-    private IEnumerator WaitForMergeClose(float newHp)
-    {
-        // Wait until the merge ritual UI is closed (player finished or skipped)
-        // Use WaitForSecondsRealtime because game is paused (Time.timeScale == 0)
-        while (mergeRitualUI != null && mergeRitualUI.IsOpen)
-            yield return new WaitForSecondsRealtime(0.1f);
         AdvanceToNextStage(newHp);
     }
 

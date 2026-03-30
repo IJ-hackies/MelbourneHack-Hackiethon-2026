@@ -29,7 +29,6 @@ public class CutscenePlayer : MonoBehaviour
     private Image      flashOverlay;       // full-screen flash layer
     private TMP_Text   displayText;
     private RectTransform textRT;
-    private Image      textGlowImage;      // soft glow behind text
     private GameObject particleHost;       // world-space host for UI particles
 
     private bool       isPlaying;
@@ -84,18 +83,6 @@ public class CutscenePlayer : MonoBehaviour
         flashOverlay = CreateFullscreenImage("CutsceneFlash", canvas.transform);
         flashOverlay.color = new Color(1, 1, 1, 0);
 
-        // Text glow — soft radial glow behind the text
-        var glowGO = new GameObject("TextGlow");
-        glowGO.transform.SetParent(canvas.transform, false);
-        textGlowImage = glowGO.AddComponent<Image>();
-        textGlowImage.raycastTarget = false;
-        textGlowImage.color = new Color(0.4f, 0.15f, 0.7f, 0f);
-        var glowRT = textGlowImage.rectTransform;
-        glowRT.anchorMin = new Vector2(0.2f, 0.3f);
-        glowRT.anchorMax = new Vector2(0.8f, 0.7f);
-        glowRT.offsetMin = Vector2.zero;
-        glowRT.offsetMax = Vector2.zero;
-
         // Chronicle text
         var txtGO = new GameObject("CutsceneText");
         txtGO.transform.SetParent(canvas.transform, false);
@@ -148,13 +135,11 @@ public class CutscenePlayer : MonoBehaviour
         bgImage.color      = new Color(0.02f, 0.01f, 0.04f, 1f);
         tintOverlay.color  = new Color(0, 0, 0, 0);
         flashOverlay.color = new Color(1, 1, 1, 0);
-        textGlowImage.color = new Color(0.4f, 0.15f, 0.7f, 0f);
         displayText.text   = "";
         displayText.color  = new Color(0.9f, 0.8f, 0.55f, 0f);
 
         // ── Start ambient atmosphere: slow-drifting particles ────────────
         Coroutine ambientRoutine = StartCoroutine(AmbientParticleLoop());
-        Coroutine glowRoutine    = StartCoroutine(AmbientGlowPulse());
 
         // ── Fade in from pure black ─────────────────────────────────────
         yield return FadeBG(new Color(0, 0, 0, 1f), new Color(0.02f, 0.01f, 0.04f, 1f), 1.0f);
@@ -174,13 +159,11 @@ public class CutscenePlayer : MonoBehaviour
 
         // Stop ambient effects
         if (ambientRoutine != null) StopCoroutine(ambientRoutine);
-        if (glowRoutine != null)    StopCoroutine(glowRoutine);
         CleanupParticles();
 
         displayText.text        = "";
         tintOverlay.color       = new Color(0, 0, 0, 0);
         flashOverlay.color      = new Color(1, 1, 1, 0);
-        textGlowImage.color     = new Color(0.4f, 0.15f, 0.7f, 0f);
 
         if (playerMove != null) playerMove.enabled = true;
         Time.timeScale = savedTimeScale;
@@ -200,20 +183,6 @@ public class CutscenePlayer : MonoBehaviour
         {
             SpawnUIParticles(new Color(0.5f, 0.25f, 0.8f, 0.4f), 3, 6f, 0.5f);
             yield return new WaitForSecondsRealtime(2f);
-        }
-    }
-
-    private IEnumerator AmbientGlowPulse()
-    {
-        // Slow breathing pulse on the text glow
-        float t = 0f;
-        while (!skipping)
-        {
-            t += Time.unscaledDeltaTime * 0.8f;
-            float a = 0.04f + Mathf.Sin(t) * 0.03f;
-            textGlowImage.color = new Color(textGlowImage.color.r, textGlowImage.color.g,
-                                             textGlowImage.color.b, a);
-            yield return null;
         }
     }
 
@@ -287,9 +256,6 @@ public class CutscenePlayer : MonoBehaviour
     {
         if (string.IsNullOrEmpty(fullText)) yield break;
 
-        // Fade in the text glow
-        StartCoroutine(FadeGlow(0.15f, 0.6f));
-
         displayText.text = "";
         displayText.color = new Color(displayText.color.r, displayText.color.g,
                                        displayText.color.b, 1f);
@@ -312,9 +278,6 @@ public class CutscenePlayer : MonoBehaviour
 
     private IEnumerator DoClearText(float duration)
     {
-        // Fade out text and glow together
-        StartCoroutine(FadeGlow(0f, duration));
-
         float elapsed = 0f;
         Color c = displayText.color;
         while (elapsed < duration)
@@ -617,22 +580,6 @@ public class CutscenePlayer : MonoBehaviour
             yield return null;
         }
         bgImage.color = to;
-    }
-
-    private IEnumerator FadeGlow(float targetAlpha, float duration)
-    {
-        Color c = textGlowImage.color;
-        float startAlpha = c.a;
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            c.a = Mathf.Lerp(startAlpha, targetAlpha, elapsed / duration);
-            textGlowImage.color = c;
-            yield return null;
-        }
-        c.a = targetAlpha;
-        textGlowImage.color = c;
     }
 
     private void CleanupParticles()
