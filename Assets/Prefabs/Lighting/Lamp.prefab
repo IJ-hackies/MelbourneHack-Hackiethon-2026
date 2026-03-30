@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5141608496752526188}
   - component: {fileID: -4633370661727678084}
-  - component: {fileID: 5176029925352695577}
   m_Layer: 0
   m_Name: Lamp
   m_TagString: Untagged
@@ -94,20 +93,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
---- !u!114 &5176029925352695577
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3399659701355363896}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 880b007ae2f0248c7a916ebe79c4c5b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YSorter
-  precision: 100
-  sortingOriginY: 0
 --- !u!1 &5964267718297587950
 GameObject:
   m_ObjectHideFlags: 0
@@ -224,6 +209,7 @@ GameObject:
   - component: {fileID: 3613472796045178965}
   - component: {fileID: 6971645488902062570}
   - component: {fileID: 4528615212966982061}
+  - component: {fileID: 5415494354437386816}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -293,7 +279,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 285542781
   m_SortingLayer: 2
-  m_SortingOrder: 0
+  m_SortingOrder: 722
   m_MaskInteraction: 0
   m_Sprite: {fileID: -3535221090349844623, guid: fb2af12425495406ea7eb54d4a847719, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -351,3 +337,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5181f1d277844eefb8c32d966e6b406, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DecoOutline
+--- !u!114 &5415494354437386816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6403160042089075254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 880b007ae2f0248c7a916ebe79c4c5b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YSorter
+  precision: 100
+  sortingOriginY: 0
