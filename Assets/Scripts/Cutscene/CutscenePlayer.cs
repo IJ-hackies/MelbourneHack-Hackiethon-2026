@@ -155,6 +155,7 @@ public class CutscenePlayer : MonoBehaviour
         // ── Start ambient atmosphere: slow-drifting particles ────────────
         Coroutine ambientRoutine = StartCoroutine(AmbientParticleLoop());
         Coroutine glowRoutine    = StartCoroutine(AmbientGlowPulse());
+        StartScreenParticles();
 
         // ── Fade in from pure black ─────────────────────────────────────
         yield return FadeBG(new Color(0, 0, 0, 1f), new Color(0.02f, 0.01f, 0.04f, 1f), 1.0f);
@@ -215,6 +216,74 @@ public class CutscenePlayer : MonoBehaviour
                                              textGlowImage.color.b, a);
             yield return null;
         }
+    }
+
+    private void StartScreenParticles()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        float w = cam.orthographicSize * cam.aspect * 2f;
+        float h = cam.orthographicSize * 2f;
+
+        var go = new GameObject("CutsceneScreenParticles");
+        go.transform.position = cam.transform.position + Vector3.forward * 5f;
+        var ps = go.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        // Main — looping, fills the screen continuously
+        var main             = ps.main;
+        main.loop            = true;
+        main.startLifetime   = new ParticleSystem.MinMaxCurve(3.5f, 6.0f);
+        main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.22f);
+        main.startSize       = new ParticleSystem.MinMaxCurve(0.03f, 0.09f);
+        main.startColor      = new ParticleSystem.MinMaxGradient(
+                                   new Color(0.55f, 0.25f, 0.90f, 0.55f),
+                                   new Color(0.70f, 0.35f, 1.00f, 0.40f));
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.useUnscaledTime = true;
+        main.maxParticles    = 120;
+        main.gravityModifier = -0.04f; // very gentle upward float
+
+        // Spread evenly across the full screen
+        var emission          = ps.emission;
+        emission.rateOverTime = 18f;
+
+        var shape        = ps.shape;
+        shape.shapeType  = ParticleSystemShapeType.Box;
+        shape.scale      = new Vector3(w, h, 0.1f);
+
+        // Slow lateral wander so particles don't move in straight lines
+        var vol     = ps.velocityOverLifetime;
+        vol.enabled = true;
+        vol.x       = new ParticleSystem.MinMaxCurve(-0.08f, 0.08f);
+        vol.y       = new ParticleSystem.MinMaxCurve( 0.04f, 0.18f);
+
+        // Fade in, hold, fade out — keeps the effect subtle
+        var col     = ps.colorOverLifetime;
+        col.enabled = true;
+        var g       = new Gradient();
+        g.SetKeys(
+            new[] { new GradientColorKey(new Color(0.60f, 0.28f, 0.92f), 0f),
+                    new GradientColorKey(new Color(0.72f, 0.38f, 1.00f), 0.5f),
+                    new GradientColorKey(new Color(0.55f, 0.22f, 0.85f), 1f) },
+            new[] { new GradientAlphaKey(0.00f, 0.00f),
+                    new GradientAlphaKey(0.55f, 0.15f),
+                    new GradientAlphaKey(0.55f, 0.75f),
+                    new GradientAlphaKey(0.00f, 1.00f) });
+        col.color = g;
+
+        // Gentle shrink toward end of life so particles disappear softly
+        var sol     = ps.sizeOverLifetime;
+        sol.enabled = true;
+        sol.size    = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+            new Keyframe(0f, 0.3f), new Keyframe(0.2f, 1f),
+            new Keyframe(0.8f, 1f), new Keyframe(1f, 0f)));
+
+        ApplyParticleMaterial(ps.GetComponent<ParticleSystemRenderer>());
+        ps.Play();
+
+        activeParticles.Add(go);
     }
 
     // ── Step execution ───────────────────────────────────────────────────
@@ -300,6 +369,7 @@ public class CutscenePlayer : MonoBehaviour
             displayText.text = fullText.Substring(0, i + 1);
             float delay = charDelay;
             char ch = fullText[i];
+            SFXManager.Instance?.PlayTypewriterTick(ch);
             if (ch == '.' || ch == '!' || ch == '?') delay *= 6f;
             else if (ch == ',')                       delay *= 3f;
             else if (ch == '\n')                      delay *= 4f;

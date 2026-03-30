@@ -48,6 +48,8 @@ public class SpellExecutor : MonoBehaviour
 
     private void ExecuteSpell(SpellData spell)
     {
+        SFXManager.Instance?.PlayPlayerShoot();
+
         Vector2 aimDir = GetAimDirection();
         if (spell.HasTag(SpellTag.REVERSED_CONTROLS)) aimDir = -aimDir;
 

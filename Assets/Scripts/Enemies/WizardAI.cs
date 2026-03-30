@@ -5,6 +5,10 @@ using UnityEngine;
 // Used by FireWizard, IceWizard, and any future wizard type.
 public class WizardAI : MeleeChaseAI
 {
+    [Header("Attack SFX")]
+    [SerializeField] private AudioClip shootSfxClip;
+    [SerializeField, Range(0f, 1f)] private float shootSfxVolume = 0.8f;
+
     [Header("Projectile")]
     [SerializeField] private Color          projectileColorA = new Color(1.0f, 0.35f, 0.0f, 1f);
     [SerializeField] private Color          projectileColorB = new Color(1.0f, 0.85f, 0.1f, 1f);
@@ -43,6 +47,8 @@ public class WizardAI : MeleeChaseAI
     protected override void Attack()
     {
         if (playerHealth == null || playerHealth.IsDead) return;
+
+        SFXManager.Instance?.PlayAtPosition(shootSfxClip, shootSfxVolume, transform.position);
 
         Vector2 dir      = DirectionToPlayer();
         Vector3 spawnPos = transform.position + (Vector3)(dir * 0.45f);

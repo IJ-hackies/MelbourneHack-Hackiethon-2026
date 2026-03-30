@@ -2,7 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Static store for all user settings — keybindings and volumes.
-/// Persisted via PlayerPrefs. Access from anywhere; call Save() after mutations.
+/// Always starts from defaults on launch (no PlayerPrefs restore).
+/// Changes made during a session are applied live but not persisted across runs.
 /// </summary>
 public static class SettingsData
 {
@@ -19,13 +20,11 @@ public static class SettingsData
     public static KeyCode ToggleMap  { get; private set; } = KeyCode.M;
 
     // ── Volume ────────────────────────────────────────────────────────────────
-    public static float MusicVolume { get; private set; } = 0.8f;
-    public static float SfxVolume   { get; private set; } = 0.8f;
+    public static float MusicVolume { get; private set; } = 0.5f;
+    public static float SfxVolume   { get; private set; } = 0.5f;
 
     /// <summary>Fired whenever any keybinding is changed via SetKey.</summary>
     public static event System.Action OnBindingsChanged;
-
-    static SettingsData() => Load();
 
     public static void SetKey(string action, KeyCode key)
     {
@@ -47,11 +46,13 @@ public static class SettingsData
     }
 
     public static void SetMusicVolume(float v) { MusicVolume = Mathf.Clamp01(v); Save(); ApplyVolumes(); }
-    public static void SetSfxVolume(float v)   { SfxVolume   = Mathf.Clamp01(v); Save(); }
+    public static void SetSfxVolume(float v)   { SfxVolume   = Mathf.Clamp01(v); Save(); ApplyVolumes(); }
 
     public static void ApplyVolumes()
     {
-        AudioListener.volume = MusicVolume;
+        // AudioListener.volume stays at 1 — each manager controls its own source volume.
+        MusicManager.Instance?.SetVolume(MusicVolume);
+        SFXManager.Instance?.SetSfxVolume(SfxVolume);
     }
 
     public static void Save()

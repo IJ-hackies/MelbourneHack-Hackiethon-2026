@@ -19,6 +19,10 @@ public class MeleeChaseAI : EnemyBase
     [SerializeField] private Color hitColorA = new Color(0.85f, 0.85f, 0.88f, 1f);
     [SerializeField] private Color hitColorB = new Color(0.45f, 0.45f, 0.50f, 1f);
 
+    [Header("Attack SFX")]
+    [SerializeField] private AudioClip attackSfxClip;
+    [SerializeField, Range(0f, 1f)] private float attackSfxVolume = 0.8f;
+
     [Header("Status Effects")]
     [SerializeField] private bool  applyBleed            = false;
     [SerializeField] private float bleedDuration         = 2f;
@@ -169,6 +173,7 @@ public class MeleeChaseAI : EnemyBase
         if (playerHealth == null || playerHealth.IsDead) return;
         if (DistanceToPlayer() > AttackRange * 1.3f) return;
 
+        SFXManager.Instance?.PlayAtPosition(attackSfxClip, attackSfxVolume, transform.position);
         DealDamageToPlayer(AttackDamage);
         if (applyBleed)
             playerStatusEffects?.ApplyBleed(AttackDamage * bleedDamageMultiplier, bleedDuration);

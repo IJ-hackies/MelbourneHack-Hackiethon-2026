@@ -251,6 +251,8 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.6981132, g: 0.40038428, b: 0.036222856, a: 1}
   hitColorB: {r: 0.7830189, g: 0.64537716, b: 0.08495018, a: 1}
+  attackSfxClip: {fileID: 8300000, guid: 32db463dc96884d6aa57ea65f6f1cf86, type: 3}
+  attackSfxVolume: 0.8
   applyBleed: 0
   bleedDuration: 2
   bleedDamageMultiplier: 0.1
@@ -321,6 +323,8 @@ MonoBehaviour:
   shockwaveLifetime: 1.2
   shockwaveColorA: {r: 0.9, g: 0.55, b: 0.1, a: 1}
   shockwaveColorB: {r: 0.45, g: 0.2, b: 0.05, a: 1}
+  attackSfxClip: {fileID: 0}
+  attackSfxVolume: 1
   crackDuration: 0.9
   crackColorA: {r: 0.18, g: 0.12, b: 0.06, a: 1}
   crackColorB: {r: 0.3, g: 0.2, b: 0.1, a: 1}

@@ -3,6 +3,10 @@ using UnityEngine;
 // Alien AI — pathfinds toward the player until in attack range, then stands and fires.
 public class AlienAI : EnemyBase
 {
+    [Header("Attack SFX")]
+    [SerializeField] private AudioClip shootSfxClip;
+    [SerializeField, Range(0f, 1f)] private float shootSfxVolume = 0.8f;
+
     [Header("Animation Timing")]
     [SerializeField] private float attackAnimDuration = 0.6f;
     [SerializeField] private float damageHitFrame     = 0.3f;
@@ -158,6 +162,7 @@ public class AlienAI : EnemyBase
     protected override void Attack()
     {
         if (playerHealth == null || playerHealth.IsDead || player == null) return;
+        SFXManager.Instance?.PlayAtPosition(shootSfxClip, shootSfxVolume, transform.position);
         Vector2 dir      = DirectionToPlayer();
         Vector3 spawnPos = transform.position + (Vector3)(dir * 0.45f);
         FireballProjectile.Spawn(spawnPos, dir, AttackDamage,

@@ -129,6 +129,8 @@ GameObject:
   m_Component:
   - component: {fileID: 898916084}
   - component: {fileID: 898916083}
+  - component: {fileID: 898916085}
+  - component: {fileID: 898916086}
   m_Layer: 0
   m_Name: IntroCutscene
   m_TagString: Untagged
@@ -177,6 +179,7 @@ MonoBehaviour:
   titleText: {fileID: 0}
   skipButton: {fileID: 0}
   skipText: {fileID: 0}
+  heartSprite: {fileID: 4606908045521496030, guid: aeeb4d0d40dca46e1bab240455a75aef, type: 3}
   chronicleMessage: 'Another soul stumbles into the dark.
 
     The Grimoire stirs...
@@ -184,6 +187,12 @@ MonoBehaviour:
 
     Let us see what you are made of.'
   titleMessage: EVERCHANGING GRIMOIRE
+  subtitleMessage: rumoured to have taken the souls of all who seeks it...along with
+    their spells
+  footstepClip: {fileID: 8300000, guid: 5f46db63f1ae143a18b6a1e7de195a2b, type: 3}
+  grimoireReachClip: {fileID: 8300000, guid: c86ba444f713b4d1b962e345e09058cc, type: 3}
+  ambientClip: {fileID: 8300000, guid: 2f10f672bdae34305b8fc16cc84993a8, type: 3}
+  ambientVolume: 0.4
   gameplaySceneName: Dungeon
 --- !u!4 &898916084
 Transform:
@@ -200,6 +209,91 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &898916085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 898916082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad9853ceb754940e3bfed0e59ff46762, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
+  maxAudibleDistance: 20
+  distanceFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.35
+      value: 1
+      inSlope: 0
+      outSlope: -2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -2
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  buttonClickClip: {fileID: 0}
+  buttonClickVolume: 0.7
+  playerShootClip: {fileID: 0}
+  playerShootVolume: 0.8
+  playerShootFadeOut: 0.15
+  mergeSpellClip: {fileID: 0}
+  mergeSpellVolume: 1
+  playerHitClip: {fileID: 0}
+  playerHitVolume: 1
+  scrollOpenClip: {fileID: 0}
+  scrollOpenVolume: 1
+  wordsAppearingClip: {fileID: 8300000, guid: 746456ba12242456e95b287732c0dc76, type: 3}
+  wordsAppearingVolume: 0.06
+  heartbeatClip: {fileID: 8300000, guid: bc2796455f51a4367a09f0aed7e4c6d6, type: 3}
+  heartbeatVolume: 1
+  cutsceneEndingClip: {fileID: 8300000, guid: b68357659925b4dacbe223fc1b6deefb, type: 3}
+  cutsceneEndingVolume: 1
+  ghostThrowClip: {fileID: 0}
+  ghostThrowVolume: 0.8
+  ghostSplatClip: {fileID: 0}
+  ghostSplatVolume: 0.9
+  vampireChargeUpClip: {fileID: 0}
+  vampireChargeUpVolume: 0.85
+  vampireShootClip: {fileID: 0}
+  vampireShootVolume: 1
+--- !u!114 &898916086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 898916082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00751c89e2be24a69994f54162e179e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIClickSFX
+  clip: {fileID: 8300000, guid: 8f2a1f3655f504091ad4780e6f48428b, type: 3}
+  volume: 0.17
 --- !u!1001 &1231336334
 PrefabInstance:
   m_ObjectHideFlags: 0

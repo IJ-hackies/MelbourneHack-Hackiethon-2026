@@ -214,6 +214,8 @@ MonoBehaviour:
   floatFrequency: 1.5
   hitColorA: {r: 0.5377358, g: 0.31221676, b: 0.19023673, a: 1}
   hitColorB: {r: 0.7924528, g: 0.41455817, b: 0.078497685, a: 1}
+  attackSfxClip: {fileID: 8300000, guid: 88ec0ff8e50084da8b185b06fc8a4063, type: 3}
+  attackSfxVolume: 0.8
   applyBleed: 1
   bleedDuration: 2
   bleedDamageMultiplier: 0.1

@@ -41,6 +41,9 @@ public class MusicManager : MonoBehaviour
 
     private void Start()
     {
+        // Apply persisted volume setting before the fade begins.
+        targetVolume = SettingsData.MusicVolume;
+
         if (musicClip != null)
             StartFade(FadeIn());
         else
@@ -90,6 +93,9 @@ public class MusicManager : MonoBehaviour
     public void SetVolume(float volume)
     {
         targetVolume = Mathf.Clamp01(volume);
-        audioSource.volume = targetVolume;
+        // Only snap to new volume if no fade is active; otherwise the fade coroutine
+        // already owns audioSource.volume and will land at the new targetVolume.
+        if (activeFade == null)
+            audioSource.volume = targetVolume;
     }
 }

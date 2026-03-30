@@ -29,6 +29,10 @@ public class DragonNewtAI : MeleeChaseAI
     [SerializeField] private Color shockwaveColorA   = new Color(0.90f, 0.55f, 0.10f, 1f);
     [SerializeField] private Color shockwaveColorB   = new Color(0.45f, 0.20f, 0.05f, 1f);
 
+    [Header("Attack SFX")]
+    [SerializeField] private AudioClip attackSfxClip;
+    [SerializeField, Range(0f, 1f)] private float attackSfxVolume = 1f;
+
     [Header("Ground Crack")]
     [SerializeField] private float crackDuration = 0.9f;
     [SerializeField] private Color crackColorA   = new Color(0.18f, 0.12f, 0.06f, 1f);
@@ -73,6 +77,7 @@ public class DragonNewtAI : MeleeChaseAI
     // Called at DamageHitFrame — the landing moment of the jump.
     protected override void Attack()
     {
+        SFXManager.Instance?.PlayAtPosition(attackSfxClip, attackSfxVolume, transform.position);
         SpawnGroundCrack();
         ShockwaveProjectile.SpawnRing(
             transform.position,

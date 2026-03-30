@@ -25,6 +25,9 @@ public class VampireAI : AlienAI
                            + BloodBeamProjectile.LockOnDuration
                            + BloodBeamProjectile.FireDuration;
 
+        // Charge-up SFX pitched to exactly match the telegraph window
+        SFXManager.Instance?.PlayVampireChargeUp((Vector2)transform.position, TelegraphDuration);
+
         Vector2 initialDir = DirectionToPlayer();
         BloodBeamProjectile.Spawn(transform, initialDir, AttackDamage,
                                   playerHealth,
@@ -55,5 +58,9 @@ public class VampireAI : AlienAI
         // Lock-on phase: unfreeze so the fireball animation plays BEFORE the beam fires,
         // making the shot look like it causes the beam rather than reacting to it.
         animator.speed = 1f;
+
+        // Wait for lock-on to complete, then fire the shoot SFX as the beam unleashes
+        yield return new WaitForSeconds(BloodBeamProjectile.LockOnDuration);
+        SFXManager.Instance?.PlayVampireShoot((Vector2)transform.position);
     }
 }
