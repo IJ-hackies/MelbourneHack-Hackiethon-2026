@@ -269,6 +269,24 @@ public class GrimoireUI : MonoBehaviour
         }
 
         equipSlotsGO.SetActive(false);
+
+        // X close button — top-right of book image
+        float closeBtnSize = 48f;
+        var closeBtnRT = MakeRT("CloseBtn", panelRoot,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(imageW / 2f - closeBtnSize * 0.3f, imageH / 2f - closeBtnSize * 0.3f),
+            new Vector2(closeBtnSize, closeBtnSize));
+        var closeBtnImg = closeBtnRT.gameObject.AddComponent<Image>();
+        closeBtnImg.color = new Color(0.15f, 0.1f, 0.05f, 0.85f);
+        var closeBtn = closeBtnRT.gameObject.AddComponent<Button>();
+        closeBtn.targetGraphic = closeBtnImg;
+        closeBtn.onClick.AddListener(Close);
+        closeBtnRT.gameObject.AddComponent<UIButtonHover>();
+        MakeTMP("CloseBtnLabel", closeBtnRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero,
+            "X", 24f, new Color(0.9f, 0.8f, 0.6f), TextAlignmentOptions.Center);
+
         canvasGO.SetActive(false);
     }
 
