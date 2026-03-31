@@ -270,6 +270,24 @@ public class MergeRitualUI : MonoBehaviour
             Vector2.zero, Vector2.zero,
             "Skip", 20f, Color.white, TextAlignmentOptions.Center);
 
+        // X close button — top-right of panel
+        float closeBtnSize = 44f;
+        var closeBtnRT = MakeRT("CloseBtn", panelRoot,
+            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(-50f, -100f), new Vector2(closeBtnSize, closeBtnSize));
+        var closeBtnImg = closeBtnRT.gameObject.AddComponent<Image>();
+        closeBtnImg.sprite = boxSprite;
+        closeBtnImg.type = Image.Type.Sliced;
+        closeBtnImg.color = new Color(0.55f, 0.12f, 0.08f, 0.9f);
+        var closeBtn = closeBtnRT.gameObject.AddComponent<Button>();
+        closeBtn.targetGraphic = closeBtnImg;
+        closeBtn.onClick.AddListener(Close);
+        closeBtnRT.gameObject.AddComponent<UIButtonHover>();
+        MakeTMP("CloseBtnLabel", closeBtnRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero,
+            "X", 22f, Color.white, TextAlignmentOptions.Center);
+
         canvasGO.SetActive(false);
     }
 

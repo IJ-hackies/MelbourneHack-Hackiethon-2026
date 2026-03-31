@@ -115,8 +115,7 @@ public class MinimapController : MonoBehaviour
     {
         if (_mapTex == null) return; // floor not yet assembled
 
-        if (Input.GetKeyDown(SettingsData.ToggleMap) ||
-            (_expanded && Input.GetKeyDown(KeyCode.Escape)))
+        if (Input.GetKeyDown(SettingsData.ToggleMap))
             Toggle();
 
         UpdateFog();
@@ -516,6 +515,34 @@ public class MinimapController : MonoBehaviour
         var panelBtn       = panelRT.gameObject.AddComponent<Button>();
         panelBtn.targetGraphic = panelBg;
         panelBtn.onClick.AddListener(() => { }); // no-op
+
+        // X close button — top-right of panel
+        float closeBtnSize = 40f;
+        var closeBtnRT = MakeRT("CloseBtn", panelRT,
+            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(-8f, -8f), new Vector2(closeBtnSize, closeBtnSize));
+        var closeBtnImg = closeBtnRT.gameObject.AddComponent<Image>();
+        closeBtnImg.color = new Color(0.55f, 0.12f, 0.08f, 0.9f);
+        var closeBtnButton = closeBtnRT.gameObject.AddComponent<Button>();
+        closeBtnButton.targetGraphic = closeBtnImg;
+        closeBtnButton.onClick.AddListener(Toggle);
+        closeBtnRT.gameObject.AddComponent<UIButtonHover>();
+        if (font != null)
+        {
+            var labelRT = MakeRT("CloseBtnLabel", closeBtnRT,
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero);
+            labelRT.offsetMin = Vector2.zero;
+            labelRT.offsetMax = Vector2.zero;
+            var closeLabel = labelRT.gameObject.AddComponent<TextMeshProUGUI>();
+            closeLabel.font = font;
+            closeLabel.text = "X";
+            closeLabel.fontSize = 22f;
+            closeLabel.fontStyle = FontStyles.Bold;
+            closeLabel.alignment = TextAlignmentOptions.Center;
+            closeLabel.color = new Color(0.93f, 0.87f, 0.72f);
+            closeLabel.raycastTarget = false;
+        }
 
         // Dark inner panel with 18px inset on all sides
         var innerRT        = MakeRT("InnerPanel", panelRT,

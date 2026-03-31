@@ -76,13 +76,8 @@ public class HudIconBar : MonoBehaviour
         }
 
         // Keyboard shortcuts (unscaled so they work while paused)
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (grimoireUI != null && grimoireUI.IsOpen)            grimoireUI.Close();
-            else if (mergeRitualUI != null && mergeRitualUI.IsOpen) mergeRitualUI.Close();
-            else if (settingsUI != null && settingsUI.IsOpen)       settingsUI.Close();
-            else if (settingsUI != null)                            settingsUI.Open(true);
-        }
+        // Note: Escape handling removed — on itch.io Escape exits fullscreen.
+        // All popups now have X close buttons instead.
         if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.G))
             ToggleGrimoire();
         if (Input.GetKeyDown(KeyCode.M))

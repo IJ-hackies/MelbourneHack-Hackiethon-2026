@@ -80,11 +80,10 @@ public class SettingsUI : MonoBehaviour
     {
         if (!IsOpen) return;
 
-        // Escape cancels rebind or closes menu (dungeon only — menu scene has no Escape-to-close)
+        // Escape cancels rebind only (close via X button instead — Escape exits fullscreen on itch.io)
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (_listeningAction != null) CancelRebind();
-            else if (_isDungeon)          Close();
             return;
         }
 
@@ -194,6 +193,20 @@ public class SettingsUI : MonoBehaviour
 
         MakeText("Title", hRT, V2.zero, V2.one, V2.half, V2.zero, V2.zero,
             "SETTINGS", 30f, ColGold, TextAlignmentOptions.Center, FontStyles.Bold);
+
+        // X close button — top-right of header
+        float closeBtnSize = 40f;
+        var closeBtnRT = MakeRT("CloseBtn", hRT,
+            new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+            new Vector2(-10f, 0f), new Vector2(closeBtnSize, closeBtnSize));
+        var closeBtnImg = closeBtnRT.gameObject.AddComponent<Image>();
+        closeBtnImg.color = ColBtnDanger;
+        var closeBtn = closeBtnRT.gameObject.AddComponent<Button>();
+        closeBtn.targetGraphic = closeBtnImg;
+        closeBtn.onClick.AddListener(Close);
+        closeBtnRT.gameObject.AddComponent<UIButtonHover>();
+        MakeText("CloseBtnLabel", closeBtnRT, V2.zero, V2.one, V2.half, V2.zero, V2.zero,
+            "X", 22f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
 
         // Thin gold line under header
         var lineRT   = MakeRT("Line", panel,
