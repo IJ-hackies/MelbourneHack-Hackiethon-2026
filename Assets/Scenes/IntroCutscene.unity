@@ -264,6 +264,8 @@ MonoBehaviour:
   mergeSpellVolume: 1
   playerHitClip: {fileID: 0}
   playerHitVolume: 1
+  playerDeathClip: {fileID: 0}
+  playerDeathVolume: 1
   enemyHitClip: {fileID: 0}
   enemyHitVolume: 0.5
   enemyHitPitch: 0.35
@@ -385,7 +387,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1478792998}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &1478793000
 Camera:
   m_ObjectHideFlags: 0
