@@ -59,6 +59,16 @@ public class GeminiClient : MonoBehaviour
         StartCoroutine(GenerateFreeTextCoroutine(prompt, onComplete));
     }
 
+    /// <summary>
+    /// Sends the death narration prompt using function calling and returns structured taunts.
+    /// Returns narration + score_taunt_beaten + score_taunt_failed via callback.
+    /// On failure, callback receives a result with hardcoded fallback strings.
+    /// </summary>
+    public void GenerateDeathNarration(string prompt, Action<DeathNarrationResult> onComplete)
+    {
+        StartCoroutine(GenerateDeathNarrationCoroutine(prompt, onComplete));
+    }
+
     // ── Coroutine ────────────────────────────────────────────────────────────
 
     private IEnumerator GenerateFloorCoroutine(string sessionLogJson, int nextStageNumber,
@@ -130,6 +140,136 @@ public class GeminiClient : MonoBehaviour
             Debug.Log($"[GeminiClient] Free-text narration received ({text.Length} chars)");
 
         onComplete?.Invoke(text);
+    }
+
+    // ── Death narration (function calling) ───────────────────────────────────
+
+    public struct DeathNarrationResult
+    {
+        public string narration;
+        public string score_taunt_beaten;
+        public string score_taunt_failed;
+    }
+
+    private IEnumerator GenerateDeathNarrationCoroutine(string prompt, Action<DeathNarrationResult> onComplete)
+    {
+        string escapedPrompt = EscapeJson(prompt);
+        string geminiBody = $@"{{
+  ""contents"": [{{""role"":""user"",""parts"":[{{""text"":""{escapedPrompt}""}}]}}],
+  ""tools"": [
+    {{
+      ""functionDeclarations"": [
+        {{
+          ""name"": ""generate_death_narration"",
+          ""description"": ""Generates the Chronicle's death narration and score taunts."",
+          ""parameters"": {{
+            ""type"": ""object"",
+            ""properties"": {{
+              ""narration"":           {{ ""type"": ""string"", ""description"": ""3-4 sentence roast of the player's playstyle. Mean, specific, plain language. No markdown."" }},
+              ""score_taunt_beaten"":  {{ ""type"": ""string"", ""description"": ""1-2 sentence threatening taunt for when the player beats their Furthest Page. The Grimoire is unsettled and doubles its threat."" }},
+              ""score_taunt_failed"":  {{ ""type"": ""string"", ""description"": ""1-2 sentence unimpressed taunt for when the player fails to beat their Furthest Page. Cold dismissal."" }}
+            }},
+            ""required"": [""narration"", ""score_taunt_beaten"", ""score_taunt_failed""]
+          }}
+        }}
+      ]
+    }}
+  ],
+  ""toolConfig"": {{
+    ""functionCallingConfig"": {{
+      ""mode"": ""ANY"",
+      ""allowedFunctionNames"": [""generate_death_narration""]
+    }}
+  }},
+  ""generationConfig"": {{""temperature"": 0.9}}
+}}";
+        string body = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
+
+        using var request = new UnityWebRequest(proxyUrl, "POST");
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.timeout         = timeoutSeconds;
+
+        Debug.Log("[GeminiClient] Requesting death narration via function calling...");
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"[GeminiClient] Death narration request failed: {request.error}");
+            onComplete?.Invoke(FallbackDeathNarration());
+            yield break;
+        }
+
+        DeathNarrationResult result = ParseDeathNarrationResponse(request.downloadHandler.text);
+        onComplete?.Invoke(result);
+    }
+
+    private DeathNarrationResult ParseDeathNarrationResponse(string responseJson)
+    {
+        try
+        {
+            int functionCallIdx = responseJson.IndexOf("\"functionCall\"", StringComparison.Ordinal);
+            if (functionCallIdx < 0) { Debug.LogError("[GeminiClient] No functionCall in death narration response."); return FallbackDeathNarration(); }
+
+            int argsIdx = responseJson.IndexOf("\"args\"", functionCallIdx, StringComparison.Ordinal);
+            if (argsIdx < 0) { Debug.LogError("[GeminiClient] No args in death narration response."); return FallbackDeathNarration(); }
+
+            int braceStart = responseJson.IndexOf('{', argsIdx + 6);
+            if (braceStart < 0) return FallbackDeathNarration();
+
+            int depth = 0, braceEnd = -1;
+            bool inString = false;
+            for (int i = braceStart; i < responseJson.Length; i++)
+            {
+                char c = responseJson[i];
+                if (inString) { if (c == '\\') { i++; continue; } if (c == '"') inString = false; continue; }
+                if (c == '"') { inString = true; continue; }
+                if (c == '{') depth++;
+                else if (c == '}') { depth--; if (depth == 0) { braceEnd = i; break; } }
+            }
+            if (braceEnd < 0) return FallbackDeathNarration();
+
+            string argsJson = responseJson.Substring(braceStart, braceEnd - braceStart + 1);
+
+            var dto = JsonUtility.FromJson<DeathNarrationDTO>(argsJson);
+            return new DeathNarrationResult
+            {
+                narration          = StripMarkdownStatic(dto?.narration          ?? ""),
+                score_taunt_beaten = StripMarkdownStatic(dto?.score_taunt_beaten ?? ""),
+                score_taunt_failed = StripMarkdownStatic(dto?.score_taunt_failed ?? ""),
+            };
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[GeminiClient] ParseDeathNarrationResponse error: {e.Message}");
+            return FallbackDeathNarration();
+        }
+    }
+
+    private static DeathNarrationResult FallbackDeathNarration() => new DeathNarrationResult
+    {
+        narration          = "The dungeon has swallowed another Seeker. You were no different from the rest.",
+        score_taunt_beaten = "Further than before. The Grimoire has taken notice. It won't allow it again.",
+        score_taunt_failed = "You didn't even reach your previous depth. Disappointing doesn't cover it.",
+    };
+
+    private static string StripMarkdownStatic(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\*{1,3}|_{1,3}", "");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"^\s*#{1,6}\s*", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"^\s*[-•]\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        return text.Trim();
+    }
+
+    // Intermediate DTO for JsonUtility deserialization
+    [System.Serializable]
+    private class DeathNarrationDTO
+    {
+        public string narration;
+        public string score_taunt_beaten;
+        public string score_taunt_failed;
     }
 
     private static string ParseFreeTextResponse(string json)

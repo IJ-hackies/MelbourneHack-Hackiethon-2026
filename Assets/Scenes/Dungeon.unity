@@ -592,7 +592,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
   font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
-  typewriterSpeed: 0.032
+  typewriterSpeed: 0.05
 --- !u!4 &1230371088
 Transform:
   m_ObjectHideFlags: 0
@@ -713,30 +713,32 @@ MonoBehaviour:
   mergeSpellVolume: 1
   playerHitClip: {fileID: 8300000, guid: 57adeb984a6c148ad8d2c8d545f9c9eb, type: 3}
   playerHitVolume: 0.948
+  playerDeathClip: {fileID: 8300000, guid: 5a4dc64ec79364d75a8a89f3ca833905, type: 3}
+  playerDeathVolume: 0.038
   enemyHitClip: {fileID: 8300000, guid: 7de20f07d5868439ba106edb78e1763e, type: 3}
   enemyHitVolume: 0.215
   enemyHitPitch: 0.662
   enemyDeathClip: {fileID: 8300000, guid: d4da8fb3037da4594bf140f3bc6c033f, type: 3}
   enemyDeathVolume: 0.403
   wallHitClip: {fileID: 8300000, guid: bae0981a2fe594a57bc8d5214190afad, type: 3}
-  wallHitVolume: 0.254
-  wallHitPitch: 0.621
+  wallHitVolume: 0.122
+  wallHitPitch: 0.535
   scrollOpenClip: {fileID: 8300000, guid: 00c07f713c0bc4b838291ddd8c58c91a, type: 3}
-  scrollOpenVolume: 1
+  scrollOpenVolume: 0.947
   wordsAppearingClip: {fileID: 8300000, guid: 746456ba12242456e95b287732c0dc76, type: 3}
   wordsAppearingVolume: 0.06
-  heartbeatClip: {fileID: 0}
+  heartbeatClip: {fileID: 8300000, guid: bc2796455f51a4367a09f0aed7e4c6d6, type: 3}
   heartbeatVolume: 1
   cutsceneEndingClip: {fileID: 0}
   cutsceneEndingVolume: 1
   ghostThrowClip: {fileID: 8300000, guid: 1cb7b1a3acdbf4ceaa40fe14ccf8adc8, type: 3}
-  ghostThrowVolume: 0.649
+  ghostThrowVolume: 0.561
   ghostSplatClip: {fileID: 8300000, guid: 48f9864156e4240429b4c98412918f96, type: 3}
-  ghostSplatVolume: 0.708
+  ghostSplatVolume: 0.63
   vampireChargeUpClip: {fileID: 8300000, guid: 1d05efa101d294a8ebc724b21088f716, type: 3}
-  vampireChargeUpVolume: 0.819
+  vampireChargeUpVolume: 0.676
   vampireShootClip: {fileID: 8300000, guid: e8e12b414720b4bf484159105cdca4bf, type: 3}
-  vampireShootVolume: 0.609
+  vampireShootVolume: 0.484
 --- !u!114 &1416350751
 MonoBehaviour:
   m_ObjectHideFlags: 0

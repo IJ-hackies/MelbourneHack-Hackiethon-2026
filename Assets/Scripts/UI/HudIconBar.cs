@@ -41,6 +41,9 @@ public class HudIconBar : MonoBehaviour
     private TMP_Text enemyCountText;
     private FloorClearDetector clearDetector;
 
+    // Page display (top-center)
+    private TMP_Text _pageText;
+
     private void Start()
     {
         // Auto-find overlay UIs if not wired in Inspector
@@ -84,7 +87,7 @@ public class HudIconBar : MonoBehaviour
             ToggleMerge();
     }
 
-    public void SetStage(int stage) => currentStage = stage;
+    public void SetStage(int stage) { currentStage = stage; UpdatePageDisplay(); }
     public bool IsMergeStage() => currentStage >= 5 && currentStage % 5 == 0;
 
     // ── Build ────────────────────────────────────────────────────────────────
@@ -124,6 +127,9 @@ public class HudIconBar : MonoBehaviour
 
         // ── Enemy counter ───────────────────────────────────────────────────
         BuildEnemyCounter();
+
+        // ── Top-center page display ─────────────────────────────────────────
+        BuildPageDisplay();
     }
 
     private void BuildEnemyCounter()
@@ -151,6 +157,40 @@ public class HudIconBar : MonoBehaviour
         enemyCountText.raycastTarget = false;
 
         UpdateEnemyCountDisplay();
+    }
+
+    private void BuildPageDisplay()
+    {
+        var pageRT = MakeRT("PageDisplay", canvasGO.transform,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -Margin),
+            new Vector2(200f, 38f));
+
+        // No background
+        var bgImg = pageRT.gameObject.AddComponent<Image>();
+        bgImg.color = new Color(0f, 0f, 0f, 0f);
+
+        var textRT = MakeRT("Text", pageRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        textRT.offsetMin = Vector2.zero;
+        textRT.offsetMax = Vector2.zero;
+
+        _pageText = textRT.gameObject.AddComponent<TextMeshProUGUI>();
+        _pageText.font = font;
+        _pageText.fontSize = 28f;
+        _pageText.fontStyle = FontStyles.Bold;
+        _pageText.alignment = TextAlignmentOptions.Center;
+        _pageText.color = new Color(0.93f, 0.87f, 0.72f);
+        _pageText.raycastTarget = false;
+
+        UpdatePageDisplay();
+    }
+
+    private void UpdatePageDisplay()
+    {
+        if (_pageText != null)
+            _pageText.text = $"Page {currentStage}";
     }
 
     private Image MakeIconButton(string name, RectTransform parent, float xPos,

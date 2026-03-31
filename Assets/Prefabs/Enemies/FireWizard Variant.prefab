@@ -223,7 +223,7 @@ MonoBehaviour:
   bleedDamageMultiplier: 0.1
   pathRefreshInterval: 0.3
   shootSfxClip: {fileID: 8300000, guid: b0346bbc75d32472d96bb44df15108f3, type: 3}
-  shootSfxVolume: 0.733
+  shootSfxVolume: 0.565
   projectileColorA: {r: 1, g: 0.35, b: 0, a: 1}
   projectileColorB: {r: 1, g: 0.85, b: 0.1, a: 1}
   projectileSpeed: 8

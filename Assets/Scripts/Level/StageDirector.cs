@@ -66,6 +66,10 @@ public class StageDirector : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        // Play the dramatic intro transition when the dungeon scene first loads.
+        // DungeonIntroTransition handles its own cleanup when done.
+        gameObject.AddComponent<DungeonIntroTransition>();
     }
 
     private void Start()
@@ -144,15 +148,31 @@ public class StageDirector : MonoBehaviour
                 spellList += s.spellName + ", ";
         spellList = spellList.TrimEnd(',', ' ');
 
+        // Record score — snapshots previous Furthest Page before saving
+        int pagesCleared = stageNumber - 1;
+        PageTracker.RecordRun(pagesCleared);
+
+        // Stop heartbeat immediately and play death sound
+        SFXManager.Instance?.StopHeartbeatImmediate();
+        SFXManager.Instance?.PlayPlayerDeath();
+
         // Fire Gemini immediately in the background (before cutscene plays)
-        gameOverUI?.PreloadNarration(stageNumber, sessionLog, spellList);
+        gameOverUI?.PreloadNarration(stageNumber, sessionLog, spellList,
+                                     pagesCleared, PageTracker.PreviousFurthestPage);
 
         // Play death cutscene then show Game Over UI
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (deathCutscene != null && playerObj != null)
-            deathCutscene.Play(playerObj, () => gameOverUI?.Show());
+            deathCutscene.Play(playerObj, () =>
+            {
+                Destroy(playerObj);
+                gameOverUI?.Show();
+            });
         else
+        {
+            if (playerObj != null) Destroy(playerObj);
             gameOverUI?.Show();
+        }
     }
 
     // ── Stage loading ────────────────────────────────────────────────────────

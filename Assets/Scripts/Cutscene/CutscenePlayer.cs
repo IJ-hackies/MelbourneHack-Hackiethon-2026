@@ -327,25 +327,11 @@ public class CutscenePlayer : MonoBehaviour
     {
         if (string.IsNullOrEmpty(fullText)) yield break;
 
-        displayText.text = "";
-        displayText.color = new Color(displayText.color.r, displayText.color.g,
-                                       displayText.color.b, 1f);
-
-        for (int i = 0; i < fullText.Length; i++)
-        {
-            if (skipping) { displayText.text = fullText; yield break; }
-            displayText.text = fullText.Substring(0, i + 1);
-            float delay = charDelay;
-            char ch = fullText[i];
-            SFXManager.Instance?.PlayTypewriterTick(ch);
-            if (ch == '.' || ch == '!' || ch == '?') delay *= 6f;
-            else if (ch == ',')                       delay *= 3f;
-            else if (ch == '\n')                      delay *= 4f;
-            yield return new WaitForSecondsRealtime(delay);
-        }
-
-        // Hold the text visible for a beat after finishing
-        yield return new WaitForSecondsRealtime(0.8f);
+        // Gold/amber — matches displayText's base colour set in EnsureUI
+        Color baseColor = new Color(0.9f, 0.8f, 0.55f, 1f);
+        yield return MagicalTypewriter.Reveal(
+            displayText, fullText, charDelay, baseColor, () => skipping);
+        // MagicalTypewriter handles the 0.8s hold and resets the mesh for DoClearText
     }
 
     private IEnumerator DoClearText(float duration)

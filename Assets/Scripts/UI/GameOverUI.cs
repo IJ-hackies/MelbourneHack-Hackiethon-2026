@@ -46,14 +46,19 @@ public class GameOverUI : MonoBehaviour
     // ── Phase 2 widgets ────────────────────────────────────────────────────────
     private GameObject  _gameOverPanel;
     private TMP_Text    _gameOverNarration;
+    private TMP_Text    _scoreText;
+    private TMP_Text    _tauntText;
 
     // ── Shared ─────────────────────────────────────────────────────────────────
     private GameObject  _canvas;
 
     // ── Narration state (set by PreloadNarration, consumed by Show) ────────────
     private string  _pendingNarration;
+    private string  _pendingTaunt;
     private bool    _narrationReady;
     private bool    _waitingForNarration; // UI shown, waiting for Gemini
+    private int     _pagesCleared;
+    private int     _prevFurthestPage;
 
     // ── Loading animation ──────────────────────────────────────────────────────
     private float _loadingTimer;
@@ -81,31 +86,77 @@ public class GameOverUI : MonoBehaviour
     /// Fire the Gemini narration request immediately (call on player death,
     /// before the death cutscene plays, so it loads in the background).
     /// </summary>
-    public void PreloadNarration(int stageReached, string sessionLogJson, string spellList)
+    public void PreloadNarration(int stageReached, string sessionLogJson, string spellList,
+                                 int pagesCleared = 0, int prevFurthestPage = 0)
     {
         _pendingNarration    = null;
+        _pendingTaunt        = null;
         _narrationReady      = false;
         _waitingForNarration = false;
+        _pagesCleared        = pagesCleared;
+        _prevFurthestPage    = prevFurthestPage;
+
+        bool isTie = pagesCleared > 0 && pagesCleared == prevFurthestPage;
 
         if (GeminiClient.Instance != null)
         {
-            string prompt = BuildDeathPrompt(stageReached, sessionLogJson, spellList);
-            GeminiClient.Instance.GenerateFreeText(prompt, text =>
+            if (isTie)
             {
-                _pendingNarration = !string.IsNullOrEmpty(text) ? StripMarkdown(text) : FallbackMessage(stageReached);
-                _narrationReady   = true;
+                // Tie: use free-text for a mocking taunt, separate from narration
+                string narrationPrompt = BuildDeathPrompt(stageReached, sessionLogJson, spellList, pagesCleared, prevFurthestPage);
+                string tiePrompt       = BuildTiePrompt(pagesCleared);
 
-                // If the popup is already visible and waiting, start typewriter now
-                if (IsOpen && _waitingForNarration)
+                int callsRemaining = 2;
+                void TryFinish()
                 {
-                    _waitingForNarration = false;
-                    StartCoroutine(BeginTypewriter(_pendingNarration));
+                    callsRemaining--;
+                    if (callsRemaining > 0) return;
+                    _narrationReady = true;
+                    if (IsOpen && _waitingForNarration)
+                    {
+                        _waitingForNarration = false;
+                        StartCoroutine(BeginTypewriter(_pendingNarration));
+                    }
                 }
-            });
+
+                GeminiClient.Instance.GenerateFreeText(narrationPrompt, text =>
+                {
+                    _pendingNarration = !string.IsNullOrEmpty(text) ? StripMarkdown(text) : FallbackMessage(stageReached);
+                    TryFinish();
+                });
+                GeminiClient.Instance.GenerateFreeText(tiePrompt, text =>
+                {
+                    _pendingTaunt = !string.IsNullOrEmpty(text) ? StripMarkdown(text) : "The exact same depth. Not better. Not worse. Just... the same. Pathetic.";
+                    TryFinish();
+                });
+            }
+            else
+            {
+                string prompt = BuildDeathPrompt(stageReached, sessionLogJson, spellList, pagesCleared, prevFurthestPage);
+                GeminiClient.Instance.GenerateDeathNarration(prompt, result =>
+                {
+                    _pendingNarration = !string.IsNullOrEmpty(result.narration) ? result.narration : FallbackMessage(stageReached);
+                    _pendingTaunt     = pagesCleared > prevFurthestPage
+                        ? result.score_taunt_beaten
+                        : result.score_taunt_failed;
+
+                    _narrationReady = true;
+                    if (IsOpen && _waitingForNarration)
+                    {
+                        _waitingForNarration = false;
+                        StartCoroutine(BeginTypewriter(_pendingNarration));
+                    }
+                });
+            }
         }
         else
         {
             _pendingNarration = FallbackMessage(stageReached);
+            _pendingTaunt     = isTie
+                ? "The exact same depth. Not better. Not worse. Just... the same. Pathetic."
+                : pagesCleared > prevFurthestPage
+                    ? "Further than before. The Grimoire has taken notice. It won't allow it again."
+                    : "You didn't even reach your previous depth. Disappointing doesn't cover it.";
             _narrationReady   = true;
         }
     }
@@ -188,6 +239,16 @@ public class GameOverUI : MonoBehaviour
     {
         _gameOverNarration.text = _pendingNarration ?? "";
 
+        if (_scoreText != null)
+            _scoreText.text = $"Pages Turned: {_pagesCleared}     " +
+                              $"Furthest Page: {_prevFurthestPage}";
+
+        if (_tauntText != null)
+        {
+            _tauntText.text = _pendingTaunt ?? "";
+            _tauntText.gameObject.SetActive(!string.IsNullOrEmpty(_pendingTaunt));
+        }
+
         _popupPanel.SetActive(false);
         _gameOverPanel.SetActive(true);
 
@@ -243,19 +304,38 @@ public class GameOverUI : MonoBehaviour
         return text.Trim();
     }
 
-    private static string BuildDeathPrompt(int stageReached, string sessionLogJson, string spellList)
+    private static string BuildDeathPrompt(int stageReached, string sessionLogJson, string spellList,
+                                           int pagesCleared = 0, int prevFurthestPage = 0)
     {
         string sessionSection = string.IsNullOrEmpty(sessionLogJson)
             ? ""
             : $"\nFinal floor session data: {sessionLogJson}";
 
+        string scoreContext = pagesCleared > prevFurthestPage
+            ? $"\nScore context: The Seeker cleared {pagesCleared} floors — a new personal record (previous best: {prevFurthestPage}). The Grimoire is displeased that they went deeper."
+            : $"\nScore context: The Seeker cleared {pagesCleared} floors (previous best: {prevFurthestPage}). They failed to beat their record.";
+
         return
-$@"You are the Chronicle — the smug, contemptuous narrator of the Grimoire dungeon. A Seeker just died pathetically inside its pages.
+$@"You are the Chronicle — the smug, contemptuous narrator of the Grimoire dungeon. A Seeker just died inside its pages.
 
 Stage they reached: {stageReached}
-Spells they owned: {(string.IsNullOrEmpty(spellList) ? "none" : spellList)}{sessionSection}
+Spells they owned: {(string.IsNullOrEmpty(spellList) ? "none" : spellList)}{sessionSection}{scoreContext}
 
-Roast this Seeker mercilessly. Speak directly to them in second person. Do NOT summarise what they did — instead mock the WAY they played. Were their spells trash? Did they barely make it past stage 1? Were they probably button-mashing? Pick apart their incompetence with cruel, specific wit. Think a villain who finds the whole thing embarrassing to witness. Be mean, be funny, be short. 3-4 sentences maximum. No purple prose. No sympathy. No quotation marks. Plain text only — no asterisks, no markdown, no bullet points.";
+Call generate_death_narration with three fields:
+
+narration: Roast this Seeker mercilessly. Speak in second person. Mock the WAY they played — their spells, their tactics, their failures. Cruel, specific, plain language. 3-4 sentences. No purple prose. No markdown.
+
+score_taunt_beaten: They went deeper than ever before. The Grimoire is threatened — 1-2 sentences of cold, threatening menace. It is studying them harder now and WILL make the next attempt worse. Dark, direct threat. No markdown.
+
+score_taunt_failed: They didn't reach their previous depth. 1-2 sentences of utter contempt and dismissal. The Grimoire finds this boring. No markdown.";
+    }
+
+    private static string BuildTiePrompt(int pagesCleared)
+    {
+        return
+$@"You are the Chronicle — the contemptuous narrator of the Grimoire dungeon. A Seeker just died having cleared exactly {pagesCleared} floors — matching their previous personal best exactly. Not better. Not worse.
+
+Write 1-2 sentences mocking them for this stagnation. You are not threatened — you find it almost funny that they reached the exact same depth and stopped there again. Cold, mocking, slightly amused. Like watching someone trip over the same step twice. No markdown, no quotation marks, plain text only.";
     }
 
     private static string FallbackMessage(int stage)
@@ -345,7 +425,7 @@ Roast this Seeker mercilessly. Speak directly to them in second person. Do NOT s
         _popupNarrationText = MakeText("Narration", contentRT,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             Vector2.zero, new Vector2(PW - 80f, contentH - 16f),
-            "", 18f, ColParchment, TextAlignmentOptions.Center, FontStyles.Normal);
+            "", 22f, ColParchment, TextAlignmentOptions.Center, FontStyles.Normal);
         _popupNarrationText.textWrappingMode = TMPro.TextWrappingModes.Normal;
         _popupNarrationText.overflowMode     = TextOverflowModes.Overflow;
         _popupNarrationText.gameObject.SetActive(false);
@@ -373,7 +453,7 @@ Roast this Seeker mercilessly. Speak directly to them in second person. Do NOT s
     private void BuildGameOverScreen(Transform canvasT)
     {
         const float PW = 820f;
-        const float PH = 480f;
+        const float PH = 580f;
         const float HH = 70f;
         const float FH = 80f;
 
@@ -398,9 +478,13 @@ Roast this Seeker mercilessly. Speak directly to them in second person. Do NOT s
             new Vector2(0f, -HH), new Vector2(0f, 2f));
         lineRT.gameObject.AddComponent<Image>().color = ColGold;
 
-        // Narration area
+        // Narration area (shortened to make room for score + taunt below)
+        const float ScoreH = 50f;
+        const float TauntH = 72f;
+        const float ScoreGap = 12f;
+        float extraH   = ScoreH + TauntH + ScoreGap * 2f;
         float areaTopY = -(HH + 2f);
-        float areaH    = PH - HH - 2f - FH - 1f;
+        float areaH    = PH - HH - 2f - FH - 1f - extraH - 8f;
         var   areaRT   = MakeRT("NarrationArea", panelRT,
             new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
             new Vector2(0f, areaTopY), new Vector2(0f, areaH));
@@ -408,10 +492,30 @@ Roast this Seeker mercilessly. Speak directly to them in second person. Do NOT s
         _gameOverNarration = MakeText("Text", areaRT,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             Vector2.zero, new Vector2(PW - 90f, areaH - 24f),
-            "", 18f, ColParchment, TextAlignmentOptions.Center, FontStyles.Normal);
+            "", 28f, ColParchment, TextAlignmentOptions.Center, FontStyles.Normal);
         _gameOverNarration.textWrappingMode = TMPro.TextWrappingModes.Normal;
         _gameOverNarration.overflowMode     = TextOverflowModes.Overflow;
         _gameOverNarration.raycastTarget    = false;
+
+        // Score line — Pages Turned + Furthest Page
+        float scoreY = -(HH + 2f + areaH + ScoreGap);
+        _scoreText = MakeText("ScoreText", panelRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, scoreY), new Vector2(PW - 60f, ScoreH),
+            "", 24f, ColGold, TextAlignmentOptions.Center, FontStyles.Bold);
+        _scoreText.raycastTarget = false;
+
+        // Taunt line — Chronicle's score comment
+        float tauntY = scoreY - ScoreH - ScoreGap;
+        _tauntText = MakeText("TauntText", panelRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, tauntY), new Vector2(PW - 80f, TauntH),
+            "", 20f, ColCrimson, TextAlignmentOptions.Center, FontStyles.Normal);
+        _tauntText.fontStyle         = FontStyles.Italic;
+        _tauntText.textWrappingMode  = TMPro.TextWrappingModes.Normal;
+        _tauntText.overflowMode      = TextOverflowModes.Truncate;
+        _tauntText.raycastTarget     = false;
+        _tauntText.gameObject.SetActive(false);
 
         // Gold divider above footer
         var divRT = MakeRT("Divider", panelRT,

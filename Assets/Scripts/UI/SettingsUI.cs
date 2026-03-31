@@ -72,6 +72,9 @@ public class SettingsUI : MonoBehaviour
 
     public static SettingsUI Instance { get; private set; }
 
+    /// <summary>The Alagard TMP font asset, accessible to any runtime-built UI.</summary>
+    public TMP_FontAsset Font => font;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()

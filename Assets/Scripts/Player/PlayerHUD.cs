@@ -50,6 +50,17 @@ public class PlayerHUD : MonoBehaviour
     private float fastBeatTimer;
     private float healthFlashTimer;
 
+    // ── Low-health heartbeat state ─────────────────────────────────────────────
+    private const float CritThreshold = 0.20f;
+    private const float RestingBPM    = 40f;
+    private const float CritLowBPM    = 45f;
+    private const float CritHighBPM   = 65f;
+    private bool  _criticalHeartbeatActive;
+
+    // ── Promoted HUD element references ───────────────────────────────────────
+    private Image _heartImg;
+    private Image _barOutlineImg;
+
     // ── Screen damage flash ───────────────────────────────────────────────────
     private Image screenFlashImage;
     private float screenFlashTimer;
@@ -93,6 +104,8 @@ public class PlayerHUD : MonoBehaviour
     private void OnDestroy()
     {
         if (canvasGO != null) Destroy(canvasGO);
+        if (_criticalHeartbeatActive)
+            SFXManager.Instance?.StopHeartbeatImmediate();
     }
 
     private void TriggerDamageFlash()
@@ -145,9 +158,9 @@ public class PlayerHUD : MonoBehaviour
             anchorMin: Vector2.zero, anchorMax: Vector2.one,
             pivot: new Vector2(0.5f, 0.5f),
             pos: Vector2.zero, size: Vector2.zero);
-        var heartImg         = heartMainRT.gameObject.AddComponent<Image>();
-        heartImg.sprite      = ExtractSprite(heartIconPrefab);
-        heartImg.preserveAspect = true;
+        _heartImg            = heartMainRT.gameObject.AddComponent<Image>();
+        _heartImg.sprite     = ExtractSprite(heartIconPrefab);
+        _heartImg.preserveAspect = true;
 
         // Bar drop shadow — flat rect, offset slightly for depth
         var barShadowRT      = MakeRT("BarShadow", canvasGO.transform,
@@ -166,9 +179,9 @@ public class PlayerHUD : MonoBehaviour
             pivot: new Vector2(0.5f, 0.5f),
             pos: new Vector2(0f, barCenterY),
             size: new Vector2(BarW + OutlinePx * 2f, BarH + OutlinePx * 2f));
-        var barOutlineImg    = barOutlineRT.gameObject.AddComponent<Image>();
-        barOutlineImg.color  = new Color(0f, 0f, 0f, 1f);
-        barOutlineImg.raycastTarget = false;
+        _barOutlineImg       = barOutlineRT.gameObject.AddComponent<Image>();
+        _barOutlineImg.color = new Color(0f, 0f, 0f, 1f);
+        _barOutlineImg.raycastTarget = false;
 
         // Bar container — flat rect mask; dark background visible in empty portion
         var barContainerRT   = MakeRT("BarContainer", canvasGO.transform,
@@ -242,6 +255,7 @@ public class PlayerHUD : MonoBehaviour
         if (health == null || status == null) return;
         UpdateHeartbeat();
         UpdateHealthText();
+        UpdateOutlineGlow();
         UpdateScreenFlash();
         SyncStatusSlots();
         AnimateSlots();
@@ -253,12 +267,80 @@ public class PlayerHUD : MonoBehaviour
     {
         if (fastBeatTimer > 0f) fastBeatTimer -= Time.deltaTime;
 
-        float freq      = fastBeatTimer > 0f ? 2.6f : 0.65f;
-        float amplitude = fastBeatTimer > 0f ? 0.09f : 0.05f;
+        float pct = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
 
-        beatPhase += freq * Mathf.PI * 2f * Time.deltaTime;
+        // Stop everything if dead — StageDirector handles the sound cutoff
+        if (health.IsDead)
+        {
+            if (_criticalHeartbeatActive)
+            {
+                _criticalHeartbeatActive = false;
+                SFXManager.Instance?.StopHeartbeatImmediate();
+            }
+            return;
+        }
+
+        // Health-based BPM drives audio; animation layers the hit boost on top
+        float healthBPM;
+        if (pct <= CritThreshold)
+        {
+            float t = 1f - (pct / CritThreshold); // 0 at 20% HP, 1 at 0% HP
+            healthBPM = Mathf.Lerp(CritLowBPM, CritHighBPM, t);
+
+            if (!_criticalHeartbeatActive)
+                _criticalHeartbeatActive = true;
+
+            SFXManager.Instance?.StartOrUpdateHeartbeat(healthBPM);
+        }
+        else
+        {
+            if (_criticalHeartbeatActive)
+            {
+                _criticalHeartbeatActive = false;
+                SFXManager.Instance?.StopHeartbeat();
+            }
+            healthBPM = RestingBPM;
+        }
+
+        // Animation: hit boost layers on top (take whichever is faster)
+        float animFreqHz  = healthBPM / 60f;
+        float amplitude   = 0.05f;
+        if (fastBeatTimer > 0f)
+        {
+            animFreqHz = Mathf.Max(animFreqHz, 2.6f); // 2.6 Hz ≈ 156 BPM hit boost
+            amplitude  = 0.09f;
+        }
+
+        beatPhase += animFreqHz * Mathf.PI * 2f * Time.deltaTime;
         float pulse = 1f + amplitude * Mathf.Max(0f, Mathf.Sin(beatPhase));
         heartRT.localScale = new Vector3(pulse, pulse, 1f);
+    }
+
+    // ── Outline + heart red glow ──────────────────────────────────────────────
+
+    private void UpdateOutlineGlow()
+    {
+        float pct = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
+
+        // Critical health: sine pulse synced to beatPhase, grows stronger as HP drops
+        float critAlpha = 0f;
+        if (pct <= CritThreshold)
+        {
+            float critT  = 1f - (pct / CritThreshold);
+            float intensity = Mathf.Lerp(0.45f, 1f, critT);
+            critAlpha = ((Mathf.Sin(beatPhase) + 1f) * 0.5f) * intensity;
+        }
+
+        // Hit flash: immediate red spike, decays over 0.45s
+        float hitAlpha = healthFlashTimer > 0f ? Mathf.Clamp01(healthFlashTimer / 0.45f) : 0f;
+
+        float redAlpha = Mathf.Max(critAlpha, hitAlpha);
+
+        if (_barOutlineImg != null)
+            _barOutlineImg.color = Color.Lerp(new Color(0f, 0f, 0f, 1f), new Color(0.9f, 0.1f, 0.1f, 1f), redAlpha);
+
+        if (_heartImg != null)
+            _heartImg.color = Color.Lerp(Color.white, new Color(1f, 0.18f, 0.18f, 1f), hitAlpha);
     }
 
     // ── Screen damage flash ───────────────────────────────────────────────────
@@ -287,12 +369,11 @@ public class PlayerHUD : MonoBehaviour
         float pct = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
         healthText.text = Mathf.CeilToInt(health.Current).ToString();
 
-        // Bar fill + colour — anchorMax.x drives width; flash white on damage
+        // Bar fill + colour — anchorMax.x drives width
         if (healthBarFill != null)
         {
             healthBarFillRT.anchorMax = new Vector2(pct, 1f);
-            float flashT = Mathf.Clamp01(healthFlashTimer / 0.45f);
-            healthBarFill.color = Color.Lerp(HealthBarColor(pct), Color.white, flashT * flashT);
+            healthBarFill.color = HealthBarColor(pct);
         }
 
         if (healthFlashTimer > 0f)

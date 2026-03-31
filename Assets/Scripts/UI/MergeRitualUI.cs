@@ -216,8 +216,8 @@ public class MergeRitualUI : MonoBehaviour
 
         // Bottom buttons — soft radial glow behind merge button, then button on top
         var glowRT = MakeRT("MergeBtnGlow", panelRoot,
-            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(-110f, 225f), new Vector2(340f, 160f));
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f),
+            new Vector2(-110f, 260f), new Vector2(340f, 160f));
         mergeBtnGlow = glowRT.gameObject.AddComponent<RawImage>();
         mergeBtnGlow.texture = GetMergeGlowTexture();
         mergeBtnGlow.color = new Color(0.7f, 0.1f, 1f, 0f);
@@ -322,7 +322,7 @@ public class MergeRitualUI : MonoBehaviour
                     mergeSparkleAngles[i] += 55f * Time.unscaledDeltaTime;
                     float rad = mergeSparkleAngles[i] * Mathf.Deg2Rad;
                     float x = -110f + Mathf.Cos(rad) * 116f;
-                    float y = 225f + Mathf.Sin(rad) * 38f;
+                    float y = 260f + Mathf.Sin(rad) * 38f;
                     mergeSparkles[i].rectTransform.anchoredPosition = new Vector2(x, y);
                     float alpha = Mathf.Sin(Time.unscaledTime * 4f + i * 1.05f) * 0.3f + 0.7f;
                     mergeSparkles[i].color = new Color(0.9f, 0.5f, 1f, alpha);
