@@ -264,6 +264,14 @@ MonoBehaviour:
   mergeSpellVolume: 1
   playerHitClip: {fileID: 0}
   playerHitVolume: 1
+  enemyHitClip: {fileID: 0}
+  enemyHitVolume: 0.5
+  enemyHitPitch: 0.35
+  enemyDeathClip: {fileID: 0}
+  enemyDeathVolume: 0.9
+  wallHitClip: {fileID: 0}
+  wallHitVolume: 0.6
+  wallHitPitch: 1
   scrollOpenClip: {fileID: 0}
   scrollOpenVolume: 1
   wordsAppearingClip: {fileID: 8300000, guid: 746456ba12242456e95b287732c0dc76, type: 3}

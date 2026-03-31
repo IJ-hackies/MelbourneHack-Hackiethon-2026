@@ -561,6 +561,7 @@ public class StageTransitionUI : MonoBehaviour
     {
         page1.SetActive(false);
         page2.SetActive(true);
+        SFXManager.Instance?.PlayScrollOpen();
         if (Grimoire.Instance != null)
             Grimoire.Instance.OnLoadoutChanged += RefreshSpellIcon;
         RefreshSpellIcon();

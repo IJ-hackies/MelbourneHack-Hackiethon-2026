@@ -510,14 +510,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 807e1df34f8ea4fd38d56b0d7120a6a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerParry
-  parryRadius: 4
-  parryCooldown: 10
-  parryWindow: 0.5
-  parrySuccessClip: {fileID: 8300000, guid: 043b735f3da5646c8906c055bca05993, type: 3}
-  parryFailClip: {fileID: 8300000, guid: 41b0240779586481fb3c75a4c33ada59, type: 3}
-  audioVolume: 1
-  cooldownTimer: 0
-  playerSR: {fileID: 0}
 --- !u!1 &1170421377
 GameObject:
   m_ObjectHideFlags: 0
@@ -566,6 +558,52 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 38.28002, y: 22.18636, z: 0}
   m_LocalScale: {x: 3, y: 3, z: 3}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1230371086
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1230371088}
+  - component: {fileID: 1230371087}
+  m_Layer: 0
+  m_Name: GameOverUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1230371087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230371086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df36b7ca8bd7346cd84a9eba4a56274f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
+  font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
+  typewriterSpeed: 0.032
+--- !u!4 &1230371088
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230371086}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1663,3 +1701,4 @@ SceneRoots:
   - {fileID: 320363557}
   - {fileID: 2137569829124466701}
   - {fileID: 1849055940963223558}
+  - {fileID: 1230371088}

@@ -42,7 +42,7 @@ public class MainMenuController : MonoBehaviour
         if (quitButton != null)     quitButton.onClick.AddListener(OnQuit);
     }
 
-    private void OnSettings() => settingsUI?.Open(false);
+    private void OnSettings() => (SettingsUI.Instance ?? settingsUI)?.Open(false);
 
     private void OnPlay()
     {

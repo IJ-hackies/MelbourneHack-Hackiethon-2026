@@ -68,10 +68,25 @@ public class SettingsUI : MonoBehaviour
     private TMP_Text       _listeningBtnText;
     private readonly Dictionary<string, (Image bg, TMP_Text label)> _bindBtns = new();
 
+    // ── Singleton ─────────────────────────────────────────────────────────────
+
+    public static SettingsUI Instance { get; private set; }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        // Must be root-level for DontDestroyOnLoad
+        transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
+        // Restore saved settings (volumes + keybinds) from PlayerPrefs
+        SettingsData.Load();
         BuildCanvas();
         _canvas.SetActive(false);
     }

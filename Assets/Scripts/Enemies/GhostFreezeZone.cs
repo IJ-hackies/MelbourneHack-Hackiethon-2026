@@ -274,6 +274,8 @@ public class GhostFreezeZone : MonoBehaviour
 
         var rot = ps.rotationOverLifetime;
         rot.enabled = true;
+        rot.x       = new ParticleSystem.MinMaxCurve(0f, 0f);
+        rot.y       = new ParticleSystem.MinMaxCurve(0f, 0f);
         rot.z       = new ParticleSystem.MinMaxCurve(-45f * Mathf.Deg2Rad, 45f * Mathf.Deg2Rad);
 
         ps.Play();
