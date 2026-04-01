@@ -289,7 +289,10 @@ public class HudIconBar : MonoBehaviour
 
     private void OnGrimoireClick() => ToggleGrimoire();
     private void OnMergeClick()    => ToggleMerge();
-    private void OnSettingsClick() => settingsUI?.Toggle(true);
+    private void OnSettingsClick()
+    {
+        if (SettingsUI.Instance != null) SettingsUI.Instance.Toggle(true);
+    }
 
     private void ToggleGrimoire()
     {

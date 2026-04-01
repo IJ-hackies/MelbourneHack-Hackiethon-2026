@@ -80,7 +80,7 @@ public class MainMenuController : MonoBehaviour
         textRT.offsetMax = Vector2.zero;
         var tmp          = textGO.AddComponent<TextMeshProUGUI>();
         if (SettingsUI.Instance != null) tmp.font = SettingsUI.Instance.Font;
-        tmp.text         = $"Furthest Page: {PageTracker.ToRoman(PageTracker.FurthestPage)}";
+        tmp.text         = $"Furthest Page: {PageTracker.FurthestPage}";
         tmp.fontSize     = 40f;
         tmp.fontStyle    = FontStyles.Bold;
         tmp.alignment    = TextAlignmentOptions.Center;

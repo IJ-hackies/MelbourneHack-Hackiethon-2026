@@ -11,9 +11,13 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float     dashDistance   = 3f;
     [SerializeField] private float     dashDuration   = 0.12f;
     [SerializeField] private float     dashCooldown   = 1.5f;
-    [SerializeField] private float     iFrameDuration = 0.25f;
+    [SerializeField] private float     iFrameDuration = 0.5f;
     [SerializeField] private AudioClip dashClip;
     [SerializeField] [Range(0f, 1f)] private float dashAudioVolume = 1f;
+
+    [Header("Dash Speed Boost")]
+    [SerializeField] private float     dashBoostDuration  = 0.8f;
+    [SerializeField] private float     dashBoostMultiplier = 1.4f;
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -27,10 +31,13 @@ public class PlayerMovement : MonoBehaviour
 
     // Dash state
     private bool  isDashing;
+    private bool  isIFrameActive;
     private float dashCooldownTimer;
     private Health playerHealth;
+    private Coroutine boostCoroutine;
 
     public bool  IsDashing              => isDashing;
+    public bool  IsIFrameActive         => isIFrameActive;
     public float DashCooldownPct       => dashCooldown > 0f ? Mathf.Clamp01(dashCooldownTimer / dashCooldown) : 0f;
     public float DashCooldownRemaining => Mathf.Max(0f, dashCooldownTimer);
 
@@ -67,6 +74,7 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator DashRoutine()
     {
         isDashing = true;
+        isIFrameActive = true;
         dashCooldownTimer = dashCooldown;
 
         if (dashClip != null)
@@ -80,6 +88,11 @@ public class PlayerMovement : MonoBehaviour
         if (playerHealth != null)
             playerHealth.IsInvulnerable = true;
 
+        // Start speed boost
+        if (boostCoroutine != null)
+            StopCoroutine(boostCoroutine);
+        boostCoroutine = StartCoroutine(SpeedBoostRoutine());
+
         float elapsed = 0f;
         while (elapsed < dashDuration)
         {
@@ -91,13 +104,22 @@ public class PlayerMovement : MonoBehaviour
 
         isDashing = false;
 
-        // Keep i-frames slightly longer than the dash itself
+        // Keep i-frames for the full duration
         float remaining = iFrameDuration - dashDuration;
         if (remaining > 0f)
             yield return new WaitForSeconds(remaining);
 
         if (playerHealth != null)
             playerHealth.IsInvulnerable = false;
+        isIFrameActive = false;
+    }
+
+    private IEnumerator SpeedBoostRoutine()
+    {
+        speedMultiplier *= dashBoostMultiplier;
+        yield return new WaitForSeconds(dashBoostDuration);
+        speedMultiplier /= dashBoostMultiplier;
+        boostCoroutine = null;
     }
 
     // Called by PlayerAnimator once animations are set up

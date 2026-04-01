@@ -156,7 +156,7 @@ public class MergeRitualUI : MonoBehaviour
         MakeTMP("Subtitle", panelRoot,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -165f), new Vector2(600f, 24f),
-            "Select 2-3 spells to fuse. Source spells are consumed.", 15f,
+            "Select 2-3 spells of the same tier to fuse. Source spells are consumed.", 15f,
             new Color(0.6f, 0.6f, 0.6f), TextAlignmentOptions.Center);
 
         // Left: spell list
@@ -352,6 +352,8 @@ public class MergeRitualUI : MonoBehaviour
             SpellData spell = allSpells[i];
             float y = -(i * (rowH + rowGap));
             bool canMerge = !spell.isMerged;
+            // Greyed out if tier doesn't match current selection
+            bool tierMismatch = canMerge && selected.Count > 0 && !selected.Contains(spell) && spell.tier != selected[0].tier;
 
             var row = new MergeRowUI { spell = spell, isSelectable = canMerge };
             row.rt = MakeRT($"Row_{i}", spellListContainer,
@@ -362,7 +364,9 @@ public class MergeRitualUI : MonoBehaviour
             row.bg.sprite = boxSprite;
             row.bg.type = Image.Type.Sliced;
 
-            if (!canMerge)
+            bool isEffectivelySelectable = canMerge && !tierMismatch;
+
+            if (!canMerge || tierMismatch)
             {
                 row.bg.color = new Color(0.9f, 0.9f, 0.9f, 0.4f);
             }
@@ -376,9 +380,31 @@ public class MergeRitualUI : MonoBehaviour
             row.checkText = MakeTMP($"Check_{i}", row.rt,
                 new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(8f, 0f), new Vector2(25f, rowH),
-                canMerge ? (selected.Contains(spell) ? "[x]" : "[ ]") : "",
-                13f, canMerge ? new Color(0.18f, 0.62f, 0.27f) : new Color(0.5f, 0.5f, 0.5f),
+                isEffectivelySelectable ? (selected.Contains(spell) ? "[x]" : "[ ]") : "",
+                13f, isEffectivelySelectable ? new Color(0.18f, 0.62f, 0.27f) : new Color(0.5f, 0.5f, 0.5f),
                 TextAlignmentOptions.MidlineLeft);
+
+            // Tier badge — colored pill on the right edge of the row
+            Color tierBadgeCol = spell.tier switch
+            {
+                SpellTier.Basic    => new Color(0.10f, 0.50f, 0.18f, 0.92f),
+                SpellTier.Skill    => new Color(0.15f, 0.32f, 0.72f, 0.92f),
+                SpellTier.Ultimate => new Color(0.58f, 0.40f, 0.05f, 0.92f),
+                _                  => new Color(0.3f, 0.3f, 0.3f, 0.92f),
+            };
+            string tierInitial = spell.tier == SpellTier.Ultimate ? "ULT" : spell.tier.ToString()[..1];
+            const float badgeW = 32f;
+            var badgeRT = MakeRT($"TierBadge_{i}", row.rt,
+                new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(-4f, 0f), new Vector2(badgeW, rowH - 10f));
+            var badgeImg = badgeRT.gameObject.AddComponent<Image>();
+            badgeImg.color = tierBadgeCol;
+            badgeImg.raycastTarget = false;
+            if (boxSprite != null) { badgeImg.sprite = boxSprite; badgeImg.type = Image.Type.Sliced; }
+            MakeTMP($"TierBadgeTxt_{i}", badgeRT,
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero,
+                tierInitial, 10f, Color.white, TextAlignmentOptions.Center);
 
             string label = spell.spellName;
             if (spell.isMerged) label += "  (merged)";
@@ -391,13 +417,13 @@ public class MergeRitualUI : MonoBehaviour
                 new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(35f, 0f), new Vector2(0f, rowH),
                 $"{label}\n<size=10>{tagStr.TrimEnd()}</size>",
-                13f, canMerge ? new Color(0.12f, 0.12f, 0.12f) : new Color(0.5f, 0.5f, 0.5f),
+                13f, isEffectivelySelectable ? new Color(0.12f, 0.12f, 0.12f) : new Color(0.5f, 0.5f, 0.5f),
                 TextAlignmentOptions.MidlineLeft);
             row.nameText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
             row.nameText.richText = true;
-            row.nameText.rectTransform.offsetMax = new Vector2(-10f, 0f);
+            row.nameText.rectTransform.offsetMax = new Vector2(-(badgeW + 8f), 0f);
 
-            if (canMerge)
+            if (isEffectivelySelectable)
             {
                 var btn = row.rt.gameObject.AddComponent<Button>();
                 btn.targetGraphic = row.bg;
@@ -419,6 +445,11 @@ public class MergeRitualUI : MonoBehaviour
         else
         {
             if (selected.Count >= 3) return; // max 3
+            if (selected.Count > 0 && spell.tier != selected[0].tier)
+            {
+                previewWarning.text = $"Can only merge {selected[0].tier} spells together!";
+                return;
+            }
             selected.Add(spell);
         }
         RefreshList();

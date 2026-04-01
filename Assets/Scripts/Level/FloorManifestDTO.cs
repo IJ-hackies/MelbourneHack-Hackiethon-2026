@@ -18,4 +18,5 @@ public class FloorManifestDTO
     public SpellDTO        new_spell;
     public CutsceneStepDTO[] cutscene_steps;
     public string[]          lamp_ids;
+    public int               heal_scroll_count;
 }

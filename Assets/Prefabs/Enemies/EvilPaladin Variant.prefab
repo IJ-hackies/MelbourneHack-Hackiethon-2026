@@ -185,7 +185,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1040c7d9ace4c4ee2b9c037e26b80c33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeChaseAI
-  moveSpeed: 2.5
+  moveSpeed: 2
   attackRange: 1.5
   attackDamage: 10
   attackCooldown: 1.5
@@ -263,6 +263,6 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0071599022, y: -0.103439726}
-  m_Size: {x: 0.18452142, y: 0.046992835}
-  m_Direction: 1
+  m_Offset: {x: -0.0041596415, y: -0.08039036}
+  m_Size: {x: 0.008172846, y: 0.029038502}
+  m_Direction: 0

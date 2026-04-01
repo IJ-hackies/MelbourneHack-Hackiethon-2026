@@ -53,6 +53,27 @@ public class MeleeChaseAI : EnemyBase
         attackTimer = AttackCooldown;
         if (player != null)
             currentDir = DirectionToPlayer();
+
+        ApplySpeedHealthBalance();
+    }
+
+    /// <summary>
+    /// Slow melee enemies are tankier; fast ones are fragile.
+    /// Uses a power curve so the effect is meaningful but not extreme:
+    ///   speed 1.5 → ~1.4× HP  |  speed 2.5 (ref) → 1.0×  |  speed 4.0 → ~0.80×  |  speed 5.5 → ~0.68×
+    /// Applied after base.Start() so stage-based HP scaling (EnemySpawner) is already baked in.
+    /// </summary>
+    private void ApplySpeedHealthBalance()
+    {
+        const float ReferenceSpeed = 2.5f; // default EnemyBase moveSpeed
+        const float Exponent       = 0.65f; // soften the curve — pure inverse would be 1.0
+
+        var hp = GetComponent<Health>();
+        if (hp == null || MoveSpeed <= 0f) return;
+
+        float mult = Mathf.Pow(ReferenceSpeed / MoveSpeed, Exponent);
+        mult = Mathf.Clamp(mult, 0.5f, 2.5f); // hard cap: never below 50% or above 250% of base
+        hp.SetMaxHealth(hp.Max * mult);
     }
 
     protected override void OnActivated()

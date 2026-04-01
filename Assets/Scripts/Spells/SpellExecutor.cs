@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Reads the active spell's tags and dispatches the correct cast behavior.
@@ -14,10 +15,7 @@ public class SpellExecutor : MonoBehaviour
     [Header("Orbital")]
     [SerializeField] private GameObject orbitalPrefab;
 
-#pragma warning disable CS0414
-    private float    lastCastTime = -999f;
-#pragma warning restore CS0414
-    private Health   playerHealth;
+    private Health    playerHealth;
     private Coroutine echoRoutine;
 
     private void Awake()
@@ -27,36 +25,68 @@ public class SpellExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (IsAttackHeld())
-            TryCast();
+        if (PauseManager.IsPaused) return;
+
+        // Basic — held (LMB), slot 0
+        if (IsKeyHeld(SettingsData.Attack))
+            TryCastSlot(0);
+
+        // Skill 1 — pressed (E), slot 1
+        if (Input.GetKeyDown(SettingsData.SpellSkill))
+            TryCastSlot(1);
+
+        // Skill 2 — pressed (Q), slot 2
+        if (Input.GetKeyDown(SettingsData.SpellSkill2))
+            TryCastSlot(2);
+
+        // Ultimate — pressed (X), separate gauge-based system
+        if (Input.GetKeyDown(SettingsData.SpellUltimate))
+            UltimateAbility.Instance?.TryFire();
     }
 
-    private static bool IsAttackHeld()
+    private static bool IsKeyHeld(KeyCode key)
     {
-        KeyCode key = SettingsData.Attack;
-        // Input.GetMouseButton is more reliable for held mouse buttons
         if (key == KeyCode.Mouse0) return Input.GetMouseButton(0);
         if (key == KeyCode.Mouse1) return Input.GetMouseButton(1);
         if (key == KeyCode.Mouse2) return Input.GetMouseButton(2);
         return Input.GetKey(key);
     }
 
-    private void TryCast()
+    private void TryCastSlot(int slot)
     {
         Grimoire grimoire = Grimoire.Instance;
         if (grimoire == null) return;
 
-        SpellData spell = grimoire.ActiveSpell;
+        SpellData spell = grimoire.Loadout[slot];
         if (spell == null) return;
-
-        int slot = grimoire.ActiveSlot;
         if (!grimoire.IsSlotReady(slot)) return;
 
         grimoire.RecordCast(slot);
-        ExecuteSpell(spell);
+
+        // Both skill slots (1 and 2) use the Skill multiplier
+        SpellTier tier = spell.tier;
+        float tierMult = tier switch
+        {
+            SpellTier.Skill    => Mathf.Max(1.8f, 1f + spell.cooldown * 0.4f),
+            SpellTier.Ultimate => Mathf.Max(4.0f, 1f + spell.cooldown * 0.3f),
+            _                  => 1f,
+        };
+
+        const float DamageMult = 0.8f;
+        Vector2 aimTarget = GetAimWorldPosition();
+
+        if (slot > 0) // any non-basic slot gets cast effects + AOE burst
+        {
+            SFXManager.Instance?.PlaySkillCast();
+            StartCoroutine(SkillCastEffects(spell));
+            StartCoroutine(SpawnTierAOE(aimTarget, spell.damage * tierMult * 0.6f * DamageMult,
+                                        radius: 3.5f, ProjectileHandler.GetSpellColor(spell), duration: 0.5f));
+        }
+
+        ExecuteSpell(spell, tierMult);
     }
 
-    private void ExecuteSpell(SpellData spell)
+    private void ExecuteSpell(SpellData spell, float baseDamageMult = 1f)
     {
         SFXManager.Instance?.PlayPlayerShoot();
 
@@ -64,12 +94,12 @@ public class SpellExecutor : MonoBehaviour
         if (spell.HasTag(SpellTag.REVERSED_CONTROLS)) aimDir = -aimDir;
 
         // SACRIFICE — 15% HP cost, 2× damage multiplier
-        float dmgMult = 1f;
+        float dmgMult = baseDamageMult;
         if (spell.HasTag(SpellTag.SACRIFICE) && playerHealth != null)
         {
             float cost = playerHealth.Current * 0.15f;
             playerHealth.TakeDamage(cost);
-            dmgMult = 2f;
+            dmgMult *= 2f;
         }
 
         if (spell.isMerged && spell.mergedSourceSpells != null && spell.mergedSourceSpells.Length > 0)
@@ -236,7 +266,7 @@ public class SpellExecutor : MonoBehaviour
         float beamDist = wallHit.collider != null ? wallHit.distance : BeamRange;
         Vector2 beamEnd = origin + dir * beamDist;
 
-        float dmg = spell.damage * damageMultiplier;
+        float dmg = spell.damage * damageMultiplier * 0.8f; // global 20% reduction
 
         // Deal damage to enemies along the beam
         RaycastHit2D[] hits = Physics2D.RaycastAll(origin, dir, beamDist, ProjectileHandler.EnemyMask);
@@ -247,6 +277,7 @@ public class SpellExecutor : MonoBehaviour
             if (h == null || h.IsDead) continue;
 
             h.TakeDamage(dmg);
+            UltimateAbility.Instance?.RegisterHit();
             SessionLogger.Instance?.RecordDamageDealt(spell.element, dmg);
 
             if (spell.HasTag(SpellTag.LIFESTEAL))
@@ -303,12 +334,272 @@ public class SpellExecutor : MonoBehaviour
         }
     }
 
+    // ── Tier AOE + visual effects ─────────────────────────────────────────────
+
+    private IEnumerator SkillCastEffects(SpellData spell)
+    {
+        Color spellCol = ProjectileHandler.GetSpellColor(spell);
+        Vector2 origin = transform.position;
+
+        // Screen flash
+        var flashGO = new GameObject("SkillFlash");
+        var cv = flashGO.AddComponent<Canvas>();
+        cv.renderMode = RenderMode.ScreenSpaceOverlay;
+        cv.sortingOrder = 997;
+        var img = flashGO.AddComponent<UnityEngine.UI.Image>();
+        img.color = new Color(spellCol.r, spellCol.g, spellCol.b, 0.5f);
+        img.raycastTarget = false;
+
+        // Radial particle burst from player (12 sparks)
+        for (int i = 0; i < 12; i++)
+        {
+            float angle = i * Mathf.PI * 2f / 12f;
+            var dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var part = new GameObject("SkillSpark");
+            part.transform.position = origin;
+            var sr = part.AddComponent<SpriteRenderer>();
+            sr.sprite = GetPixelSprite();
+            sr.sortingLayerName = "Entities";
+            sr.sortingOrder = 301;
+            sr.color = spellCol;
+            part.transform.localScale = Vector3.one * 0.22f;
+            StartCoroutine(DriftParticle(part, dir * 6f, spellCol, 0.28f));
+        }
+
+        // Inner fast ring from player
+        StartCoroutine(SpawnSkillRing(origin, spellCol, 2.5f, 0.22f));
+
+        float elapsed = 0f;
+        while (elapsed < 0.22f)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            img.color = new Color(spellCol.r, spellCol.g, spellCol.b,
+                Mathf.Lerp(0.5f, 0f, elapsed / 0.22f));
+            yield return null;
+        }
+        if (flashGO != null) Destroy(flashGO);
+    }
+
+    private IEnumerator SpawnSkillRing(Vector2 center, Color color, float maxRadius, float duration)
+    {
+        var go = new GameObject("SkillRing");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace    = true;
+        lr.loop             = true;
+        lr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
+        lr.sortingLayerName = "Entities";
+        lr.sortingOrder     = 302;
+
+        const int segs = 32;
+        lr.positionCount = segs;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float frac  = t / duration;
+            float r     = maxRadius * frac;
+            float alpha = Mathf.Lerp(1f, 0f, frac);
+            float w     = Mathf.Lerp(0.18f, 0.03f, frac);
+
+            Color c = new Color(color.r, color.g, color.b, alpha);
+            lr.startColor = c; lr.endColor = c;
+            lr.startWidth = w; lr.endWidth = w;
+
+            for (int i = 0; i < segs; i++)
+            {
+                float ang = i * Mathf.PI * 2f / segs;
+                lr.SetPosition(i, new Vector3(center.x + Mathf.Cos(ang) * r,
+                                              center.y + Mathf.Sin(ang) * r, 0f));
+            }
+            yield return null;
+        }
+        if (go != null) Destroy(go);
+    }
+
+    /// <summary>
+    /// Expanding ring visual + instant AoE damage at <paramref name="center"/>.
+    /// </summary>
+    private IEnumerator SpawnTierAOE(Vector2 center, float damage, float radius, Color color, float duration)
+    {
+        // Damage all enemies in the radius
+        Collider2D[] hits = Physics2D.OverlapCircleAll(center, radius, ProjectileHandler.EnemyMask);
+        foreach (var hit in hits)
+        {
+            var h = hit.GetComponent<Health>();
+            if (h != null && !h.IsDead)
+            {
+                h.TakeDamage(damage);
+                UltimateAbility.Instance?.RegisterHit();
+                if (playerHealth != null) // lifesteal passthrough
+                    playerHealth.Heal(damage * 0.05f);
+            }
+        }
+
+        // Inner burst particles
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = i * Mathf.PI * 2f / 8f;
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var part = new GameObject("AOEPart");
+            part.transform.position = center;
+            var sr = part.AddComponent<SpriteRenderer>();
+            sr.sprite = GetPixelSprite();
+            sr.sortingLayerName = "Entities";
+            sr.sortingOrder = 299;
+            sr.color = color;
+            part.transform.localScale = Vector3.one * 0.18f;
+            StartCoroutine(DriftParticle(part, dir * 4f, color, duration * 0.7f));
+        }
+
+        // Expanding ring
+        var go = new GameObject("AOERing");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace    = true;
+        lr.loop             = true;
+        lr.material         = HitEffectSpawner.GetAdditiveParticleMaterial();
+        lr.sortingLayerName = "Entities";
+        lr.sortingOrder     = 300;
+
+        const int segs = 40;
+        lr.positionCount = segs;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float frac  = t / duration;
+            float r     = radius * frac;
+            float alpha = Mathf.Lerp(1f, 0f, frac);
+            float w     = Mathf.Lerp(0.22f, 0.04f, frac);
+
+            Color c = new Color(color.r, color.g, color.b, alpha);
+            lr.startColor = c; lr.endColor = c;
+            lr.startWidth = w; lr.endWidth = w;
+
+            for (int i = 0; i < segs; i++)
+            {
+                float ang = i * Mathf.PI * 2f / segs;
+                lr.SetPosition(i, new Vector3(center.x + Mathf.Cos(ang) * r,
+                                              center.y + Mathf.Sin(ang) * r, 0f));
+            }
+            yield return null;
+        }
+        if (go != null) Destroy(go);
+    }
+
+    private static IEnumerator DriftParticle(GameObject go, Vector2 velocity, Color color, float lifetime)
+    {
+        float t = 0f;
+        var sr = go.GetComponent<SpriteRenderer>();
+        while (t < lifetime && go != null)
+        {
+            t += Time.deltaTime;
+            go.transform.position += (Vector3)(velocity * Time.deltaTime);
+            if (sr != null) sr.color = new Color(color.r, color.g, color.b,
+                Mathf.Lerp(1f, 0f, t / lifetime));
+            yield return null;
+        }
+        if (go != null) Destroy(go);
+    }
+
+    // ── Ultimate screen effects ───────────────────────────────────────────────
+
+    private IEnumerator UltimateScreenEffects()
+    {
+        // Gold flash overlay
+        var flashGO = new GameObject("UltimateFlash");
+        var flashCanvas = flashGO.AddComponent<Canvas>();
+        flashCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        flashCanvas.sortingOrder = 999;
+        flashGO.AddComponent<UnityEngine.UI.CanvasScaler>();
+        var flashImg = flashGO.AddComponent<UnityEngine.UI.Image>();
+        flashImg.color = new Color(1f, 0.85f, 0.2f, 0.65f);
+        flashImg.raycastTarget = false;
+
+        // Slow motion
+        Time.timeScale = 0.12f;
+
+        // Lightning strikes
+        for (int i = 0; i < 4; i++)
+            SpawnLightningStrike();
+
+        // Fade flash over 0.2 real seconds
+        float elapsed = 0f;
+        const float flashDur = 0.2f;
+        while (elapsed < flashDur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float a = Mathf.Lerp(0.65f, 0f, elapsed / flashDur);
+            if (flashImg != null) flashImg.color = new Color(1f, 0.85f, 0.2f, a);
+            yield return null;
+        }
+        if (flashGO != null) Destroy(flashGO);
+
+        // Hold slowmo for a beat, then restore
+        yield return new WaitForSecondsRealtime(0.25f);
+        if (!PauseManager.IsPaused)
+            Time.timeScale = 1f;
+    }
+
+    private void SpawnLightningStrike()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        // Random horizontal position
+        float normX = Random.Range(0.1f, 0.9f);
+        Vector3 topScreen    = cam.ViewportToWorldPoint(new Vector3(normX, 1.1f, cam.nearClipPlane + 1f));
+        Vector3 bottomScreen = cam.ViewportToWorldPoint(new Vector3(normX + Random.Range(-0.15f, 0.15f), -0.1f, cam.nearClipPlane + 1f));
+        topScreen.z    = 0f;
+        bottomScreen.z = 0f;
+
+        var go = new GameObject("Lightning");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace  = true;
+        lr.positionCount  = 2;
+        lr.SetPosition(0, topScreen);
+        lr.SetPosition(1, bottomScreen);
+        lr.startWidth     = 0.12f;
+        lr.endWidth       = 0.05f;
+        Color bolt = new Color(0.7f, 0.85f, 1f, 1f);
+        lr.startColor     = bolt;
+        lr.endColor       = bolt;
+        lr.material       = HitEffectSpawner.GetAdditiveParticleMaterial();
+        lr.sortingLayerName = "Entities";
+        lr.sortingOrder   = 998;
+
+        StartCoroutine(FadeLightning(lr, bolt));
+    }
+
+    private IEnumerator FadeLightning(LineRenderer lr, Color c)
+    {
+        float t = 0f;
+        const float dur = 0.25f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float a = Mathf.Lerp(1f, 0f, t / dur);
+            lr.startColor = new Color(c.r, c.g, c.b, a);
+            lr.endColor   = new Color(c.r, c.g, c.b, a);
+            yield return null;
+        }
+        if (lr != null) Destroy(lr.gameObject);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Vector2 GetAimDirection()
     {
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         return ((Vector2)(mouseWorld - transform.position)).normalized;
+    }
+
+    private Vector2 GetAimWorldPosition()
+    {
+        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorld.z = 0f;
+        return mouseWorld;
     }
 
     private void SpawnBeamVisual(Vector2 start, Vector2 end, SpellData spell)
@@ -351,6 +642,17 @@ public class SpellExecutor : MonoBehaviour
             yield return null;
         }
         Destroy(lr.gameObject);
+    }
+
+    private static Sprite _pixelSprite;
+    private static Sprite GetPixelSprite()
+    {
+        if (_pixelSprite != null) return _pixelSprite;
+        var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+        tex.SetPixel(0, 0, Color.white);
+        tex.Apply();
+        _pixelSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+        return _pixelSprite;
     }
 
     private static Sprite circleSprite;

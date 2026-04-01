@@ -269,7 +269,7 @@ public class FireballProjectile : MonoBehaviour
     {
         // Core crisp ice particles
         SetupCoreParticles(colorA, colorB,
-            rateOverTime: 65f,
+            rateOverTime: 26f,
             lifetime:     new ParticleSystem.MinMaxCurve(0.08f, 0.18f),
             speed:        new ParticleSystem.MinMaxCurve(1.0f,  3.5f),
             size:         new ParticleSystem.MinMaxCurve(0.08f, 0.20f));
@@ -323,7 +323,7 @@ public class FireballProjectile : MonoBehaviour
         main.gravityModifier = 0f;
 
         var shardsEmission = ps.emission;
-        shardsEmission.rateOverTime = 45f;
+        shardsEmission.rateOverTime = 18f;
 
         var shape = ps.shape;
         shape.enabled   = true;
@@ -367,7 +367,7 @@ public class FireballProjectile : MonoBehaviour
         main.gravityModifier = 0f;
 
         var mistEmission = ps.emission;
-        mistEmission.rateOverTime = 18f;
+        mistEmission.rateOverTime = 7f;
 
         var shape = ps.shape;
         shape.enabled   = true;

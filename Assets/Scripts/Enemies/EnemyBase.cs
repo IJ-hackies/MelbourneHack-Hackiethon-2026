@@ -132,6 +132,9 @@ public abstract class EnemyBase : MonoBehaviour
 
         if (GetComponent<EnemyOutline>() == null)
             gameObject.AddComponent<EnemyOutline>();
+
+        if (GetComponent<DamageNumberSpawner>() == null)
+            gameObject.AddComponent<DamageNumberSpawner>();
     }
 
     protected virtual void Start()

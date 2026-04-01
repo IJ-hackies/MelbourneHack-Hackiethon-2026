@@ -92,6 +92,9 @@ public class PlayerHUD : MonoBehaviour
     {
         health = GetComponent<Health>();
         status = GetComponent<PlayerStatusEffects>();
+
+        if (GetComponent<DamageNumberSpawner>() == null)
+            gameObject.AddComponent<DamageNumberSpawner>();
     }
 
     private void Start()
@@ -99,6 +102,10 @@ public class PlayerHUD : MonoBehaviour
         BuildHUD();
         health.OnDamaged.AddListener(_ => TriggerDamageFlash());
         health.OnDamaged.AddListener(_ => SFXManager.Instance?.PlayPlayerHit());
+
+        // Share the Alagard font with all damage number spawners
+        if (alagardFont != null)
+            DamageNumberSpawner.SharedFont = alagardFont;
     }
 
     private void OnDestroy()
@@ -132,11 +139,11 @@ public class PlayerHUD : MonoBehaviour
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // ── Health bar row — bottom-center: [heart] [===bar===] ──────────────
-        const float BarW       = 340f;
-        const float BarH       = 22f;
-        const float BarBottomY = 16f;
-        const float HeartDim   = 44f;
-        float barCenterY = BarBottomY + BarH * 0.5f; // 27 px from screen bottom
+        const float BarW       = 460f;
+        const float BarH       = 34f;
+        const float BarBottomY = 18f;
+        const float HeartDim   = 64f;
+        float barCenterY = BarBottomY + BarH * 0.5f; // 35 px from screen bottom
 
         // Heart container — also drives heartbeat scale animation
         heartRT = MakeRT("Heart", canvasGO.transform,
@@ -215,7 +222,7 @@ public class PlayerHUD : MonoBehaviour
             size: new Vector2(BarW, BarH));
         healthText           = healthTextRT.gameObject.AddComponent<TextMeshProUGUI>();
         healthText.font      = alagardFont;
-        healthText.fontSize  = 17f;
+        healthText.fontSize  = 24f;
         healthText.fontStyle = FontStyles.Bold;
         healthText.alignment = TextAlignmentOptions.Center;
         healthText.textWrappingMode = TextWrappingModes.NoWrap;
@@ -225,11 +232,12 @@ public class PlayerHUD : MonoBehaviour
         healthText.outlineColor     = new Color32(0, 0, 0, 230);
         healthText.raycastTarget    = false;
 
-        // Status icon row — anchored to bottom-left of canvas
+        // Status icon row — top-left, just below the minimap widget
+        // Minimap: anchor (0,1), margin 20, height 200 → bottom at -220 from top
         statusContainer = MakeRT("StatusRow", canvasGO.transform,
-            anchorMin: Vector2.zero, anchorMax: Vector2.zero,
-            pivot: Vector2.zero,
-            pos: statusPosition,
+            anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+            pivot: new Vector2(0f, 1f),
+            pos: new Vector2(20f, -(20f + 200f + 8f)),   // 8px gap below minimap
             size: new Vector2(IconSpacing * 4f, IconSize));
 
         // Cache effect sprites

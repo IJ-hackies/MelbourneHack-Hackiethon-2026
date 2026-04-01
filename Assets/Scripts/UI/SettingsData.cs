@@ -12,11 +12,11 @@ public static class SettingsData
     public static KeyCode MoveDown  { get; private set; } = KeyCode.S;
     public static KeyCode MoveLeft  { get; private set; } = KeyCode.A;
     public static KeyCode MoveRight { get; private set; } = KeyCode.D;
-    public static KeyCode Attack    { get; private set; } = KeyCode.Mouse0;
-    public static KeyCode Slot1      { get; private set; } = KeyCode.Alpha1;
-    public static KeyCode Slot2      { get; private set; } = KeyCode.Alpha2;
-    public static KeyCode Slot3      { get; private set; } = KeyCode.Alpha3;
-    public static KeyCode Dash       { get; private set; } = KeyCode.LeftShift;
+    public static KeyCode Attack        { get; private set; } = KeyCode.Mouse0;
+    public static KeyCode SpellSkill    { get; private set; } = KeyCode.E;
+    public static KeyCode SpellSkill2   { get; private set; } = KeyCode.Q;
+    public static KeyCode SpellUltimate { get; private set; } = KeyCode.X;
+    public static KeyCode Dash          { get; private set; } = KeyCode.LeftShift;
     public static KeyCode ToggleMap  { get; private set; } = KeyCode.M;
 
     // ── Volume ────────────────────────────────────────────────────────────────
@@ -34,11 +34,11 @@ public static class SettingsData
             case "MoveDown":  MoveDown  = key; break;
             case "MoveLeft":  MoveLeft  = key; break;
             case "MoveRight": MoveRight = key; break;
-            case "Attack":    Attack    = key; break;
-            case "Slot1":     Slot1     = key; break;
-            case "Slot2":     Slot2     = key; break;
-            case "Slot3":     Slot3     = key; break;
-            case "Dash":      Dash      = key; break;
+            case "Attack":        Attack        = key; break;
+            case "SpellSkill":    SpellSkill    = key; break;
+            case "SpellSkill2":   SpellSkill2   = key; break;
+            case "SpellUltimate": SpellUltimate = key; break;
+            case "Dash":          Dash          = key; break;
             case "ToggleMap": ToggleMap = key; break;
         }
         Save();
@@ -50,7 +50,6 @@ public static class SettingsData
 
     public static void ApplyVolumes()
     {
-        // AudioListener.volume stays at 1 — each manager controls its own source volume.
         MusicManager.Instance?.SetVolume(MusicVolume);
         SFXManager.Instance?.SetSfxVolume(SfxVolume);
     }
@@ -61,11 +60,11 @@ public static class SettingsData
         PlayerPrefs.SetInt("Key_MoveDown",  (int)MoveDown);
         PlayerPrefs.SetInt("Key_MoveLeft",  (int)MoveLeft);
         PlayerPrefs.SetInt("Key_MoveRight", (int)MoveRight);
-        PlayerPrefs.SetInt("Key_Attack",    (int)Attack);
-        PlayerPrefs.SetInt("Key_Slot1",     (int)Slot1);
-        PlayerPrefs.SetInt("Key_Slot2",     (int)Slot2);
-        PlayerPrefs.SetInt("Key_Slot3",     (int)Slot3);
-        PlayerPrefs.SetInt("Key_Dash",      (int)Dash);
+        PlayerPrefs.SetInt("Key_Attack",        (int)Attack);
+        PlayerPrefs.SetInt("Key_SpellSkill",    (int)SpellSkill);
+        PlayerPrefs.SetInt("Key_SpellSkill2",   (int)SpellSkill2);
+        PlayerPrefs.SetInt("Key_SpellUltimate", (int)SpellUltimate);
+        PlayerPrefs.SetInt("Key_Dash",          (int)Dash);
         PlayerPrefs.SetInt("Key_ToggleMap", (int)ToggleMap);
         PlayerPrefs.SetFloat("Vol_Music",   MusicVolume);
         PlayerPrefs.SetFloat("Vol_Sfx",     SfxVolume);
@@ -78,11 +77,11 @@ public static class SettingsData
         MoveDown  = (KeyCode)PlayerPrefs.GetInt("Key_MoveDown",  (int)KeyCode.S);
         MoveLeft  = (KeyCode)PlayerPrefs.GetInt("Key_MoveLeft",  (int)KeyCode.A);
         MoveRight = (KeyCode)PlayerPrefs.GetInt("Key_MoveRight", (int)KeyCode.D);
-        Attack    = (KeyCode)PlayerPrefs.GetInt("Key_Attack",    (int)KeyCode.Mouse0);
-        Slot1     = (KeyCode)PlayerPrefs.GetInt("Key_Slot1",     (int)KeyCode.Alpha1);
-        Slot2     = (KeyCode)PlayerPrefs.GetInt("Key_Slot2",     (int)KeyCode.Alpha2);
-        Slot3     = (KeyCode)PlayerPrefs.GetInt("Key_Slot3",     (int)KeyCode.Alpha3);
-        Dash      = (KeyCode)PlayerPrefs.GetInt("Key_Dash",      (int)KeyCode.LeftShift);
+        Attack        = (KeyCode)PlayerPrefs.GetInt("Key_Attack",        (int)KeyCode.Mouse0);
+        SpellSkill    = (KeyCode)PlayerPrefs.GetInt("Key_SpellSkill",    (int)KeyCode.E);
+        SpellSkill2   = (KeyCode)PlayerPrefs.GetInt("Key_SpellSkill2",   (int)KeyCode.Q);
+        SpellUltimate = (KeyCode)PlayerPrefs.GetInt("Key_SpellUltimate", (int)KeyCode.X);
+        Dash          = (KeyCode)PlayerPrefs.GetInt("Key_Dash",          (int)KeyCode.LeftShift);
         ToggleMap = (KeyCode)PlayerPrefs.GetInt("Key_ToggleMap", (int)KeyCode.M);
         MusicVolume = PlayerPrefs.GetFloat("Vol_Music", 0.8f);
         SfxVolume   = PlayerPrefs.GetFloat("Vol_Sfx",   0.8f);

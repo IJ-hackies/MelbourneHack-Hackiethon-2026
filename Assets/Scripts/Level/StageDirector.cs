@@ -43,6 +43,7 @@ public class StageDirector : MonoBehaviour
     private int               stageNumber = 1;
     private FloorManifestDTO  nextManifest;
     private SpellData         nextSpellData;  // pre-created with icon generation already in flight
+    private SpellTier         nextSpellTier = SpellTier.Basic; // rolled before Gemini call
     private bool              pregenStarted;
     private bool              pregenComplete;
     private bool              floorCleared;
@@ -224,7 +225,14 @@ public class StageDirector : MonoBehaviour
                 newSpell.icon = ProceduralSpellIconGenerator.Generate(newSpell);
             }
 
-            Grimoire.Instance?.AddSpell(newSpell);
+            // Ultimate spells go to the gauge-based ability AND the library (for display in Grimoire UI)
+            if (newSpell.tier == SpellTier.Ultimate)
+            {
+                UltimateAbility.Instance?.SetSpell(newSpell);
+                Grimoire.Instance?.AddSpell(newSpell); // library only; AutoEquip skips Ultimates
+            }
+            else
+                Grimoire.Instance?.AddSpell(newSpell);
         }
 
         Debug.Log($"[StageDirector] Stage {stageNumber} loaded: \"{manifest.floor_name}\"");
@@ -255,13 +263,14 @@ public class StageDirector : MonoBehaviour
         }
 
         int nextStage     = stageNumber + 1;
+        nextSpellTier     = RollNextSpellTier(nextStage);
         string sessionLog = sessionLogger != null
             ? sessionLogger.BuildSessionLog(stageNumber)
             : $"{{\"stage_number\":{stageNumber}}}";
 
-        Debug.Log($"[StageDirector] Pre-generating stage {nextStage} (kill progress: {clearDetector.KillProgress:P0})...");
+        Debug.Log($"[StageDirector] Pre-generating stage {nextStage} (kill progress: {clearDetector.KillProgress:P0}, tier={nextSpellTier})...");
 
-        geminiClient.GenerateFloor(sessionLog, nextStage, previousManifestJson, manifest =>
+        geminiClient.GenerateFloor(sessionLog, nextStage, previousManifestJson, nextSpellTier, manifest =>
         {
             if (manifest != null)
             {
@@ -350,9 +359,9 @@ public class StageDirector : MonoBehaviour
 
     private void ShowTransitionScroll()
     {
-        // Calculate HP for the new stage
-        float hpIncrease = 0.05f; // default 5% — could come from manifest later
-        float newHp = playerHpBeforeStage * (1f + hpIncrease);
+        // Full health restore + 5% max HP increase each stage
+        float hpIncrease = 0.05f;
+        float newHp = (playerHealth != null ? playerHealth.Max : playerHpBeforeStage) * (1f + hpIncrease);
 
         if (transitionUI != null)
         {
@@ -396,9 +405,11 @@ public class StageDirector : MonoBehaviour
 
         Debug.Log($"[StageDirector] AdvanceToNextStage({stageNumber}): Time.timeScale={Time.timeScale}");
 
-        // Scale player HP
+        // Increase max HP and restore to full
         if (playerHealth != null)
-            playerHealth.SetMaxHealth(newHp);
+        {
+            playerHealth.SetMaxHealth(newHp, rescaleCurrent: true); // rescaleCurrent:true → keep HP ratio, no full heal
+        }
 
         // Destroy all remaining enemies/projectiles from previous floor
         CleanupPreviousFloor();
@@ -477,6 +488,17 @@ public class StageDirector : MonoBehaviour
         }
     }
 
+    // ── Tier rolling ─────────────────────────────────────────────────────────
+
+    private static SpellTier RollNextSpellTier(int stage)
+    {
+        // Stage 1 is always hardcoded (no Gemini call).
+        // From stage 2 onward: deterministic cycle Basic→Skill→Basic→Skill→Ultimate, repeat.
+        if (stage <= 1) return SpellTier.Basic;
+        SpellTier[] cycle = { SpellTier.Basic, SpellTier.Skill, SpellTier.Basic, SpellTier.Skill, SpellTier.Ultimate };
+        return cycle[(stage - 2) % cycle.Length];
+    }
+
     // ── Fallback manifest (no Gemini) ────────────────────────────────────────
 
     private static FloorManifestDTO BuildFallbackManifest(int stage)
@@ -485,7 +507,7 @@ public class StageDirector : MonoBehaviour
                               "ocean", "rocky", "techy", "bubblegum", "honey" };
         string tileset = tilesets[(stage - 1) % tilesets.Length];
 
-        int enemyCount = Mathf.Min(4 + stage, 30);
+        int enemyCount = Mathf.Min(Mathf.RoundToInt(2f + stage * 1.1f), 50);
 
         return new FloorManifestDTO
         {
@@ -545,6 +567,7 @@ public class StageDirector : MonoBehaviour
                         ""name"": ""Void Shard"",
                         ""flavor"": ""A raw sliver of nothing, flung outward with intent."",
                         ""tags"": [""PROJECTILE""],
+                        ""tier"": ""basic"",
                         ""damage"": 20.0,
                         ""speed"": 8.0,
                         ""cooldown"": 0.4,

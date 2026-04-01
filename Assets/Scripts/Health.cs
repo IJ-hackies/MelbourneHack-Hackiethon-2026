@@ -19,11 +19,16 @@ public class Health : MonoBehaviour
     [HideInInspector] public float DamageReduction = 0f;
 
     public UnityEvent<float> OnDamaged;
+    public UnityEvent<float> OnHealed;
     public UnityEvent OnDeath;
 
     private void Awake()
     {
         currentHealth = maxHealth;
+        // Ensure events are never null (OnHealed won't be serialized on old prefabs)
+        if (OnDamaged == null) OnDamaged = new UnityEvent<float>();
+        if (OnHealed == null)  OnHealed  = new UnityEvent<float>();
+        if (OnDeath == null)   OnDeath   = new UnityEvent();
     }
 
     // Scaling: set a new max and optionally rescale current HP proportionally
@@ -35,6 +40,9 @@ public class Health : MonoBehaviour
     }
 
     public bool IsInvulnerable { get; set; }
+
+    // Set by ProjectileHandler before calling TakeDamage; read by DamageNumberSpawner.
+    public bool LastHitWasCrit { get; set; }
 
     public void TakeDamage(float amount)
     {
@@ -48,6 +56,10 @@ public class Health : MonoBehaviour
     public void Heal(float amount)
     {
         if (IsDead) return;
+        float before = currentHealth;
         currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        float actual = currentHealth - before;
+        if (actual > 0f)
+            OnHealed?.Invoke(actual);
     }
 }

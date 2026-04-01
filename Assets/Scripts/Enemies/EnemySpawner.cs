@@ -96,10 +96,22 @@ public class EnemySpawner : MonoBehaviour
         var entryPoints  = ComputeEntryPoints(assemblerOrigin);
         var queue        = BuildShuffledQueue(spawns, library);
 
+        int   stage       = StageDirector.Instance != null ? StageDirector.Instance.StageNumber : 1;
+        // HP grows by 22% per stage (stage 1 = 1.0×, stage 5 = 1.88×, stage 10 = 2.98×)
+        float healthScale = 1f + (stage - 1) * 0.22f;
+
         foreach (var (prefab, modifiers) in queue)
         {
             Vector2 spawnPos = entryPoints[Random.Range(0, entryPoints.Length)];
             var go = Instantiate(prefab, spawnPos, Quaternion.identity);
+
+            // Scale enemy HP for the current stage before applying modifiers
+            if (stage > 1)
+            {
+                var hp = go.GetComponent<Health>();
+                if (hp != null) hp.SetMaxHealth(hp.Max * healthScale);
+            }
+
             ApplyModifiers(go, modifiers);
             FloorClearDetector.Instance?.RegisterEnemy(go);
             yield return new WaitForSeconds(spawnInterval);

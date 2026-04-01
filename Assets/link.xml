@@ -1,0 +1,6 @@
+<linker>
+  <!-- Preserve ShadowCaster2D private fields accessed via reflection by UnifiedShadowCaster -->
+  <assembly fullname="Unity.RenderPipelines.Universal.Runtime">
+    <type fullname="UnityEngine.Rendering.Universal.ShadowCaster2D" preserve="all"/>
+  </assembly>
+</linker>

@@ -22,6 +22,12 @@ public class CutscenePlayer : MonoBehaviour
     [Header("UI (optional — auto-created if null)")]
     [SerializeField] private TMP_FontAsset uiFont;
 
+    [Header("Cutscene Music")]
+    [Tooltip("Looping audio track that plays during the Chronicle cutscene.")]
+    [SerializeField] private AudioClip cutsceneMusic;
+    [SerializeField, Range(0f, 1f)] private float cutsceneMusicVolume = 0.5f;
+    [SerializeField] private float musicFadeDuration = 1f;
+
     // ── Runtime UI ──────────────────────────────────────────────────────────
     private Canvas     canvas;
     private Image      bgImage;            // solid dark background — game is NEVER visible
@@ -34,6 +40,9 @@ public class CutscenePlayer : MonoBehaviour
     private bool       isPlaying;
     private bool       skipping;
     private List<GameObject> activeParticles = new();
+
+    // ── Cutscene music ─────────────────────────────────────────────────────
+    private AudioSource cutsceneMusicSource;
 
     /// <summary>True while a cutscene sequence is running.</summary>
     public bool IsPlaying => isPlaying;
@@ -102,6 +111,39 @@ public class CutscenePlayer : MonoBehaviour
         textRT.anchorMax = new Vector2(0.88f, 0.65f);
         textRT.offsetMin = Vector2.zero;
         textRT.offsetMax = Vector2.zero;
+
+        // Skip button — top-right corner, last child so it renders on top
+        var skipGO = new GameObject("SkipButton");
+        skipGO.transform.SetParent(canvas.transform, false);
+        var skipRT              = skipGO.AddComponent<RectTransform>();
+        skipRT.anchorMin        = new Vector2(1f, 1f);
+        skipRT.anchorMax        = new Vector2(1f, 1f);
+        skipRT.pivot            = new Vector2(1f, 1f);
+        skipRT.anchoredPosition = new Vector2(-20f, -20f);
+        skipRT.sizeDelta        = new Vector2(120f, 40f);
+
+        var skipImg        = skipGO.AddComponent<Image>();
+        skipImg.color      = new Color(0.3f, 0.3f, 0.3f, 0.7f);
+
+        var skipBtn        = skipGO.AddComponent<Button>();
+        skipBtn.targetGraphic = skipImg;
+        skipBtn.onClick.AddListener(() => skipping = true);
+
+        var labelGO = new GameObject("SkipLabel");
+        labelGO.transform.SetParent(skipGO.transform, false);
+        var labelRT        = labelGO.AddComponent<RectTransform>();
+        labelRT.anchorMin  = Vector2.zero;
+        labelRT.anchorMax  = Vector2.one;
+        labelRT.offsetMin  = Vector2.zero;
+        labelRT.offsetMax  = Vector2.zero;
+        var label          = labelGO.AddComponent<TextMeshProUGUI>();
+        if (uiFont != null) label.font = uiFont;
+        label.fontSize     = 18f;
+        label.fontStyle    = FontStyles.Normal;
+        label.alignment    = TextAlignmentOptions.Center;
+        label.color        = Color.white;
+        label.text         = "SKIP";
+        label.raycastTarget = false;
     }
 
     private Image CreateFullscreenImage(string name, Transform parent)
@@ -130,6 +172,10 @@ public class CutscenePlayer : MonoBehaviour
 
         var playerMove = FindAnyObjectByType<PlayerMovement>();
         if (playerMove != null) playerMove.enabled = false;
+
+        // ── Pause dungeon music, start cutscene music ──────────────────
+        MusicManager.Instance?.Pause();
+        StartCutsceneMusic();
 
         // ── Set initial state: fully opaque dark background ─────────────
         bgImage.color      = new Color(0.02f, 0.01f, 0.04f, 1f);
@@ -161,6 +207,9 @@ public class CutscenePlayer : MonoBehaviour
         // Stop ambient effects
         if (ambientRoutine != null) StopCoroutine(ambientRoutine);
         CleanupParticles();
+
+        // Fade out cutscene music — dungeon music resumes when player clicks BEGIN
+        yield return FadeCutsceneMusic();
 
         displayText.text        = "";
         tintOverlay.color       = new Color(0, 0, 0, 0);
@@ -627,6 +676,47 @@ public class CutscenePlayer : MonoBehaviour
     // ═════════════════════════════════════════════════════════════════════════
     //  HELPERS
     // ═════════════════════════════════════════════════════════════════════════
+
+    // ── Cutscene music ────────────────────────────────────────────────────
+
+    private void StartCutsceneMusic()
+    {
+        if (cutsceneMusic == null) return;
+
+        if (cutsceneMusicSource == null)
+        {
+            cutsceneMusicSource = gameObject.AddComponent<AudioSource>();
+            cutsceneMusicSource.playOnAwake = false;
+            cutsceneMusicSource.spatialBlend = 0f;
+            cutsceneMusicSource.loop = true;
+        }
+
+        cutsceneMusicSource.clip = cutsceneMusic;
+        cutsceneMusicSource.volume = 0f;
+        cutsceneMusicSource.Play();
+        StartCoroutine(FadeAudioSource(cutsceneMusicSource, 0f,
+            cutsceneMusicVolume * SettingsData.MusicVolume, musicFadeDuration));
+    }
+
+    private IEnumerator FadeCutsceneMusic()
+    {
+        if (cutsceneMusicSource == null || !cutsceneMusicSource.isPlaying) yield break;
+        yield return FadeAudioSource(cutsceneMusicSource, cutsceneMusicSource.volume, 0f,
+            skipping ? 0.3f : musicFadeDuration);
+        cutsceneMusicSource.Stop();
+    }
+
+    private IEnumerator FadeAudioSource(AudioSource source, float from, float to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            source.volume = Mathf.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        source.volume = to;
+    }
 
     private IEnumerator FadeBG(Color from, Color to, float duration)
     {

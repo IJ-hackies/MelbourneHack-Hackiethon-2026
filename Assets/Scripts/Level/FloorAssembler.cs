@@ -37,6 +37,9 @@ public class FloorAssembler : MonoBehaviour
     [Header("Tileset Libraries — one entry per tileset, each with its 8 chamber prefabs")]
     public List<TilesetLibrary> tilesetLibraries = new List<TilesetLibrary>();
 
+    [Header("Unified Shadow Caster — builds merged wall shadows at runtime")]
+    public UnifiedShadowCaster unifiedShadowCaster;
+
     [Header("Enemy Spawner — optional, called after map assembly")]
     public EnemySpawner enemySpawner;
 
@@ -49,6 +52,9 @@ public class FloorAssembler : MonoBehaviour
     [Header("Active Lamp IDs — set from Floor Manifest at runtime (used by DecoSpawner)")]
     public string[] activeLampIds;
 
+    [Header("Active Heal Scroll Count — set from Floor Manifest at runtime (used by DecoSpawner)")]
+    public int activeHealScrollCount;
+
     [Header("Grid — 8 chamber IDs, row-major (index 0-3 = bottom row, 4-7 = top row)")]
     [Tooltip(
         "Visual layout:\n" +
@@ -59,6 +65,7 @@ public class FloorAssembler : MonoBehaviour
     [Header("Tilemap Tints")]
     public Color groundTint = new Color(0.45f, 0.45f, 0.45f, 1f);
     public Color wallTint   = new Color(1.0f,  0.85f, 0.7f,  1f);
+
 
     [Header("Auto-assemble")]
     [Tooltip("Assemble the floor automatically on Start using the Inspector values above. Disable when driving from StageLoader.")]
@@ -102,7 +109,8 @@ public class FloorAssembler : MonoBehaviour
             ? manifest.chamber_grid
             : RandomizeChamberGrid(activeTilesetId);
 
-        activeLampIds = manifest.lamp_ids;
+        activeLampIds         = manifest.lamp_ids;
+        activeHealScrollCount = Mathf.Max(0, manifest.heal_scroll_count);
 
         enemySpawns.Clear();
         if (manifest.enemy_spawns != null)
@@ -193,6 +201,10 @@ public class FloorAssembler : MonoBehaviour
         PositionMapBounds();
         SpawnBoundaryWalls();
 
+        // Build unified shadow caster from all wall tilemaps
+        if (unifiedShadowCaster != null)
+            unifiedShadowCaster.BuildUnifiedShadow(transform);
+
         if (AstarPath.active != null)
         {
             float mapW = ChamberSize * 4;
@@ -227,12 +239,6 @@ public class FloorAssembler : MonoBehaviour
                 Debug.LogWarning("FloorAssembler: AstarPath is active but has NO GridGraph — pathfinding will not work. Add a GridGraph in the A* Inspector.");
 
             AstarPath.active.logPathResults = Pathfinding.PathLog.None;
-
-            // Force all CompositeCollider2D on Walls tilemaps to rebuild immediately,
-            // otherwise the A* scan runs before Unity's physics step and sees no walls.
-            Physics2D.SyncTransforms();
-            foreach (var composite in FindObjectsByType<CompositeCollider2D>(FindObjectsSortMode.None))
-                composite.GenerateGeometry();
 
             AstarPath.active.Scan();
 
@@ -290,6 +296,7 @@ public class FloorAssembler : MonoBehaviour
             var composite = walls.GetComponent<CompositeCollider2D>();
             if (composite != null)
                 composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+
         }
 
         var ground = chamber.transform.Find("Ground");

@@ -15,6 +15,9 @@ public class PlayerAnimator : MonoBehaviour
 
         if (GetComponent<PlayerOutline>() == null)
             gameObject.AddComponent<PlayerOutline>();
+
+        if (GetComponent<DashEffect>() == null)
+            gameObject.AddComponent<DashEffect>();
     }
 
     private void Update()

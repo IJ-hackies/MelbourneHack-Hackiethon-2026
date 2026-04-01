@@ -37,6 +37,18 @@ public class SFXManager : MonoBehaviour
     [SerializeField] private AudioClip mergeSpellClip;
     [SerializeField, Range(0f, 1f)] private float mergeSpellVolume = 1f;
 
+    [Header("Equip Spell SFX")]
+    [SerializeField] private AudioClip equipSpellClip;
+    [SerializeField, Range(0f, 1f)] private float equipSpellVolume = 0.9f;
+
+    [Header("Skill Cast SFX")]
+    [SerializeField] private AudioClip skillCastClip;
+    [SerializeField, Range(0f, 1f)] private float skillCastVolume = 0.9f;
+
+    [Header("Ultimate Cast SFX")]
+    [SerializeField] private AudioClip ultimateCastClip;
+    [SerializeField, Range(0f, 1f)] private float ultimateCastVolume = 1f;
+
     [Header("Player Hit SFX")]
     [SerializeField] private AudioClip playerHitClip;
     [SerializeField, Range(0f, 1f)] private float playerHitVolume = 1f;
@@ -44,6 +56,10 @@ public class SFXManager : MonoBehaviour
     [Header("Player Death SFX")]
     [SerializeField] private AudioClip playerDeathClip;
     [SerializeField, Range(0f, 1f)] private float playerDeathVolume = 1f;
+
+    [Header("Crit Hit SFX")]
+    [SerializeField] private AudioClip critHitClip;
+    [SerializeField, Range(0f, 1f)] private float critHitVolume = 1f;
 
     [Header("Enemy Hit SFX")]
     [SerializeField] private AudioClip enemyHitClip;
@@ -62,6 +78,10 @@ public class SFXManager : MonoBehaviour
     [Header("Scroll Open SFX")]
     [SerializeField] private AudioClip scrollOpenClip;
     [SerializeField, Range(0f, 1f)] private float scrollOpenVolume = 1f;
+
+    [Header("Heal Scroll SFX")]
+    [SerializeField] private AudioClip healScrollClip;
+    [SerializeField, Range(0f, 1f)] private float healScrollVolume = 0.9f;
 
     // ── Typewriter SFX ────────────────────────────────────────────────────────
     [Header("Typewriter SFX")]
@@ -286,11 +306,16 @@ public class SFXManager : MonoBehaviour
         if (vol < MinAudibleVolume) return;
         PlayOnVoice(enemyHitClip, vol, enemyHitPitch, pos);
     }
+    public void PlayCritHit(Vector2 pos)    => PlayAtPosition(critHitClip, critHitVolume, pos);
     public void PlayEnemyDeath(Vector2 pos) => PlayAtPosition(enemyDeathClip, enemyDeathVolume, pos);
     public void PlayMergeSpell()      => PlayUI(mergeSpellClip,      mergeSpellVolume);
+    public void PlayEquipSpell()      => PlayUI(equipSpellClip,      equipSpellVolume);
+    public void PlaySkillCast()       => PlayUI(skillCastClip,       skillCastVolume);
+    public void PlayUltimateCast()    => PlayUI(ultimateCastClip,    ultimateCastVolume);
     public void PlayPlayerHit()       => PlayUI(playerHitClip,       playerHitVolume);
     public void PlayPlayerDeath()     => PlayUI(playerDeathClip,     playerDeathVolume);
     public void PlayScrollOpen()      => PlayUI(scrollOpenClip,       scrollOpenVolume);
+    public void PlayHealScroll()      => PlayUI(healScrollClip,        healScrollVolume);
     /// <summary>Plays the heartbeat clip pitched so it lasts exactly <paramref name="targetDuration"/> seconds.</summary>
     public void PlayHeartbeat(float targetDuration)
     {

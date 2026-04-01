@@ -52,7 +52,14 @@
       "Bash(grep -r \"AudioMixer\\\\|AudioListener\\\\|volume\\\\|Volume\" /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets/Scripts --include=*.cs)",
       "Bash(grep -E \"\\\\.\\(mp3|wav|ogg|flac\\)$\")",
       "Bash(grep -v \".meta$\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(grep -E \"\\\\.prefab$\")",
+      "Bash(grep -l ShadowCaster2D /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets/Chambers/dungeon/Prefabs/*.prefab)",
+      "Bash(find /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets -name *.scene)",
+      "Bash(find /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets -name *.unity)",
+      "Bash(grep -l \"Lamp\\\\|TorchLight\\\\|DecoAmbientLight\" /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets/Chambers/**/*.prefab)",
+      "Bash(find /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Assets/Chambers -name *.prefab -exec grep -l Light {})",
+      "Bash(find /Users/iden/Documents/Projects/Jams/MelbourneHack-Hackiethon-2026/Library/PackageCache -name *ShadowShape2D* -type f)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Jorvan\\Documents\\Projects\\MelbourneHack-Hackiethon-2026\\.claude\\skills"
