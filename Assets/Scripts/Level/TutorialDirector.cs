@@ -559,7 +559,7 @@ public class TutorialDirector : MonoBehaviour
         var health = playerObj.GetComponent<Health>();
         if (health != null)
         {
-            health.SetMaxHealth(100f, rescaleCurrent: false);
+            health.SetMaxHealth(200f, rescaleCurrent: false);
         }
 
         // Re-enable movement in case it was disabled
