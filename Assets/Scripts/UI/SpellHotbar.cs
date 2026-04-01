@@ -13,6 +13,11 @@ public class SpellHotbar : MonoBehaviour
 {
     public static SpellHotbar Instance { get; private set; }
 
+    /// <summary>Get the RectTransform for a hotbar slot (0=Basic, 1=Skill1, 2=Skill2).</summary>
+    public RectTransform GetSlotRT(int slot) => slots != null && slot >= 0 && slot < slots.Length ? slots[slot].root : null;
+    /// <summary>The canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
+
     [Header("Sprites")]
     [SerializeField] private Sprite slotSprite;
 
@@ -38,10 +43,14 @@ public class SpellHotbar : MonoBehaviour
     private SlotUI[] slots; // index = slot (0=Basic, 1=Skill1, 2=Skill2)
 
     // Dash cooldown indicator
+    private RectTransform  _dashRT;
     private Image          dashCooldownOverlay;
     private TMP_Text       dashKeyText;
     private TMP_Text       dashCenterLabel;
     private PlayerMovement cachedPlayer;
+
+    /// <summary>RectTransform of the dash indicator slot.</summary>
+    public RectTransform DashRT => _dashRT;
 
     // Ultimate box
     private RectTransform    ultRoot;
@@ -224,15 +233,15 @@ public class SpellHotbar : MonoBehaviour
         const float Gap        = 14f;
         float posX = BarHalfW + Gap + dashSize * 0.5f;
 
-        var root = MakeRT("DashSlot", parent,
+        _dashRT = MakeRT("DashSlot", parent,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f),
             new Vector2(posX, BarCenterY), new Vector2(dashSize, dashSize));
 
-        var bg = root.gameObject.AddComponent<Image>();
+        var bg = _dashRT.gameObject.AddComponent<Image>();
         bg.color = new Color(1f, 1f, 1f, 0.45f);
         if (slotSprite != null) { bg.sprite = slotSprite; bg.preserveAspect = true; }
 
-        var coolRT = MakeRT("DashCooldown", root,
+        var coolRT = MakeRT("DashCooldown", _dashRT,
             new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero);
         coolRT.offsetMin = Vector2.zero;
@@ -246,12 +255,12 @@ public class SpellHotbar : MonoBehaviour
         dashCooldownOverlay.fillClockwise = true;
         dashCooldownOverlay.fillAmount   = 0f;
 
-        dashCenterLabel = MakeText("DashLabel", root,
+        dashCenterLabel = MakeText("DashLabel", _dashRT,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             Vector2.zero, new Vector2(dashSize, dashSize * 0.8f),
             "DASH", nameFontSize, Color.white, TextAlignmentOptions.Center);
 
-        dashKeyText = MakeText("DashKey", root,
+        dashKeyText = MakeText("DashKey", _dashRT,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f),
             new Vector2(dashSize * 0.5f + 8f, 0f), new Vector2(60f, 20f),
             SettingsData.KeyLabel(SettingsData.Dash), keyFontSize - 1f, Color.white, TextAlignmentOptions.Left);

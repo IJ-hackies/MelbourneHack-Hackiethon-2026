@@ -163,6 +163,21 @@ public class Grimoire : MonoBehaviour
     /// <summary>Call at the start of each new floor to reset the usage record.</summary>
     public void ResetUsedSpells() => usedSpellNames.Clear();
 
+    // --- Reset (called on return to main menu) ---
+
+    /// <summary>Wipe all state for a fresh run. Call before loading a new game or tutorial.</summary>
+    public void ResetAll()
+    {
+        library.Clear();
+        for (int i = 0; i < LoadoutSize; i++)
+        {
+            loadout[i] = null;
+            lastCastTimes[i] = -999f;
+        }
+        usedSpellNames.Clear();
+        OnLoadoutChanged?.Invoke();
+    }
+
     // --- Merge Ritual ---
 
     /// <summary>
@@ -198,7 +213,7 @@ public class Grimoire : MonoBehaviour
         // Union all tags (no duplicates)
         var tagSet = new HashSet<SpellTag>();
         float totalDamage = 0f;
-        float maxCooldown = 0f;
+        float totalCooldown = 0f;
         float totalSpeed = 0f;
 
         foreach (var src in sources)
@@ -208,16 +223,18 @@ public class Grimoire : MonoBehaviour
                     tagSet.Add(t);
 
             totalDamage += src.damage;
-            if (src.cooldown > maxCooldown) maxCooldown = src.cooldown;
+            totalCooldown += src.cooldown;
             totalSpeed += src.speed;
         }
 
         merged.tags = new SpellTag[tagSet.Count];
         tagSet.CopyTo(merged.tags);
 
-        merged.damage = totalDamage * 0.5f;                // halved — looks OP but toned down
-        merged.cooldown = maxCooldown * 2f;                // heavy cooldown penalty
-        merged.speed = totalSpeed / sources.Length;        // average
+        float avgDamage = totalDamage / sources.Length;
+        float damageMult = sources.Length >= 3 ? 1.6f : 1.3f;
+        merged.damage = avgDamage * damageMult;            // averaged then buffed (1.3× for 2, 1.6× for 3)
+        merged.cooldown = totalCooldown / sources.Length;   // averaged
+        merged.speed = totalSpeed / sources.Length;         // averaged
 
         // Keep copies of source spells so SpellExecutor can fire each projectile
         merged.mergedSourceSpells = new SpellData[sources.Length];

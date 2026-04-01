@@ -110,7 +110,7 @@ public class FloorAssembler : MonoBehaviour
             : RandomizeChamberGrid(activeTilesetId);
 
         activeLampIds         = manifest.lamp_ids;
-        activeHealScrollCount = Mathf.Max(0, manifest.heal_scroll_count);
+        activeHealScrollCount = Mathf.Max(1, manifest.heal_scroll_count);
 
         enemySpawns.Clear();
         if (manifest.enemy_spawns != null)

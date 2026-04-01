@@ -115,6 +115,11 @@ public class StageDirector : MonoBehaviour
             clearDetector.OnFloorCleared      += OnFloorCleared;
         }
 
+        // Reset player to spawn position and full health for a fresh run
+        ResetPlayerPosition();
+        if (playerHealth != null)
+            playerHealth.SetMaxHealth(100f, rescaleCurrent: false);
+
         // Begin the game with Stage 1
         LoadStage(Stage1Manifest);
     }

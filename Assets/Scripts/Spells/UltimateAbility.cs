@@ -38,6 +38,15 @@ public class UltimateAbility : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    /// <summary>Reset gauge to zero and clear spell. Call on return to main menu.</summary>
+    public void ResetGauge()
+    {
+        _spell    = null;
+        _hitCount = 0;
+        _requiredHits = 40;
+        OnGaugeChanged?.Invoke();
+    }
+
     // ── Spell assignment ──────────────────────────────────────────────────────
 
     public void SetSpell(SpellData spell)

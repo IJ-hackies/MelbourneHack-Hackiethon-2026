@@ -176,7 +176,7 @@ public class SettingsUI : MonoBehaviour
 
         var canvas          = _canvas.AddComponent<Canvas>();
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 200;
+        canvas.sortingOrder = 500;
 
         var scaler                  = _canvas.AddComponent<CanvasScaler>();
         scaler.uiScaleMode          = CanvasScaler.ScaleMode.ScaleWithScreenSize;

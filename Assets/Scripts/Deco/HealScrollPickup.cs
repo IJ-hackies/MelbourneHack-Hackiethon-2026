@@ -25,7 +25,7 @@ public class HealScrollPickup : MonoBehaviour
     private static readonly Color ParticleColor = new Color(0.2f, 1f, 0.35f, 0.85f);
 
     // ── Heal ─────────────────────────────────────────────────────────────────
-    private const float HealPercent = 0.05f;        // 5% of max HP
+    private const float HealPercent = 0.08f;        // 8% of max HP
 
     // ── Pickup animation ─────────────────────────────────────────────────────
     private const float DisappearDuration = 0.28f;
@@ -98,7 +98,7 @@ public class HealScrollPickup : MonoBehaviour
         float gap = health.Max - health.Current;
         if (gap <= 0f) return;
 
-        // Heal up to 5% of max HP, capped at the remaining gap (won't overheal)
+        // Heal up to 8% of max HP, capped at the remaining gap (won't overheal)
         float amount = Mathf.Min(health.Max * HealPercent, gap);
         health.Heal(amount);
 

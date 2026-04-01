@@ -37,6 +37,9 @@ public class GrimoireUI : MonoBehaviour
     private RectTransform _panelRoot;
     private bool isOpen;
 
+    /// <summary>The Grimoire canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
+
     // Left page: library list
     private RectTransform libraryContainer;
     private float _libPageW;
@@ -60,6 +63,13 @@ public class GrimoireUI : MonoBehaviour
     private GameObject _overlayCanvasGO;
 
     private SpellData selectedSpell;
+
+    /// <summary>Currently selected spell in the Grimoire UI (null if none).</summary>
+    public SpellData SelectedSpell => selectedSpell;
+    /// <summary>True when the player is in placement mode (choosing a hotbar slot).</summary>
+    public bool InPlacementMode => _placeSpell != null;
+    /// <summary>Set to true to disable the Delete button (e.g. during tutorial).</summary>
+    public bool DeleteDisabled { get; set; }
 
     private class SpellRowUI
     {
@@ -639,7 +649,7 @@ public class GrimoireUI : MonoBehaviour
 
         // Enable/disable action buttons
         if (_placeBtn   != null) _placeBtn.interactable   = spell != null;
-        if (_deleteBtn  != null) _deleteBtn.interactable  = spell != null;
+        if (_deleteBtn  != null) _deleteBtn.interactable  = spell != null && !DeleteDisabled;
 
         // Populate right page
         if (spell == null)

@@ -39,10 +39,27 @@ public class HudIconBar : MonoBehaviour
 
     // Enemy counter
     private TMP_Text enemyCountText;
+    private RectTransform _enemyCounterRT;
     private FloorClearDetector clearDetector;
 
     // Page display (top-center)
     private TMP_Text _pageText;
+    private RectTransform _pageRT;
+
+    // Grimoire/Merge button RTs (for tutorial spotlight)
+    private RectTransform _grimoireButtonRT;
+    private RectTransform _mergeButtonRT;
+
+    /// <summary>RectTransform of the Grimoire icon button.</summary>
+    public RectTransform GrimoireButtonRT => _grimoireButtonRT;
+    /// <summary>RectTransform of the Merge icon button.</summary>
+    public RectTransform MergeButtonRT => _mergeButtonRT;
+    /// <summary>RectTransform of the enemy counter pill.</summary>
+    public RectTransform EnemyCounterRT => _enemyCounterRT;
+    /// <summary>RectTransform of the page display.</summary>
+    public RectTransform PageDisplayRT => _pageRT;
+    /// <summary>The canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
 
     private void Start()
     {
@@ -79,13 +96,15 @@ public class HudIconBar : MonoBehaviour
         }
 
         // Keyboard shortcuts (unscaled so they work while paused)
-        // Note: Escape handling removed — on itch.io Escape exits fullscreen.
-        // All popups now have X close buttons instead.
         if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.G))
-            ToggleGrimoire();
-        if (Input.GetKeyDown(KeyCode.M))
-            ToggleMerge();
+        {
+            if (LockedTo == null || LockedTo == "grimoire") ToggleGrimoire();
+        }
+        // M key is reserved for minimap (handled by MinimapController)
     }
+
+    /// <summary>When set, only the specified icon is clickable/keyboard-accessible. null = all enabled.</summary>
+    public string LockedTo { get; set; }
 
     public void SetStage(int stage) { currentStage = stage; UpdatePageDisplay(); }
     public bool IsMergeStage() => currentStage >= 5 && currentStage % 5 == 0;
@@ -121,8 +140,10 @@ public class HudIconBar : MonoBehaviour
             new Vector2(-Margin, -Margin),
             new Vector2(tripleBarW, IconSize + 10f));
 
-        MakeIconButtonLTR("Grimoire", rightBarRT, 0f,                        grimoireIcon, "G", OnGrimoireClick);
+        var grimoireImg = MakeIconButtonLTR("Grimoire", rightBarRT, 0f,                        grimoireIcon, "G", OnGrimoireClick);
+        _grimoireButtonRT = grimoireImg.rectTransform;
         mergeImage = MakeIconButtonLTR("Merge",   rightBarRT, IconSize + IconGap,          mergeIcon,    "M", OnMergeClick);
+        _mergeButtonRT = mergeImage.rectTransform;
         MakeIconButtonLTR("Settings", rightBarRT, (IconSize + IconGap) * 2f, settingsIcon, "S", OnSettingsClick);
 
         // ── Enemy counter ───────────────────────────────────────────────────
@@ -134,9 +155,10 @@ public class HudIconBar : MonoBehaviour
 
     private void BuildEnemyCounter()
     {
-        var counterRT = MakeRT("EnemyCounter", canvasGO.transform,
+        _enemyCounterRT = MakeRT("EnemyCounter", canvasGO.transform,
             Vector2.right, Vector2.right, Vector2.right,
             new Vector2(-Margin, Margin), new Vector2(200f, 34f));
+        var counterRT = _enemyCounterRT;
 
         // Background pill
         var bgImg = counterRT.gameObject.AddComponent<Image>();
@@ -161,16 +183,16 @@ public class HudIconBar : MonoBehaviour
 
     private void BuildPageDisplay()
     {
-        var pageRT = MakeRT("PageDisplay", canvasGO.transform,
+        _pageRT = MakeRT("PageDisplay", canvasGO.transform,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -Margin),
             new Vector2(200f, 38f));
 
         // No background
-        var bgImg = pageRT.gameObject.AddComponent<Image>();
+        var bgImg = _pageRT.gameObject.AddComponent<Image>();
         bgImg.color = new Color(0f, 0f, 0f, 0f);
 
-        var textRT = MakeRT("Text", pageRT,
+        var textRT = MakeRT("Text", _pageRT,
             Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
             Vector2.zero, Vector2.zero);
         textRT.offsetMin = Vector2.zero;
@@ -287,10 +309,19 @@ public class HudIconBar : MonoBehaviour
 
     // ── Button handlers ──────────────────────────────────────────────────────
 
-    private void OnGrimoireClick() => ToggleGrimoire();
-    private void OnMergeClick()    => ToggleMerge();
+    private void OnGrimoireClick()
+    {
+        if (LockedTo != null && LockedTo != "grimoire") return;
+        ToggleGrimoire();
+    }
+    private void OnMergeClick()
+    {
+        if (LockedTo != null && LockedTo != "merge") return;
+        ToggleMerge();
+    }
     private void OnSettingsClick()
     {
+        if (LockedTo != null && LockedTo != "settings") return;
         if (SettingsUI.Instance != null) SettingsUI.Instance.Toggle(true);
     }
 

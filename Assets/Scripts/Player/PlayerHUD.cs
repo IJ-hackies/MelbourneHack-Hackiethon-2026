@@ -41,9 +41,20 @@ public class PlayerHUD : MonoBehaviour
     private TMP_Text      healthText;
     private Image         healthBarFill;
     private RectTransform healthBarFillRT;
+    private RectTransform _healthBarContainerRT;
     private RectTransform statusContainer;
 
+    /// <summary>RectTransform of the health bar area (heart + bar) for tutorial spotlight.</summary>
+    public RectTransform HealthBarRT => _healthBarContainerRT;
+    /// <summary>The HUD canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
+
     private static Texture2D _glowTex; // cached soft-circle texture for status glows
+
+    // ── Ultimate ready prompt ────────────────────────────────────────────────
+    private TMP_Text _ultReadyText;
+    private float _ultReadyPhase;
+    private bool _ultReadyShowing;
 
     // ── Heartbeat ─────────────────────────────────────────────────────────────
     private float beatPhase;
@@ -191,19 +202,19 @@ public class PlayerHUD : MonoBehaviour
         _barOutlineImg.raycastTarget = false;
 
         // Bar container — flat rect mask; dark background visible in empty portion
-        var barContainerRT   = MakeRT("BarContainer", canvasGO.transform,
+        _healthBarContainerRT = MakeRT("BarContainer", canvasGO.transform,
             anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
             pivot: new Vector2(0.5f, 0.5f),
             pos: new Vector2(0f, barCenterY),
             size: new Vector2(BarW, BarH));
-        var barContainerImg  = barContainerRT.gameObject.AddComponent<Image>();
+        var barContainerImg  = _healthBarContainerRT.gameObject.AddComponent<Image>();
         barContainerImg.color  = new Color(0.06f, 0.04f, 0.03f, 0.9f);
         barContainerImg.raycastTarget = false;
-        var barMask          = barContainerRT.gameObject.AddComponent<Mask>();
+        var barMask          = _healthBarContainerRT.gameObject.AddComponent<Mask>();
         barMask.showMaskGraphic = true;
 
         // Bar fill — left-anchored child; anchorMax.x is set to health pct each frame
-        healthBarFillRT      = MakeRT("BarFill", barContainerRT,
+        healthBarFillRT      = MakeRT("BarFill", _healthBarContainerRT,
             Vector2.zero, Vector2.one, Vector2.zero,
             Vector2.zero, Vector2.zero);
         healthBarFillRT.anchorMin = Vector2.zero;
@@ -254,6 +265,22 @@ public class PlayerHUD : MonoBehaviour
         screenFlashImage               = flashRT.gameObject.AddComponent<Image>();
         screenFlashImage.color         = new Color(1f, 0f, 0f, 0f);
         screenFlashImage.raycastTarget = false;
+
+        // Ultimate ready text — above health bar, hidden by default
+        var ultReadyRT = MakeRT("UltReadyText", canvasGO.transform,
+            anchorMin: new Vector2(0.5f, 0f), anchorMax: new Vector2(0.5f, 0f),
+            pivot: new Vector2(0.5f, 0f),
+            pos: new Vector2(0f, 75f), size: new Vector2(600f, 40f));
+        _ultReadyText = ultReadyRT.gameObject.AddComponent<TextMeshProUGUI>();
+        _ultReadyText.font = alagardFont;
+        _ultReadyText.text = "The Grimoire surges... press X to unleash";
+        _ultReadyText.fontSize = 28f;
+        _ultReadyText.fontStyle = FontStyles.Bold | FontStyles.Italic;
+        _ultReadyText.alignment = TextAlignmentOptions.Center;
+        _ultReadyText.color = new Color(1f, 0.65f, 0.1f, 0f);
+        _ultReadyText.outlineWidth = 0.35f;
+        _ultReadyText.outlineColor = new Color32(0, 0, 0, 220);
+        _ultReadyText.raycastTarget = false;
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -267,6 +294,7 @@ public class PlayerHUD : MonoBehaviour
         UpdateScreenFlash();
         SyncStatusSlots();
         AnimateSlots();
+        UpdateUltReadyText();
     }
 
     // ── Heartbeat animation ───────────────────────────────────────────────────
@@ -367,6 +395,57 @@ public class PlayerHUD : MonoBehaviour
         else
         {
             screenFlashImage.color = new Color(1f, 0f, 0f, 0f);
+        }
+    }
+
+    // ── Ultimate ready text ──────────────────────────────────────────────────
+
+    private void UpdateUltReadyText()
+    {
+        if (_ultReadyText == null) return;
+
+        var ult = UltimateAbility.Instance;
+        bool shouldShow = ult != null && ult.IsReady;
+
+        if (shouldShow && !_ultReadyShowing)
+        {
+            // Just became ready — reset phase
+            _ultReadyShowing = true;
+            _ultReadyPhase = 0f;
+        }
+        else if (!shouldShow && _ultReadyShowing)
+        {
+            _ultReadyShowing = false;
+        }
+
+        if (_ultReadyShowing)
+        {
+            _ultReadyPhase += Time.deltaTime;
+
+            // Fade in over 0.5s
+            float fadeIn = Mathf.Clamp01(_ultReadyPhase / 0.5f);
+
+            // Pulsing alpha: sine wave between 0.6 and 1.0
+            float pulse = 0.6f + 0.4f * Mathf.Sin(_ultReadyPhase * 3f);
+            float alpha = fadeIn * pulse;
+
+            // Gentle bounce: scale oscillates between 1.0 and 1.06
+            float bounce = 1f + 0.06f * Mathf.Sin(_ultReadyPhase * 2.5f);
+
+            _ultReadyText.color = new Color(1f, 0.65f, 0.1f, alpha);
+            _ultReadyText.rectTransform.localScale = new Vector3(bounce, bounce, 1f);
+        }
+        else
+        {
+            // Fade out quickly
+            Color c = _ultReadyText.color;
+            if (c.a > 0f)
+            {
+                c.a = Mathf.Max(0f, c.a - Time.deltaTime * 4f);
+                _ultReadyText.color = c;
+                if (c.a <= 0f)
+                    _ultReadyText.rectTransform.localScale = Vector3.one;
+            }
         }
     }
 

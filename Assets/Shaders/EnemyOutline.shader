@@ -37,9 +37,11 @@ Shader "Custom/EnemyOutline"
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
+            // _ST and _TexelSize must live outside the CBUFFER for 2D SRP Batcher compatibility
+            float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
+
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float4 _MainTex_TexelSize;
                 half4  _OutlineColor;
                 float  _OutlineSize;
             CBUFFER_END
@@ -66,7 +68,7 @@ Shader "Custom/EnemyOutline"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.uv          = TRANSFORM_TEX(IN.uv, _MainTex);
+                OUT.uv          = IN.uv;
                 OUT.color       = IN.color;
                 return OUT;
             }
@@ -121,9 +123,10 @@ Shader "Custom/EnemyOutline"
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
+            float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
+
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float4 _MainTex_TexelSize;
                 half4  _OutlineColor;
                 float  _OutlineSize;
             CBUFFER_END
@@ -150,7 +153,7 @@ Shader "Custom/EnemyOutline"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.uv          = TRANSFORM_TEX(IN.uv, _MainTex);
+                OUT.uv          = IN.uv;
                 OUT.color       = IN.color;
                 return OUT;
             }

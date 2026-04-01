@@ -69,6 +69,11 @@ public class MergeRitualUI : MonoBehaviour
 
     public bool IsOpen => isOpen;
 
+    /// <summary>The MergeRitual canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
+    /// <summary>Number of spells currently selected for merge.</summary>
+    public int SelectedCount => selected.Count;
+
     public void Toggle()
     {
         if (isOpen) Close();
@@ -486,13 +491,13 @@ public class MergeRitualUI : MonoBehaviour
 
         // Combined tags
         var tagSet = new HashSet<SpellTag>();
-        float totalDmg = 0f, maxCd = 0f, totalSpd = 0f;
+        float totalDmg = 0f, totalCd = 0f, totalSpd = 0f;
         foreach (var s in selected)
         {
             if (s.tags != null)
                 foreach (var t in s.tags) tagSet.Add(t);
             totalDmg += s.damage;
-            if (s.cooldown > maxCd) maxCd = s.cooldown;
+            totalCd += s.cooldown;
             totalSpd += s.speed;
         }
 
@@ -500,12 +505,14 @@ public class MergeRitualUI : MonoBehaviour
         foreach (var t in tagSet) tags += t + "  ";
         previewTags.text = tags.TrimEnd();
 
+        float avgDmg = totalDmg / selected.Count;
+        float dmgMult = selected.Count >= 3 ? 1.6f : 1.3f;
+        float finalDmg = avgDmg * dmgMult;
         float avgSpd = totalSpd / selected.Count;
-        float finalDmg = totalDmg * 0.5f;
-        float finalCd = maxCd * 2f;
-        previewStats.text = $"DMG: {finalDmg:F0}  (total x 0.5)\n" +
+        float avgCd = totalCd / selected.Count;
+        previewStats.text = $"DMG: {finalDmg:F0}  (avg x {dmgMult:F1})\n" +
                             $"SPD: {avgSpd:F1}  (average)\n" +
-                            $"CD: {finalCd:F1}  (max x 2.0)\n" +
+                            $"CD: {avgCd:F1}  (average)\n" +
                             $"Fires all {selected.Count} projectiles simultaneously";
 
         // Warning for corruption

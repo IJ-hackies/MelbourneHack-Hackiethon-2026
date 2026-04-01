@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2105658396069903397
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3131525776972844297}
+  - component: {fileID: 2231711142317709083}
+  - component: {fileID: 3964678810741905395}
+  m_Layer: 0
+  m_Name: MergeRitualUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3131525776972844297
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105658396069903397}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 38.28002, y: 22.18636, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2231711142317709083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105658396069903397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9abb8032ee032544ac931971639bbe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MergeRitualUI
+  mergeCutscene: {fileID: 3964678810741905395}
+  boxSprite: {fileID: 7499154508442906066, guid: c99152a44e86aec428665e2439c541a7, type: 3}
+  buttonSprite: {fileID: 2530564911472380330, guid: 7e17d0dca40aa0643843dfdb9b2d4b88, type: 3}
+  font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
+  panelW: 900
+  panelH: 560
+  rowH: 48
+  rowGap: 6
+--- !u!114 &3964678810741905395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105658396069903397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 057af1bce13f04be98e932377f73e0ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MergeCutscene
+  introFadeDuration: 0.5
+  minimumSpinDuration: 2.5
+  mergeFlashDuration: 0.35
+  revealDuration: 0.6
+  celebrationDuration: 1.2
+  outroDuration: 0.5
+  ritualClip: {fileID: 8300000, guid: bc6b7071de09a49d7954f2586e227337, type: 3}
+  ritualVolume: 1
+  iconSize: 220
+  startSpread: 520
+  particleCount: 24
+  font: {fileID: 0}
