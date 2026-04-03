@@ -306,7 +306,7 @@ public class SFXManager : MonoBehaviour
         if (vol < MinAudibleVolume) return;
         PlayOnVoice(enemyHitClip, vol, enemyHitPitch, pos);
     }
-    public void PlayCritHit(Vector2 pos)    => PlayAtPosition(critHitClip, critHitVolume, pos);
+    public void PlayCritHit(Vector2 pos)    => PlayUI(critHitClip, critHitVolume);
     public void PlayEnemyDeath(Vector2 pos) => PlayAtPosition(enemyDeathClip, enemyDeathVolume, pos);
     public void PlayMergeSpell()      => PlayUI(mergeSpellClip,      mergeSpellVolume);
     public void PlayEquipSpell()      => PlayUI(equipSpellClip,      equipSpellVolume);

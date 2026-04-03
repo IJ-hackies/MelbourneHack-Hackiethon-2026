@@ -303,8 +303,9 @@ public class TutorialDirector : MonoBehaviour
 
             case State.WaitMinimapExpand:
                 tutorialUI.HideDialogue();
-                // Fully unpause so minimap click works (Toggle will re-pause when expanded)
-                PauseManager.Reset();
+                // Keep game paused — UI button clicks work regardless of timeScale.
+                // Toggle() will add a second Pause when expanded; Unpause on close
+                // only reduces the count to 1, keeping gameplay frozen until StartCombat.
                 StartCoroutine(WaitForCondition(
                     () => minimapController != null && minimapController.IsExpanded,
                     () => EnterState(State.WaitMinimapClose)));
