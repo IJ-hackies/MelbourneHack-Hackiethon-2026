@@ -200,7 +200,7 @@ public class GhostFreezeZone : MonoBehaviour
         main.gravityModifier = -0.10f;
 
         var burstEmission = ps.emission;
-        burstEmission.SetBursts(new[] { new ParticleSystem.Burst(0f, 28, 40) });
+        burstEmission.SetBursts(new[] { new ParticleSystem.Burst(0f, 11, 16) });
 
         var shape = ps.shape;
         shape.enabled   = true;
@@ -252,10 +252,10 @@ public class GhostFreezeZone : MonoBehaviour
         main.startRotation   = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
         main.gravityModifier = -0.05f;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles    = 80;
+        main.maxParticles    = 32;
 
         var snowEmission = ps.emission;
-        snowEmission.rateOverTime = 12f;
+        snowEmission.rateOverTime = 5f;
 
         var shape = ps.shape;
         shape.enabled   = true;
@@ -274,6 +274,8 @@ public class GhostFreezeZone : MonoBehaviour
 
         var rot = ps.rotationOverLifetime;
         rot.enabled = true;
+        rot.x       = new ParticleSystem.MinMaxCurve(0f, 0f);
+        rot.y       = new ParticleSystem.MinMaxCurve(0f, 0f);
         rot.z       = new ParticleSystem.MinMaxCurve(-45f * Mathf.Deg2Rad, 45f * Mathf.Deg2Rad);
 
         ps.Play();

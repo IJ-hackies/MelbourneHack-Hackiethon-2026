@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -29,6 +30,12 @@ public class MergeCutscene : MonoBehaviour
     [SerializeField] private float startSpread = 520f;
     [SerializeField] private int   particleCount = 24;
 
+    [Header("Font")]
+    [SerializeField] private TMP_FontAsset font;
+
+    // Skip state
+    private bool skipping;
+
     // Runtime canvas elements
     private GameObject    canvasGO;
     private Image         background;
@@ -51,6 +58,7 @@ public class MergeCutscene : MonoBehaviour
     {
         if (sources == null || sources.Length < 2) { onComplete?.Invoke(); return; }
         isIconReady ??= () => true;
+        skipping = false;
         StartCoroutine(RunCutscene(sources, merged, isIconReady, onComplete));
     }
 
@@ -83,20 +91,21 @@ public class MergeCutscene : MonoBehaviour
         // ── Phase 1: Intro — icons fade in ───────────────────────────────────
         SetSourceAlpha(0f);
         float t = 0f;
-        while (t < introFadeDuration)
+        while (t < introFadeDuration && !skipping)
         {
             t += Time.unscaledDeltaTime;
             SetSourceAlpha(Mathf.Clamp01(t / introFadeDuration));
             CycleBackground(srcColors, t);
             yield return null;
         }
+        if (skipping) { SkipToEnd(merged, onComplete); yield break; }
         SetSourceAlpha(1f);
 
         // ── Phase 2: Spin — icons rotate and drift toward center ──────────────
         Vector2[] startPos = GetStartPositions(sourceIcons.Count);
         float spinElapsed  = 0f;
 
-        while (spinElapsed < spinDuration || !isIconReady())
+        while ((spinElapsed < spinDuration || !isIconReady()) && !skipping)
         {
             spinElapsed += Time.unscaledDeltaTime;
             float progress = spinElapsed / spinDuration;
@@ -119,12 +128,13 @@ public class MergeCutscene : MonoBehaviour
             CycleBackground(srcColors, spinElapsed);
             yield return null;
         }
+        if (skipping) { SkipToEnd(merged, onComplete); yield break; }
 
         // ── Phase 3: Flash — icons rush together, white flash ─────────────────
         SFXManager.Instance?.PlayMergeSpell();
 
         float flashElapsed = 0f;
-        while (flashElapsed < mergeFlashDuration)
+        while (flashElapsed < mergeFlashDuration && !skipping)
         {
             flashElapsed += Time.unscaledDeltaTime;
             float p = Mathf.Clamp01(flashElapsed / mergeFlashDuration);
@@ -141,6 +151,7 @@ public class MergeCutscene : MonoBehaviour
             SetImageAlpha(flashOverlay, p);
             yield return null;
         }
+        if (skipping) { SkipToEnd(merged, onComplete); yield break; }
 
         // Hide source icons, hold white flash
         SetSourceAlpha(0f);
@@ -158,7 +169,7 @@ public class MergeCutscene : MonoBehaviour
         mergedIconRT.localScale = Vector3.zero;
 
         float revealElapsed = 0f;
-        while (revealElapsed < revealDuration)
+        while (revealElapsed < revealDuration && !skipping)
         {
             revealElapsed += Time.unscaledDeltaTime;
             float p     = Mathf.Clamp01(revealElapsed / revealDuration);
@@ -179,6 +190,7 @@ public class MergeCutscene : MonoBehaviour
 
             yield return null;
         }
+        if (skipping) { SkipToEnd(merged, onComplete); yield break; }
         mergedIconRT.localScale = Vector3.one;
         SetImageAlpha(flashOverlay, 0f);
 
@@ -186,7 +198,7 @@ public class MergeCutscene : MonoBehaviour
         SpawnParticles(mergedColor);
 
         float celElapsed = 0f;
-        while (celElapsed < celebrationDuration)
+        while (celElapsed < celebrationDuration && !skipping)
         {
             celElapsed += Time.unscaledDeltaTime;
             float p = celElapsed / celebrationDuration;
@@ -200,13 +212,14 @@ public class MergeCutscene : MonoBehaviour
                 1f);
             yield return null;
         }
+        if (skipping) { SkipToEnd(merged, onComplete); yield break; }
 
         // ── Phase 6: Outro — icon shrinks, background fades ──────────────────
         Color bgAtOutroStart   = background.color;
         Vector3 iconScaleStart = mergedIconRT.localScale;
 
         float outElapsed = 0f;
-        while (outElapsed < outroDuration)
+        while (outElapsed < outroDuration && !skipping)
         {
             outElapsed += Time.unscaledDeltaTime;
             float p       = Mathf.Clamp01(outElapsed / outroDuration);
@@ -221,6 +234,14 @@ public class MergeCutscene : MonoBehaviour
             yield return null;
         }
 
+        canvasGO.SetActive(false);
+        Cleanup();
+        MusicManager.Instance?.Resume();
+        onComplete?.Invoke();
+    }
+
+    private void SkipToEnd(SpellData merged, Action onComplete)
+    {
         canvasGO.SetActive(false);
         Cleanup();
         MusicManager.Instance?.Resume();
@@ -306,6 +327,42 @@ public class MergeCutscene : MonoBehaviour
             mergedIconImage.color = fallback;
         }
         mergedIconRT.gameObject.SetActive(false);
+
+        // Skip button must be last child so it renders on top of everything
+        BuildSkipButton();
+    }
+
+    private void BuildSkipButton()
+    {
+        var btnGO = new GameObject("SkipButton");
+        btnGO.transform.SetParent(canvasGO.transform, false);
+
+        var btnRT              = btnGO.AddComponent<RectTransform>();
+        btnRT.anchorMin        = new Vector2(1f, 1f);
+        btnRT.anchorMax        = new Vector2(1f, 1f);
+        btnRT.pivot            = new Vector2(1f, 1f);
+        btnRT.anchoredPosition = new Vector2(-20f, -20f);
+        btnRT.sizeDelta        = new Vector2(120f, 40f);
+
+        var btnImg             = btnGO.AddComponent<Image>();
+        btnImg.color           = new Color(0.1f, 0.1f, 0.1f, 0.7f);
+
+        var btn                = btnGO.AddComponent<Button>();
+        btn.targetGraphic      = btnImg;
+        btn.onClick.AddListener(() => skipping = true);
+
+        var labelRT       = MakeRT("SkipLabel", btnGO.transform,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        labelRT.offsetMin = Vector2.zero;
+        labelRT.offsetMax = Vector2.zero;
+        var label         = labelRT.gameObject.AddComponent<TextMeshProUGUI>();
+        if (font != null) label.font = font;
+        label.fontSize    = 18f;
+        label.fontStyle   = FontStyles.Normal;
+        label.alignment   = TextAlignmentOptions.Center;
+        label.color       = Color.white;
+        label.text        = "SKIP";
+        label.raycastTarget = false;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

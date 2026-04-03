@@ -107,13 +107,26 @@ public class MenuSnow : MonoBehaviour
         rend.sortingOrder     = orderInLayer;
         rend.renderMode       = ParticleSystemRenderMode.Billboard;
 
-        // Use Unity's built-in white circle sprite so flakes are round
-        Sprite circle = Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd");
-        if (circle != null)
+        // Generate a soft white circle texture for round snowflakes
+        mat.mainTexture = MakeCircleTexture(64);
+    }
+
+    private static Texture2D MakeCircleTexture(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        float r = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
         {
-            rend.renderMode    = ParticleSystemRenderMode.Billboard;
-            mat.mainTexture    = circle.texture;
+            float dx = x - r + 0.5f;
+            float dy = y - r + 0.5f;
+            float dist = Mathf.Sqrt(dx * dx + dy * dy);
+            float alpha = Mathf.Clamp01(1f - (dist - (r - 1.5f)) / 1.5f);
+            tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
         }
+        tex.Apply();
+        return tex;
     }
 
     private static Material CreateSnowMaterial()

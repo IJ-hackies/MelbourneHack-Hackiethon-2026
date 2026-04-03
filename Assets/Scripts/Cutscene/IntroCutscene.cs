@@ -447,6 +447,7 @@ public class IntroCutscene : MonoBehaviour
     {
         Time.timeScale = 1f;
         yield return FadeOverlayUnscaled(fadeImage.color.a, 1f, Color.black, 0.4f);
+        CreatePersistentBlackOverlay();
         SceneManager.LoadScene(gameplaySceneName);
     }
 
@@ -596,7 +597,7 @@ public class IntroCutscene : MonoBehaviour
             if (skipping)
             {
                 Time.timeScale = 1f;
-                if (fadeImage != null) fadeImage.color = Color.black;
+                CreatePersistentBlackOverlay();
                 SceneManager.LoadScene(gameplaySceneName);
                 yield break;
             }
@@ -646,6 +647,7 @@ public class IntroCutscene : MonoBehaviour
                 if (SFXManager.Instance != null) SFXManager.Instance.PlayCutsceneEnding();
                 yield return new WaitForSecondsRealtime(0.6f);
                 Time.timeScale = 1f;
+                CreatePersistentBlackOverlay();
                 SceneManager.LoadScene(gameplaySceneName);
                 yield break;
             }
@@ -1256,4 +1258,35 @@ public class IntroCutscene : MonoBehaviour
         t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
 
     private static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);
+
+    /// <summary>
+    /// Creates a DontDestroyOnLoad full-screen black canvas just before LoadScene so there
+    /// is no single-frame flash between the cutscene and the dungeon scene.
+    /// DungeonIntroTransition finds and owns this object once the dungeon scene starts.
+    /// </summary>
+    private static void CreatePersistentBlackOverlay()
+    {
+        // Don't create a second one if already exists (e.g. skip called twice)
+        if (GameObject.Find("SceneTransitionOverlay") != null) return;
+
+        var go           = new GameObject("SceneTransitionOverlay");
+        DontDestroyOnLoad(go);
+        var canvas       = go.AddComponent<Canvas>();
+        canvas.renderMode    = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder  = 9999;
+        var scaler           = go.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode   = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        go.AddComponent<GraphicRaycaster>();
+
+        var fill         = new GameObject("BlackFill");
+        fill.transform.SetParent(go.transform, false);
+        var img          = fill.AddComponent<Image>();
+        img.raycastTarget = false;
+        img.color         = Color.black;
+        var rt            = img.rectTransform;
+        rt.anchorMin      = Vector2.zero;
+        rt.anchorMax      = Vector2.one;
+        rt.offsetMin      = rt.offsetMax = Vector2.zero;
+    }
 }

@@ -1,0 +1,157 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5669530048450461505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1830871611387728426}
+  - component: {fileID: 374274328112654228}
+  - component: {fileID: 7639989314974622501}
+  - component: {fileID: 4497566519404613621}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1830871611387728426
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5669530048450461505}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 35.609, y: 11.96961, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &374274328112654228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5669530048450461505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa544d76ffc414b689d334c3a545c979, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusicManager
+  musicClip: {fileID: 8300000, guid: 1590def8ceca04a25842e8bd57384ba3, type: 3}
+  targetVolume: 0.133
+  fadeInDuration: 0
+  fadeOutDuration: 1
+--- !u!114 &7639989314974622501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5669530048450461505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad9853ceb754940e3bfed0e59ff46762, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
+  maxAudibleDistance: 20
+  distanceFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.35
+      value: 1
+      inSlope: 0
+      outSlope: -2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -2
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  buttonClickClip: {fileID: 0}
+  buttonClickVolume: 0.7
+  playerShootClip: {fileID: 8300000, guid: a2605d2798df44fd7ac350c3e1478b1e, type: 3}
+  playerShootVolume: 0.219
+  playerShootFadeOut: 0.15
+  mergeSpellClip: {fileID: 8300000, guid: 024c953498c854fdeafdb4e2f76003ee, type: 3}
+  mergeSpellVolume: 1
+  equipSpellClip: {fileID: 8300000, guid: f73d6e05ce2d944c596825dc3a0cd333, type: 3}
+  equipSpellVolume: 0.307
+  skillCastClip: {fileID: 8300000, guid: 6206afd1fead14b719b5b0ebf3672c2f, type: 3}
+  skillCastVolume: 0.509
+  ultimateCastClip: {fileID: 8300000, guid: 3e671a0a4f76547cb83b8a93fb78d6eb, type: 3}
+  ultimateCastVolume: 0.502
+  playerHitClip: {fileID: 8300000, guid: 57adeb984a6c148ad8d2c8d545f9c9eb, type: 3}
+  playerHitVolume: 0.948
+  playerDeathClip: {fileID: 8300000, guid: 5a4dc64ec79364d75a8a89f3ca833905, type: 3}
+  playerDeathVolume: 0.038
+  critHitClip: {fileID: 8300000, guid: 09f7eeaff81644d22a1ca39d35cf3d4c, type: 3}
+  critHitVolume: 0.098
+  enemyHitClip: {fileID: 8300000, guid: 7de20f07d5868439ba106edb78e1763e, type: 3}
+  enemyHitVolume: 0.215
+  enemyHitPitch: 0.662
+  enemyDeathClip: {fileID: 8300000, guid: d4da8fb3037da4594bf140f3bc6c033f, type: 3}
+  enemyDeathVolume: 0.403
+  wallHitClip: {fileID: 8300000, guid: bae0981a2fe594a57bc8d5214190afad, type: 3}
+  wallHitVolume: 0.122
+  wallHitPitch: 0.535
+  scrollOpenClip: {fileID: 8300000, guid: 00c07f713c0bc4b838291ddd8c58c91a, type: 3}
+  scrollOpenVolume: 0.947
+  healScrollClip: {fileID: 8300000, guid: af3afab088ff341c3a7db6ac178ebed6, type: 3}
+  healScrollVolume: 0.226
+  wordsAppearingClip: {fileID: 8300000, guid: 746456ba12242456e95b287732c0dc76, type: 3}
+  wordsAppearingVolume: 0.06
+  heartbeatClip: {fileID: 8300000, guid: bc2796455f51a4367a09f0aed7e4c6d6, type: 3}
+  heartbeatVolume: 1
+  cutsceneEndingClip: {fileID: 0}
+  cutsceneEndingVolume: 1
+  ghostThrowClip: {fileID: 8300000, guid: 1cb7b1a3acdbf4ceaa40fe14ccf8adc8, type: 3}
+  ghostThrowVolume: 0.561
+  ghostSplatClip: {fileID: 8300000, guid: 48f9864156e4240429b4c98412918f96, type: 3}
+  ghostSplatVolume: 0.63
+  vampireChargeUpClip: {fileID: 8300000, guid: 1d05efa101d294a8ebc724b21088f716, type: 3}
+  vampireChargeUpVolume: 0.46
+  vampireShootClip: {fileID: 8300000, guid: e8e12b414720b4bf484159105cdca4bf, type: 3}
+  vampireShootVolume: 0.317
+--- !u!114 &4497566519404613621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5669530048450461505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00751c89e2be24a69994f54162e179e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIClickSFX
+  clip: {fileID: 8300000, guid: 8f2a1f3655f504091ad4780e6f48428b, type: 3}
+  volume: 0.17

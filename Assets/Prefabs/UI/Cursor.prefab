@@ -45,4 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CursorManager
   cursorTexture: {fileID: 2800000, guid: 1a1c9c15afab0443dab8998bee7cdf4c, type: 3}
-  hotspot: {x: 0, y: 0}
+  hotspot: {x: 8, y: 2}

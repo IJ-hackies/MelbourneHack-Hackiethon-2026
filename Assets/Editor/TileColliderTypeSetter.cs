@@ -3,21 +3,45 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// Run via: Tools → Set All Tiles to Grid Collider
-/// Sets every Tile asset in the project to Collider Type = Grid (full-cell rectangle).
-/// This fixes diagonal phantom walls caused by auto-traced sprite physics shapes.
+/// Two menu items for switching tile collider types:
+///
+/// 1. Tools > Set All Tiles to Sprite Collider
+///    Uses each sprite's custom physics shape for collision.
+///    Run AFTER "Tools > Apply Custom Physics Shapes from JSON".
+///
+/// 2. Tools > Set All Tiles to Grid Collider
+///    Full-cell rectangles. Use as a fallback/reset.
 /// </summary>
 public static class TileColliderTypeSetter
 {
+    [MenuItem("Tools/Set All Tiles to Sprite Collider")]
+    public static void SetAllSprite()
+    {
+        int changed = SetAllToType(Tile.ColliderType.Sprite);
+        Debug.Log($"[TileColliderSetter] Done — {changed} tiles set to Sprite collider type.");
+        EditorUtility.DisplayDialog("Done",
+            $"{changed} tile(s) updated to Sprite collider type.\n\nCustom physics shapes will now be used.",
+            "OK");
+    }
+
     [MenuItem("Tools/Set All Tiles to Grid Collider")]
-    public static void SetAll()
+    public static void SetAllGrid()
+    {
+        int changed = SetAllToType(Tile.ColliderType.Grid);
+        Debug.Log($"[TileColliderSetter] Done — {changed} tiles set to Grid collider type.");
+        EditorUtility.DisplayDialog("Done",
+            $"{changed} tile(s) updated to Grid collider type.",
+            "OK");
+    }
+
+    private static int SetAllToType(Tile.ColliderType targetType)
     {
         string[] guids = AssetDatabase.FindAssets("t:Tile");
 
         if (guids.Length == 0)
         {
             EditorUtility.DisplayDialog("No Tiles Found", "No Tile assets found in the project.", "OK");
-            return;
+            return 0;
         }
 
         int changed = 0;
@@ -28,9 +52,9 @@ public static class TileColliderTypeSetter
             var tile = AssetDatabase.LoadAssetAtPath<Tile>(path);
             if (tile == null) continue;
 
-            if (tile.colliderType != Tile.ColliderType.Grid)
+            if (tile.colliderType != targetType)
             {
-                tile.colliderType = Tile.ColliderType.Grid;
+                tile.colliderType = targetType;
                 EditorUtility.SetDirty(tile);
                 changed++;
             }
@@ -39,9 +63,6 @@ public static class TileColliderTypeSetter
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"[TileColliderSetter] Done — {changed}/{guids.Length} tiles set to Grid collider type.");
-        EditorUtility.DisplayDialog("Done",
-            $"{changed} tile(s) updated to Grid collider type.\n\nNow click Regenerate Geometry on your Walls CompositeCollider2D.",
-            "OK");
+        return changed;
     }
 }

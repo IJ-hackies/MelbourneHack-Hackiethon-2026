@@ -40,10 +40,10 @@ public class GeminiClient : MonoBehaviour
     /// </summary>
     /// <param name="previousManifestJson">JSON of the previous stage's manifest (null for first Gemini call).</param>
     public void GenerateFloor(string sessionLogJson, int nextStageNumber,
-                              string previousManifestJson,
+                              string previousManifestJson, SpellTier nextSpellTier,
                               Action<FloorManifestDTO> onComplete)
     {
-        StartCoroutine(GenerateFloorCoroutine(sessionLogJson, nextStageNumber, previousManifestJson, onComplete));
+        StartCoroutine(GenerateFloorCoroutine(sessionLogJson, nextStageNumber, previousManifestJson, nextSpellTier, onComplete));
     }
 
     /// <summary>Returns the proxy URL for sharing with NanoBananaClient.</summary>
@@ -59,13 +59,23 @@ public class GeminiClient : MonoBehaviour
         StartCoroutine(GenerateFreeTextCoroutine(prompt, onComplete));
     }
 
+    /// <summary>
+    /// Sends the death narration prompt using function calling and returns structured taunts.
+    /// Returns narration + score_taunt_beaten + score_taunt_failed via callback.
+    /// On failure, callback receives a result with hardcoded fallback strings.
+    /// </summary>
+    public void GenerateDeathNarration(string prompt, Action<DeathNarrationResult> onComplete)
+    {
+        StartCoroutine(GenerateDeathNarrationCoroutine(prompt, onComplete));
+    }
+
     // ── Coroutine ────────────────────────────────────────────────────────────
 
     private IEnumerator GenerateFloorCoroutine(string sessionLogJson, int nextStageNumber,
-                                               string previousManifestJson,
+                                               string previousManifestJson, SpellTier nextSpellTier,
                                                Action<FloorManifestDTO> onComplete)
     {
-        string prompt = BuildPrompt(sessionLogJson, nextStageNumber, previousManifestJson);
+        string prompt = BuildPrompt(sessionLogJson, nextStageNumber, previousManifestJson, nextSpellTier);
         string geminiBody = BuildRequestJson(prompt);
         string proxyPayload = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
 
@@ -132,6 +142,136 @@ public class GeminiClient : MonoBehaviour
         onComplete?.Invoke(text);
     }
 
+    // ── Death narration (function calling) ───────────────────────────────────
+
+    public struct DeathNarrationResult
+    {
+        public string narration;
+        public string score_taunt_beaten;
+        public string score_taunt_failed;
+    }
+
+    private IEnumerator GenerateDeathNarrationCoroutine(string prompt, Action<DeathNarrationResult> onComplete)
+    {
+        string escapedPrompt = EscapeJson(prompt);
+        string geminiBody = $@"{{
+  ""contents"": [{{""role"":""user"",""parts"":[{{""text"":""{escapedPrompt}""}}]}}],
+  ""tools"": [
+    {{
+      ""functionDeclarations"": [
+        {{
+          ""name"": ""generate_death_narration"",
+          ""description"": ""Generates the Chronicle's death narration and score taunts."",
+          ""parameters"": {{
+            ""type"": ""object"",
+            ""properties"": {{
+              ""narration"":           {{ ""type"": ""string"", ""description"": ""3-4 sentence roast of the player's playstyle. Mean, specific, plain language. No markdown."" }},
+              ""score_taunt_beaten"":  {{ ""type"": ""string"", ""description"": ""1-2 sentence threatening taunt for when the player beats their Furthest Page. The Grimoire is unsettled and doubles its threat."" }},
+              ""score_taunt_failed"":  {{ ""type"": ""string"", ""description"": ""1-2 sentence unimpressed taunt for when the player fails to beat their Furthest Page. Cold dismissal."" }}
+            }},
+            ""required"": [""narration"", ""score_taunt_beaten"", ""score_taunt_failed""]
+          }}
+        }}
+      ]
+    }}
+  ],
+  ""toolConfig"": {{
+    ""functionCallingConfig"": {{
+      ""mode"": ""ANY"",
+      ""allowedFunctionNames"": [""generate_death_narration""]
+    }}
+  }},
+  ""generationConfig"": {{""temperature"": 0.9}}
+}}";
+        string body = $"{{\"model\":\"{EscapeJson(model)}\",\"body\":{geminiBody}}}";
+
+        using var request = new UnityWebRequest(proxyUrl, "POST");
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.timeout         = timeoutSeconds;
+
+        Debug.Log("[GeminiClient] Requesting death narration via function calling...");
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"[GeminiClient] Death narration request failed: {request.error}");
+            onComplete?.Invoke(FallbackDeathNarration());
+            yield break;
+        }
+
+        DeathNarrationResult result = ParseDeathNarrationResponse(request.downloadHandler.text);
+        onComplete?.Invoke(result);
+    }
+
+    private DeathNarrationResult ParseDeathNarrationResponse(string responseJson)
+    {
+        try
+        {
+            int functionCallIdx = responseJson.IndexOf("\"functionCall\"", StringComparison.Ordinal);
+            if (functionCallIdx < 0) { Debug.LogError("[GeminiClient] No functionCall in death narration response."); return FallbackDeathNarration(); }
+
+            int argsIdx = responseJson.IndexOf("\"args\"", functionCallIdx, StringComparison.Ordinal);
+            if (argsIdx < 0) { Debug.LogError("[GeminiClient] No args in death narration response."); return FallbackDeathNarration(); }
+
+            int braceStart = responseJson.IndexOf('{', argsIdx + 6);
+            if (braceStart < 0) return FallbackDeathNarration();
+
+            int depth = 0, braceEnd = -1;
+            bool inString = false;
+            for (int i = braceStart; i < responseJson.Length; i++)
+            {
+                char c = responseJson[i];
+                if (inString) { if (c == '\\') { i++; continue; } if (c == '"') inString = false; continue; }
+                if (c == '"') { inString = true; continue; }
+                if (c == '{') depth++;
+                else if (c == '}') { depth--; if (depth == 0) { braceEnd = i; break; } }
+            }
+            if (braceEnd < 0) return FallbackDeathNarration();
+
+            string argsJson = responseJson.Substring(braceStart, braceEnd - braceStart + 1);
+
+            var dto = JsonUtility.FromJson<DeathNarrationDTO>(argsJson);
+            return new DeathNarrationResult
+            {
+                narration          = StripMarkdownStatic(dto?.narration          ?? ""),
+                score_taunt_beaten = StripMarkdownStatic(dto?.score_taunt_beaten ?? ""),
+                score_taunt_failed = StripMarkdownStatic(dto?.score_taunt_failed ?? ""),
+            };
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[GeminiClient] ParseDeathNarrationResponse error: {e.Message}");
+            return FallbackDeathNarration();
+        }
+    }
+
+    private static DeathNarrationResult FallbackDeathNarration() => new DeathNarrationResult
+    {
+        narration          = "The dungeon has swallowed another Seeker. You were no different from the rest.",
+        score_taunt_beaten = "Further than before. The Grimoire has taken notice. It won't allow it again.",
+        score_taunt_failed = "You didn't even reach your previous depth. Disappointing doesn't cover it.",
+    };
+
+    private static string StripMarkdownStatic(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\*{1,3}|_{1,3}", "");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"^\s*#{1,6}\s*", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"^\s*[-•]\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        return text.Trim();
+    }
+
+    // Intermediate DTO for JsonUtility deserialization
+    [System.Serializable]
+    private class DeathNarrationDTO
+    {
+        public string narration;
+        public string score_taunt_beaten;
+        public string score_taunt_failed;
+    }
+
     private static string ParseFreeTextResponse(string json)
     {
         try
@@ -182,8 +322,27 @@ public class GeminiClient : MonoBehaviour
     // ── Prompt ────────────────────────────────────────────────────────────────
 
     private string BuildPrompt(string sessionLogJson, int nextStageNumber,
-                               string previousManifestJson)
+                               string previousManifestJson, SpellTier nextSpellTier)
     {
+        string tierName  = nextSpellTier.ToString().ToUpper();   // "BASIC" / "SKILL" / "ULTIMATE"
+        string tierLower = nextSpellTier.ToString().ToLower();   // "basic" / "skill" / "ultimate"
+        string tierGuidelines = nextSpellTier switch
+        {
+            SpellTier.Basic =>
+                "**BASIC** — Cooldown 0.3–0.5s. Damage 15–35. 1–2 behavior tags. " +
+                "Fast and spammable — this is the player's primary spam attack (held LMB). " +
+                "Should feel snappy and reliable. Simple but satisfying.",
+            SpellTier.Skill =>
+                "**SKILL** — Cooldown 3–4s. Damage 25–50. 2–4 tags with interesting interactions. " +
+                "More tactical and impactful — the player presses E deliberately. " +
+                "Should feel like a tool with a clear use case.",
+            SpellTier.Ultimate =>
+                "**ULTIMATE** — Cooldown 10–15s. Damage 40–80, heavily AoE-focused. 3–5 spectacular tags. " +
+                "Should feel CINEMATIC when it fires — this is a once-per-fight nuke. " +
+                "Prioritize AOE_BURST, FRAGMENTING, CHAIN, LINGERING, or CONTAGIOUS. " +
+                "The player presses Q and the screen goes gold. Make it worth waiting for.",
+            _ => ""
+        };
         string previousContext = string.IsNullOrEmpty(previousManifestJson)
             ? "This is the first Gemini-generated stage. The player just finished the hardcoded tutorial floor."
             : $@"Here is the manifest you generated for the previous stage (stage {nextStageNumber - 1}):
@@ -217,6 +376,10 @@ Stage {nextStageNumber} should feel like a meaningful escalation. Enemy stat for
 
 ### 3. New Spell — BE CREATIVE AND BALANCED
 Create ONE new spell. This is the heart of the game — every spell should feel like a unique artifact with its own identity, not a generic ""fire bolt"" or ""ice shard"".
+
+**SPELL TIER FOR THIS FLOOR: {tierName}**
+Set `tier` = `""{tierLower}""` in the new_spell object. The spell MUST match these constraints:
+{tierGuidelines}
 
 **Creativity guidelines:**
 - Give spells evocative, poetic names that hint at their behavior (e.g. ""The Weeping Spiral"", ""Shattered Lullaby"", ""Marrow Lance"").
@@ -267,9 +430,9 @@ Pick from: acid, bubblegum, dungeon, flames, forest, frozen, honey, ocean, rocky
 Match the floor's narrative theme. Avoid repeating the previous stage's tileset.
 
 ### 6. Enemy Spawns
-Available enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard, zombie, ice_wizard.
+Available enemy IDs: melee_charger, ranged_sentinel, alien, dragon_newt, evil_paladin, ghost, vampire, wizard, zombie, ice_wizard, bear.
 Available modifiers: armored, berserk, regenerating.
-Total enemies: {4 + nextStageNumber} to {6 + nextStageNumber * 2} (capped at 30).
+Total enemies: approximately {Mathf.RoundToInt(2f + nextStageNumber * 1.1f)} (scales gradually with stage).
 Compose enemy groups that counter the player's equipped spells and playstyle. Use modifiers sparingly at early stages, more liberally later.
 
 ### 7. Cutscene Steps — The Chronicle Speaks from the Void
@@ -347,7 +510,15 @@ Choose 1–2 lamp IDs that best fit this floor's atmosphere. Available lamps:
 - PinkLamp — vivid magenta glow (bubblegum, arcane, surreal)
 - TechLamp — clinical white-blue glow (tech, machinery, sterile)
 
-Return exactly 1–2 IDs in lamp_ids that match the tileset and floor name. Default guidance: dungeon/rocky/flames → RedLamp, frozen → BlueLamp, forest/acid → GreenLamp, ocean → OceanBlueLamp, techy → TechLamp, bubblegum → PinkLamp, honey → YellowLamp. Using 2 lamp types adds visual variety — prefer it when the theme supports contrast (e.g. RedLamp + YellowLamp for a fiery ruin).";
+Return exactly 1–2 IDs in lamp_ids that match the tileset and floor name. Default guidance: dungeon/rocky/flames → RedLamp, frozen → BlueLamp, forest/acid → GreenLamp, ocean → OceanBlueLamp, techy → TechLamp, bubblegum → PinkLamp, honey → YellowLamp. Using 2 lamp types adds visual variety — prefer it when the theme supports contrast (e.g. RedLamp + YellowLamp for a fiery ruin).
+
+### 9. Heal Scroll Placement
+Heal scrolls are pickups scattered on the floor that restore 8% of the player's max HP on contact (capped — they cannot overheal). Set heal_scroll_count (integer, 1–5). Always spawn at least 1 scroll per floor.
+- **Player HP**: If hp_remaining is below 40% of max, lean toward 3–5 scrolls. If above 70%, lean toward 1–2.
+- **Stage difficulty**: Later stages warrant more scrolls as compensation for higher enemy stats. Add 1 scroll every ~3 stages as a baseline.
+- **Playstyle**: If the player has LIFESTEAL spells they may self-sustain — reduce scroll count by 1 (minimum 1). If they have SACRIFICE or SELF_DAMAGE corruption, add 1–2 extra scrolls.
+- **Typical values**: 1–2 for easy/early stages, 2–3 for moderate, 3–4 for tough stages, 4–5 for brutal stages (stage 10+, low HP, high enemy count).
+- Be generous — the player needs enough scrolls to stay in the fight across multiple floors.";
     }
 
     // ── Request JSON ──────────────────────────────────────────────────────────
@@ -380,11 +551,12 @@ Return exactly 1–2 IDs in lamp_ids that match the tileset and floor name. Defa
               ""environmental_modifier"":  {{ ""type"": ""string"",  ""description"": ""Optional environmental effect ID"" }},
               ""stage_message"":           {{ ""type"": ""string"",  ""description"": ""The Chronicle's message to the player (2-4 sentences, second person, ominous/taunting)"" }},
               ""enemy_spawns"":            {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""enemy_id"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }}, ""modifiers"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }} }}, ""required"": [""enemy_id"", ""count""] }}, ""description"": ""Array of enemy spawn entries"" }},
-              ""new_spell"":               {{ ""type"": ""object"",  ""properties"": {{ ""name"": {{ ""type"": ""string"" }}, ""flavor"": {{ ""type"": ""string"" }}, ""corruption_flavor"": {{ ""type"": ""string"", ""description"": ""Set ONLY for cursed spells — explains the trade-off of built-in corruption tags"" }}, ""tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""damage"": {{ ""type"": ""number"" }}, ""speed"": {{ ""type"": ""number"" }}, ""cooldown"": {{ ""type"": ""number"" }}, ""element"": {{ ""type"": ""string"" }}, ""is_merged"": {{ ""type"": ""boolean"" }}, ""merged_from"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""projectile_color"": {{ ""type"": ""string"", ""description"": ""Hex color for main glow, e.g. #FF4400"" }}, ""secondary_color"": {{ ""type"": ""string"", ""description"": ""Hex color for trail gradient endpoint"" }}, ""projectile_scale"": {{ ""type"": ""number"", ""description"": ""Size multiplier 0.5-3.0"" }}, ""glow_size"": {{ ""type"": ""number"", ""description"": ""Glow radius 0.2-1.5"" }}, ""trail_length"": {{ ""type"": ""number"", ""description"": ""Trail time 0.0-0.5 seconds"" }}, ""trail_width"": {{ ""type"": ""number"", ""description"": ""Trail width 0.05-0.5"" }}, ""burst_count"": {{ ""type"": ""integer"", ""description"": ""Projectiles per cast 1-5"" }} }}, ""required"": [""name"", ""flavor"", ""tags"", ""damage"", ""speed"", ""cooldown"", ""projectile_color"", ""projectile_scale"", ""glow_size"", ""trail_length"", ""burst_count""], ""description"": ""The new spell given to the player. For cursed spells, include a corruption tag in tags[] and set corruption_flavor."" }},
+              ""new_spell"":               {{ ""type"": ""object"",  ""properties"": {{ ""name"": {{ ""type"": ""string"" }}, ""flavor"": {{ ""type"": ""string"" }}, ""corruption_flavor"": {{ ""type"": ""string"", ""description"": ""Set ONLY for cursed spells — explains the trade-off of built-in corruption tags"" }}, ""tags"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""tier"": {{ ""type"": ""string"", ""description"": ""One of: basic, skill, ultimate. MUST match the tier specified in the prompt."" }}, ""damage"": {{ ""type"": ""number"" }}, ""speed"": {{ ""type"": ""number"" }}, ""cooldown"": {{ ""type"": ""number"" }}, ""element"": {{ ""type"": ""string"" }}, ""is_merged"": {{ ""type"": ""boolean"" }}, ""merged_from"": {{ ""type"": ""array"", ""items"": {{ ""type"": ""string"" }} }}, ""projectile_color"": {{ ""type"": ""string"", ""description"": ""Hex color for main glow, e.g. #FF4400"" }}, ""secondary_color"": {{ ""type"": ""string"", ""description"": ""Hex color for trail gradient endpoint"" }}, ""projectile_scale"": {{ ""type"": ""number"", ""description"": ""Size multiplier 0.5-3.0"" }}, ""glow_size"": {{ ""type"": ""number"", ""description"": ""Glow radius 0.2-1.5"" }}, ""trail_length"": {{ ""type"": ""number"", ""description"": ""Trail time 0.0-0.5 seconds"" }}, ""trail_width"": {{ ""type"": ""number"", ""description"": ""Trail width 0.05-0.5"" }}, ""burst_count"": {{ ""type"": ""integer"", ""description"": ""Projectiles per cast 1-5"" }} }}, ""required"": [""name"", ""flavor"", ""tags"", ""tier"", ""damage"", ""speed"", ""cooldown"", ""projectile_color"", ""projectile_scale"", ""glow_size"", ""trail_length"", ""burst_count""], ""description"": ""The new spell given to the player. For cursed spells, include a corruption tag in tags[] and set corruption_flavor."" }},
               ""cutscene_steps"":          {{ ""type"": ""array"",   ""items"": {{ ""type"": ""object"", ""properties"": {{ ""action"": {{ ""type"": ""string"", ""description"": ""One of: TYPEWRITER, CLEAR_TEXT, FLASH, WAIT, SCREEN_TINT, PARTICLES_BURST, PARTICLES_DRIFT, TEXT_SHAKE, PULSE, GLITCH"" }}, ""text"": {{ ""type"": ""string"" }}, ""speed"": {{ ""type"": ""number"" }}, ""duration"": {{ ""type"": ""number"" }}, ""intensity"": {{ ""type"": ""number"" }}, ""color"": {{ ""type"": ""string"" }}, ""count"": {{ ""type"": ""integer"" }} }}, ""required"": [""action""] }}, ""description"": ""Dark-screen atmospheric cutscene sequence (5-12 steps). The Chronicle speaks from a dark void with particles, color washes, and dramatic text. Must end with CLEAR_TEXT."" }},
-              ""lamp_ids"":                {{ ""type"": ""array"",   ""items"": {{ ""type"": ""string"" }}, ""description"": ""1–2 lamp IDs for this floor's lighting. Choose from: RedLamp, YellowLamp, GreenLamp, BlueLamp, OceanBlueLamp, PinkLamp, TechLamp. Match the floor biome and name. Always return 1–2 IDs."" }}
+              ""lamp_ids"":                {{ ""type"": ""array"",   ""items"": {{ ""type"": ""string"" }}, ""description"": ""1–2 lamp IDs for this floor's lighting. Choose from: RedLamp, YellowLamp, GreenLamp, BlueLamp, OceanBlueLamp, PinkLamp, TechLamp. Match the floor biome and name. Always return 1–2 IDs."" }},
+              ""heal_scroll_count"":       {{ ""type"": ""integer"", ""description"": ""Number of heal scrolls to place on this floor (1–5, minimum 1). Each heals 8% of the player's max HP on contact. Balance based on player HP, stage difficulty, and spell loadout. See prompt section 9."" }}
             }},
-            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell"", ""cutscene_steps"", ""lamp_ids""]
+            ""required"": [""floor_name"", ""tileset_id"", ""stage_message"", ""enemy_spawns"", ""new_spell"", ""cutscene_steps"", ""lamp_ids"", ""heal_scroll_count""]
           }}
         }}
       ]

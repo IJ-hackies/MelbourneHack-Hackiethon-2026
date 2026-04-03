@@ -52,7 +52,7 @@ public class PlayerDeathCutscene : MonoBehaviour
         if (player == null) { onComplete?.Invoke(); yield break; }
 
         // ── 1. Freeze ─────────────────────────────────────────────────────────
-        Time.timeScale = 0f;
+        PauseManager.Pause();
 
         // Disable player input / physics
         var pm = player.GetComponent<PlayerMovement>();
@@ -144,6 +144,7 @@ public class PlayerDeathCutscene : MonoBehaviour
         // ── 7. Brief pause then hand off to Game Over UI ──────────────────────
         yield return new WaitForSecondsRealtime(preShowDelay);
 
+        PauseManager.Unpause(); // GameOverUI.Show() will re-pause via PauseManager
         onComplete?.Invoke();
     }
 }

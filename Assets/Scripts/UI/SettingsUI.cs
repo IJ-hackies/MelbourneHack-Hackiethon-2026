@@ -43,11 +43,17 @@ public class SettingsUI : MonoBehaviour
     private const float BtnW      = 210f;
     private const float Pad       = 24f;
 
+    // ── Confirm dialog constants ─────────────────────────────────────────────
+    private const float ConfirmW = 420f;
+    private const float ConfirmH = 200f;
+
     // ── State ─────────────────────────────────────────────────────────────────
     private GameObject    _canvas;
     private RectTransform _panelRoot;
     private bool          _isDungeon;
     public  bool          IsOpen { get; private set; }
+
+    private GameObject    _confirmOverlay;
 
     private enum Tab { Controls, Volume }
     private Tab _activeTab = Tab.Controls;
@@ -68,10 +74,28 @@ public class SettingsUI : MonoBehaviour
     private TMP_Text       _listeningBtnText;
     private readonly Dictionary<string, (Image bg, TMP_Text label)> _bindBtns = new();
 
+    // ── Singleton ─────────────────────────────────────────────────────────────
+
+    public static SettingsUI Instance { get; private set; }
+
+    /// <summary>The Alagard TMP font asset, accessible to any runtime-built UI.</summary>
+    public TMP_FontAsset Font => font;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        // Must be root-level for DontDestroyOnLoad
+        transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
+        // Restore saved settings (volumes + keybinds) from PlayerPrefs
+        SettingsData.Load();
         BuildCanvas();
         _canvas.SetActive(false);
     }
@@ -124,6 +148,7 @@ public class SettingsUI : MonoBehaviour
     {
         if (!IsOpen) return;
         if (_listeningAction != null) CancelRebind();
+        DismissConfirm();
         IsOpen = false;
         StartCoroutine(CloseRoutine());
     }
@@ -151,7 +176,7 @@ public class SettingsUI : MonoBehaviour
 
         var canvas          = _canvas.AddComponent<Canvas>();
         canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 200;
+        canvas.sortingOrder = 500;
 
         var scaler                  = _canvas.AddComponent<CanvasScaler>();
         scaler.uiScaleMode          = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -261,16 +286,16 @@ public class SettingsUI : MonoBehaviour
 
         (string label, string action)[] rows =
         {
-            ("Move Up",    "MoveUp"),
-            ("Move Down",  "MoveDown"),
-            ("Move Left",  "MoveLeft"),
-            ("Move Right", "MoveRight"),
-            ("Attack",     "Attack"),
-            ("Spell 1",    "Slot1"),
-            ("Spell 2",    "Slot2"),
-            ("Spell 3",    "Slot3"),
-            ("Dash",       "Dash"),
-            ("Toggle Map", "ToggleMap"),
+            ("Move Up",       "MoveUp"),
+            ("Move Down",     "MoveDown"),
+            ("Move Left",     "MoveLeft"),
+            ("Move Right",    "MoveRight"),
+            ("Basic (LMB)",   "Attack"),
+            ("Skill 1",       "SpellSkill"),
+            ("Skill 2",       "SpellSkill2"),
+            ("Ultimate",      "SpellUltimate"),
+            ("Dash",          "Dash"),
+            ("Toggle Map",    "ToggleMap"),
         };
 
         const float SbW = 10f; // scrollbar strip width
@@ -507,8 +532,8 @@ public class SettingsUI : MonoBehaviour
 
         // Resume (hidden by default; shown only in dungeon)
         BuildFooterButton("Back", footerRT, new Vector2(startX, 0f),           ColBtnResume, "BACK",          Close);
-        BuildFooterButton("MainMenu", footerRT, new Vector2(startX + BtnW + 20f, 0f), ColGoldDim,    "MAIN MENU",       GoToMainMenu);
-        BuildFooterButton("Exit",    footerRT, new Vector2(startX + BtnW * 2 + 40f, 0f), ColBtnDanger, "EXIT GAME",       QuitGame);
+        BuildFooterButton("MainMenu", footerRT, new Vector2(startX + BtnW + 20f, 0f), ColGoldDim,    "MAIN MENU",       () => ShowConfirm("Return to main menu?", GoToMainMenu));
+        BuildFooterButton("Exit",    footerRT, new Vector2(startX + BtnW * 2 + 40f, 0f), ColBtnDanger, "EXIT GAME",       () => ShowConfirm("Exit the game?", QuitGame));
     }
 
     private void BuildFooterButton(string name, RectTransform parent, Vector2 pos,
@@ -596,11 +621,88 @@ public class SettingsUI : MonoBehaviour
         }
     }
 
+    // ── Confirmation dialog ──────────────────────────────────────────────────
+
+    private void ShowConfirm(string message, System.Action onConfirm)
+    {
+        if (_confirmOverlay != null) Destroy(_confirmOverlay);
+
+        // Full-screen dim backdrop
+        var overlayRT        = MakeRT("ConfirmOverlay", _canvas.transform, V2.zero, V2.one, V2.half, V2.zero, V2.zero);
+        overlayRT.offsetMin  = V2.zero;
+        overlayRT.offsetMax  = V2.zero;
+        var overlayImg       = overlayRT.gameObject.AddComponent<Image>();
+        overlayImg.color     = new Color(0f, 0f, 0f, 0.6f);
+        AddButton(overlayRT.gameObject, DismissConfirm);
+        _confirmOverlay = overlayRT.gameObject;
+
+        // Dialog panel — Image acts as a raycast blocker so clicks don't pass through to the backdrop
+        var panelRT     = MakeRT("ConfirmPanel", overlayRT,
+            V2.half, V2.half, V2.half, V2.zero, new Vector2(ConfirmW, ConfirmH));
+        var panelImg    = panelRT.gameObject.AddComponent<Image>();
+        panelImg.color  = ColPanel;
+        panelImg.raycastTarget = true;
+        AddButton(panelRT.gameObject, () => { }); // swallow clicks so they don't reach the backdrop
+
+        // Gold border line at top
+        var lineRT  = MakeRT("TopLine", panelRT,
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+            V2.zero, new Vector2(0f, 2f));
+        lineRT.gameObject.AddComponent<Image>().color = ColGold;
+
+        // Message text
+        MakeText("Message", panelRT,
+            new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, -10f), V2.zero,
+            message, 24f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
+
+        // Button row
+        float gap   = 20f;
+        float halfW = (BtnW * 2 + gap) / 2f;
+
+        // Cancel
+        var cancelRT     = MakeRT("Cancel", panelRT,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(-halfW + BtnW / 2f, 28f), new Vector2(BtnW, BtnH));
+        var cancelImg    = cancelRT.gameObject.AddComponent<Image>();
+        cancelImg.color  = ColGoldDim;
+        MakeText("Label", cancelRT, V2.zero, V2.one, V2.half, V2.zero, V2.zero,
+            "CANCEL", 17f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
+        AddButton(cancelRT.gameObject, DismissConfirm);
+        cancelRT.gameObject.AddComponent<UIButtonHover>();
+
+        // Confirm
+        var confirmRT    = MakeRT("Confirm", panelRT,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(halfW - BtnW / 2f, 28f), new Vector2(BtnW, BtnH));
+        var confirmImg   = confirmRT.gameObject.AddComponent<Image>();
+        confirmImg.color = ColBtnDanger;
+        MakeText("Label", confirmRT, V2.zero, V2.one, V2.half, V2.zero, V2.zero,
+            "CONFIRM", 17f, ColParchment, TextAlignmentOptions.Center, FontStyles.Bold);
+        AddButton(confirmRT.gameObject, () => { DismissConfirm(); onConfirm(); });
+        confirmRT.gameObject.AddComponent<UIButtonHover>();
+
+        StartCoroutine(UIPanelAnimator.AnimateIn(panelRT));
+    }
+
+    private void DismissConfirm()
+    {
+        if (_confirmOverlay != null)
+        {
+            Destroy(_confirmOverlay);
+            _confirmOverlay = null;
+        }
+    }
+
     // ── Navigation buttons ────────────────────────────────────────────────────
 
     private void GoToMainMenu()
     {
-        Close();
+        // Skip animated close — we're about to destroy the scene anyway
+        StopAllCoroutines();
+        DismissConfirm();
+        IsOpen = false;
+        _canvas.SetActive(false);
         PauseManager.Reset();
         SceneManager.LoadScene("MainMenu");
     }
@@ -618,17 +720,17 @@ public class SettingsUI : MonoBehaviour
 
     private static KeyCode GetCurrentKey(string action) => action switch
     {
-        "MoveUp"    => SettingsData.MoveUp,
-        "MoveDown"  => SettingsData.MoveDown,
-        "MoveLeft"  => SettingsData.MoveLeft,
-        "MoveRight" => SettingsData.MoveRight,
-        "Attack"    => SettingsData.Attack,
-        "Slot1"     => SettingsData.Slot1,
-        "Slot2"     => SettingsData.Slot2,
-        "Slot3"     => SettingsData.Slot3,
-        "Dash"      => SettingsData.Dash,
-        "ToggleMap" => SettingsData.ToggleMap,
-        _           => KeyCode.None,
+        "MoveUp"        => SettingsData.MoveUp,
+        "MoveDown"      => SettingsData.MoveDown,
+        "MoveLeft"      => SettingsData.MoveLeft,
+        "MoveRight"     => SettingsData.MoveRight,
+        "Attack"        => SettingsData.Attack,
+        "SpellSkill"    => SettingsData.SpellSkill,
+        "SpellSkill2"   => SettingsData.SpellSkill2,
+        "SpellUltimate" => SettingsData.SpellUltimate,
+        "Dash"          => SettingsData.Dash,
+        "ToggleMap"     => SettingsData.ToggleMap,
+        _               => KeyCode.None,
     };
 
     private static void AddButton(GameObject go, UnityEngine.Events.UnityAction onClick)

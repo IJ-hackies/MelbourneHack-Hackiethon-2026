@@ -25,12 +25,24 @@ public class PlayerHitEffect : MonoBehaviour
 
         if (flashCoroutine != null)
             StopCoroutine(flashCoroutine);
-        flashCoroutine = StartCoroutine(Flash());
+        flashCoroutine = StartCoroutine(Flash(flashColor));
     }
 
-    private IEnumerator Flash()
+    // Called by HealScrollPickup on heal
+    public void PlayHealEffect()
     {
-        sr.color = flashColor;
+        HitEffectSpawner.SpawnHit(transform.position,
+            new Color(0.2f, 1f, 0.35f, 1f),
+            new Color(0.6f, 1f, 0.2f, 1f));
+
+        if (flashCoroutine != null)
+            StopCoroutine(flashCoroutine);
+        flashCoroutine = StartCoroutine(Flash(new Color(0.2f, 1f, 0.35f, 1f)));
+    }
+
+    private IEnumerator Flash(Color color)
+    {
+        sr.color = color;
         yield return new WaitForSeconds(flashDuration);
         sr.color = originalColor;
     }

@@ -13,6 +13,7 @@ public class SpellDTO
     public string flavor;
     public string corruption_flavor;
     public string[] tags;
+    public string tier;           // "basic", "skill", or "ultimate"
     public float damage;
     public float speed;
     public float cooldown;
@@ -45,6 +46,12 @@ public class SpellDTO
         data.cooldown = cooldown;
         data.isMerged = is_merged;
         data.mergedFrom = merged_from ?? Array.Empty<string>();
+
+        // Parse tier
+        if (!string.IsNullOrEmpty(tier) && System.Enum.TryParse<SpellTier>(tier, ignoreCase: true, out SpellTier parsedTier))
+            data.tier = parsedTier;
+        else
+            data.tier = SpellTier.Basic;
 
         // Visuals — apply defaults if Gemini omits them
         data.projectileColor = projectile_color;

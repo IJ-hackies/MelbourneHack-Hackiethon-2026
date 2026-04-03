@@ -53,6 +53,11 @@ public class MinimapController : MonoBehaviour
     private static readonly Color ColEnemy  = new Color(1.00f, 0.10f, 0.05f, 1.00f);
     private static readonly Color ColPlayer = new Color(1.00f, 0.88f, 0.35f, 1.00f);
 
+    /// <summary>RectTransform of the corner minimap widget.</summary>
+    public RectTransform MinimapRT => _miniRT;
+    /// <summary>The canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => _canvasGO;
+
     // ── Runtime state ─────────────────────────────────────────────────────────
     private Texture2D _mapTex;
     private Texture2D _fogTex;
@@ -396,7 +401,10 @@ public class MinimapController : MonoBehaviour
 
     // ── Toggle ────────────────────────────────────────────────────────────────
 
-    private void Toggle()
+    /// <summary>Whether the minimap is currently expanded.</summary>
+    public bool IsExpanded => _expanded;
+
+    public void Toggle()
     {
         _expanded = !_expanded;
         _expandRT.gameObject.SetActive(_expanded);

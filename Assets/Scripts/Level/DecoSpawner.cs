@@ -34,6 +34,9 @@ public class DecoSpawner : MonoBehaviour
     public GameObject AcidPoolPrefab;
     public GameObject CobwebPrefab;
 
+    [Header("Pickup Prefabs")]
+    public GameObject HealScrollPrefab;
+
     // ── References ────────────────────────────────────────────────────────────
     [Header("References")]
     public FloorAssembler floorAssembler;
@@ -99,12 +102,37 @@ public class DecoSpawner : MonoBehaviour
         }
 
         // Iterate chamber children (boundary walls have no Ground tilemap child)
+        var allValidPositions = new List<Vector3>();
         foreach (Transform child in floorAssembler.transform)
         {
             var groundTm = child.Find("Ground")?.GetComponent<Tilemap>();
             if (groundTm == null) continue;
 
             SpawnInChamber(child, groundTm, lampPrefabs);
+
+            // Collect valid positions for heal scroll placement (second pass below)
+            if (HealScrollPrefab != null && floorAssembler.activeHealScrollCount > 0)
+            {
+                var wallsTm = child.Find("Walls")?.GetComponent<Tilemap>();
+                var positions = CollectValidPositions(groundTm, wallsTm);
+                allValidPositions.AddRange(positions);
+            }
+        }
+
+        // Spawn heal scrolls distributed randomly across the floor
+        if (floorAssembler.activeHealScrollCount > 0)
+        {
+            if (HealScrollPrefab == null)
+            {
+                Debug.LogWarning("[DecoSpawner] activeHealScrollCount > 0 but HealScrollPrefab is not assigned — wire it in the Inspector.");
+            }
+            else if (allValidPositions.Count > 0)
+            {
+                Shuffle(allValidPositions);
+                int count = Mathf.Min(floorAssembler.activeHealScrollCount, allValidPositions.Count);
+                for (int i = 0; i < count; i++)
+                    Instantiate(HealScrollPrefab, allValidPositions[i], Quaternion.identity, floorAssembler.transform);
+            }
         }
     }
 
@@ -229,6 +257,11 @@ public class DecoSpawner : MonoBehaviour
         groundTm.CompressBounds();
         var bounds   = groundTm.cellBounds;
         int wallMask = LayerMask.GetMask("Walls");
+
+        // Chambers are instantiated in the same frame as this call. Unity only syncs
+        // new colliders to the physics engine on FixedUpdate, so OverlapCircle would
+        // return null for all newly-spawned wall colliders without this call.
+        Physics2D.SyncTransforms();
 
         foreach (var cellPos in bounds.allPositionsWithin)
         {

@@ -223,7 +223,7 @@ MonoBehaviour:
   bleedDamageMultiplier: 0.1
   pathRefreshInterval: 0.3
   shootSfxClip: {fileID: 8300000, guid: b0346bbc75d32472d96bb44df15108f3, type: 3}
-  shootSfxVolume: 0.733
+  shootSfxVolume: 0.565
   projectileColorA: {r: 1, g: 0.35, b: 0, a: 1}
   projectileColorB: {r: 1, g: 0.85, b: 0.1, a: 1}
   projectileSpeed: 8
@@ -268,6 +268,6 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0004879199, y: -0.13192278}
-  m_Size: {x: 0.19410023, y: 0.0722354}
-  m_Direction: 1
+  m_Offset: {x: -0.002537489, y: -0.11966913}
+  m_Size: {x: 0.013657093, y: 0.04772811}
+  m_Direction: 0

@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3413112483248314335
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5270969562957945445}
+  - component: {fileID: 5143169128789678926}
+  m_Layer: 0
+  m_Name: GrimoireUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5270969562957945445
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3413112483248314335}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 38.28002, y: 22.18636, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5143169128789678926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3413112483248314335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8f268190bdb0c04497d410c7e874d9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GrimoireUI
+  bookSprite: {fileID: -6454286882597596703, guid: 0ff5277518b366d4e858ced09ef48a7e, type: 3}
+  slotSprite: {fileID: 5687997949075765814, guid: c5135b705efdaea4587c5e2596feba43, type: 3}
+  slotSelectedSprite: {fileID: -7245156697202359469, guid: ddb759ed5c038e64b8e55688d769f4e6, type: 3}
+  boxSprite: {fileID: 7499154508442906066, guid: c99152a44e86aec428665e2439c541a7, type: 3}
+  buttonSprite: {fileID: 2530564911472380330, guid: 7e17d0dca40aa0643843dfdb9b2d4b88, type: 3}
+  font: {fileID: 11400000, guid: 0907333eb758c4474a5edc92a07db02a, type: 2}
+  bookW: 1200
+  spellBoxSize: 80
+  spellBoxGap: 10
+  titleFontSize: 30
+  detailNameFontSize: 28
+  detailBodyFontSize: 13
+  statsFontSize: 15
+  listFontSize: 15

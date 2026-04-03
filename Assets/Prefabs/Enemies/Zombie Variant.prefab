@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1040c7d9ace4c4ee2b9c037e26b80c33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeChaseAI
-  moveSpeed: 1
+  moveSpeed: 1.5
   attackRange: 1.3
   attackDamage: 30
   attackCooldown: 2
@@ -216,7 +216,7 @@ MonoBehaviour:
   hitColorA: {r: 0.102483094, g: 0.4433962, b: 0.15942487, a: 1}
   hitColorB: {r: 0.750269, g: 0.754717, b: 0.15307939, a: 1}
   attackSfxClip: {fileID: 8300000, guid: 4081771384ed14b4a85b9349ee78b1e3, type: 3}
-  attackSfxVolume: 0.8
+  attackSfxVolume: 0.367
   applyBleed: 0
   bleedDuration: 2
   bleedDamageMultiplier: 0.1
@@ -255,6 +255,6 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.002614081, y: -0.09674443}
-  m_Size: {x: 0.20546423, y: 0.07779223}
-  m_Direction: 1
+  m_Offset: {x: -0.000638419, y: -0.04162822}
+  m_Size: {x: 0.008024826, y: 0.04290838}
+  m_Direction: 0

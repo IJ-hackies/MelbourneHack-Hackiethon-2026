@@ -101,6 +101,7 @@ Ask: "Does this capture it? Anything to add or change?" Only proceed to building
 
 ### Build Phase
 
+Ensure that all skills are build into the root directory of the current repository with formatting of <<skill name>>/SKILL.md
 Once discovery is complete, build the skill following these steps:
 
 **Step 1: Choose the skill type**

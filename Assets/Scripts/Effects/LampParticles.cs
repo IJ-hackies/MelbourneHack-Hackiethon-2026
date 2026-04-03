@@ -72,7 +72,8 @@ public class LampParticles : MonoBehaviour
         vel.enabled = true;
         vel.space   = ParticleSystemSimulationSpace.World;
         vel.x       = new ParticleSystem.MinMaxCurve(-0.12f, 0.12f);
-        vel.y       = new ParticleSystem.MinMaxCurve(0f);
+        vel.y       = new ParticleSystem.MinMaxCurve(0f, 0f);
+        vel.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         // ── Colour + alpha fade over lifetime ─────────────────────────────────
         var col = _ps.colorOverLifetime;

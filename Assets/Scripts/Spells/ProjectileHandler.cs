@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 /// <summary>
 /// Orchestrator for all projectile behavior. Reads SpellTags and wires up
@@ -241,22 +242,47 @@ public class ProjectileHandler : MonoBehaviour
         if (h == null || h == ctx.PlayerHealth || h.IsDead) return;
         if (hitEnemies.Contains(h.gameObject)) return;
 
-        HitEnemy(h.gameObject);
+        HitEnemy(h.gameObject, other);
     }
 
     // ── Hit processing ────────────────────────────────────────────────────────
 
-    public void HitEnemy(GameObject enemyObj)
+    private const float HeadshotZone       = 0.22f;
+    private const float HeadshotMultiplier = 1.5f;
+    private const float PlayerDamageMult   = 0.8f;  // global 20% reduction for balance
+
+    public void HitEnemy(GameObject enemyObj, Collider2D hitCollider = null)
     {
         var h = enemyObj.GetComponent<Health>();
         if (h == null || h.IsDead) return;
 
-        h.TakeDamage(ctx.Spell.damage);
+        // Headshot: projectile hit the top 10% of the enemy collider.
+        // Use the actual hit collider when available (from OnTriggerEnter2D);
+        // fall back to the root collider for indirect hits (chain, contagious, etc.).
+        bool isCrit = false;
+        var col = hitCollider != null ? hitCollider : enemyObj.GetComponent<Collider2D>();
+        if (col != null)
+        {
+            Bounds b = col.bounds;
+            // Use the closest point on the collider surface to the projectile center
+            // so that overlapping projectiles don't falsely crit at the enemy's midpoint.
+            Vector2 contactPoint = col.ClosestPoint(transform.position);
+            float headshotThreshold = b.max.y - b.size.y * HeadshotZone;
+            if (contactPoint.y >= headshotThreshold)
+                isCrit = true;
+        }
+
+        float damage = (isCrit ? ctx.Spell.damage * HeadshotMultiplier : ctx.Spell.damage) * PlayerDamageMult;
+        h.LastHitWasCrit = isCrit;
+        h.TakeDamage(damage);
+        UltimateAbility.Instance?.RegisterHit();
+        if (isCrit)
+            SFXManager.Instance?.PlayCritHit(transform.position);
         SFXManager.Instance?.PlayEnemyHit(transform.position);
         HitEffectSpawner.SpawnImpactFlash(transform.position,
             ElementToColor(ctx.Spell.element), Color.white);
 
-        SessionLogger.Instance?.RecordDamageDealt(ctx.Spell.element, ctx.Spell.damage);
+        SessionLogger.Instance?.RecordDamageDealt(ctx.Spell.element, damage);
 
         if (ctx.HasTag(SpellTag.LIFESTEAL))
             ctx.PlayerHealth?.Heal(ctx.Spell.damage * 0.3f);
@@ -368,6 +394,18 @@ public class ProjectileHandler : MonoBehaviour
             HitEffectSpawner.AddTrailRenderer(gameObject, primary, secondary,
                 Mathf.Clamp(trailLen, 0.02f, 0.8f), trailW * scale);
         }
+
+        // Point light that travels with the projectile
+        var lightGO = new GameObject("ProjectileLight");
+        lightGO.transform.SetParent(transform);
+        lightGO.transform.localPosition = Vector3.zero;
+        var light = lightGO.AddComponent<Light2D>();
+        light.lightType = Light2D.LightType.Point;
+        light.color = Color.Lerp(primary, Color.white, 0.3f);
+        light.intensity = 0.6f;
+        light.pointLightOuterRadius = 3f * scale;
+        light.pointLightInnerRadius = 0.5f * scale;
+        light.falloffIntensity = 0.8f;
     }
 
     private static Color ParseHexColor(string hex, Color fallback)

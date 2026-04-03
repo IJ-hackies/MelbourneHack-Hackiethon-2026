@@ -6,7 +6,7 @@ public class Grimoire : MonoBehaviour
 {
     public static Grimoire Instance { get; private set; }
 
-    public const int LoadoutSize = 3;
+    public const int LoadoutSize = 3; // index = (int)SpellTier
 
     [Header("Starting Spell")]
     [SerializeField] private SpellData startingSpell;
@@ -14,11 +14,8 @@ public class Grimoire : MonoBehaviour
     // Full spell library — every spell the player owns.
     private List<SpellData> library = new();
 
-    // Equipped loadout — 3 slots, null = empty.
+    // Equipped loadout — indexed by SpellTier (0=Basic, 1=Skill, 2=Ultimate), null = empty.
     private SpellData[] loadout = new SpellData[LoadoutSize];
-
-    // Which loadout slot is currently active (0-2).
-    private int activeSlot = 0;
 
     // Per-slot cooldown tracking (time of last cast).
     private float[] lastCastTimes = new float[LoadoutSize];
@@ -51,37 +48,16 @@ public class Grimoire : MonoBehaviour
             AddSpell(startingSpell);
     }
 
-    private void Update()
-    {
-        // Slot switching — keys from SettingsData (rebindable)
-        if (Input.GetKeyDown(SettingsData.Slot1)) SetActiveSlot(0);
-        if (Input.GetKeyDown(SettingsData.Slot2)) SetActiveSlot(1);
-        if (Input.GetKeyDown(SettingsData.Slot3)) SetActiveSlot(2);
+    // --- Spell access by tier ---
 
-        // Scroll wheel cycling
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f)
-            SetActiveSlot((activeSlot + 1) % LoadoutSize);
-        else if (scroll < 0f)
-            SetActiveSlot((activeSlot - 1 + LoadoutSize) % LoadoutSize);
-    }
+    /// <summary>Returns the equipped spell for the given tier, or null if empty.</summary>
+    public SpellData GetSpell(SpellTier tier) => loadout[(int)tier];
 
-    // --- Active spell (reads from loadout) ---
-
-    public int ActiveSlot => activeSlot;
-    public SpellData ActiveSpell => loadout[activeSlot];
+    /// <summary>Loadout array indexed by (int)SpellTier — used by UI.</summary>
     public SpellData[] Loadout => loadout;
 
     /// <summary>All spells the player owns (library).</summary>
     public IReadOnlyList<SpellData> AllSpells => library;
-
-    public void SetActiveSlot(int slot)
-    {
-        if (slot < 0 || slot >= LoadoutSize) return;
-        if (slot == activeSlot) return;
-        activeSlot = slot;
-        OnLoadoutChanged?.Invoke();
-    }
 
     // --- Loadout management ---
 
@@ -107,18 +83,29 @@ public class Grimoire : MonoBehaviour
         OnLoadoutChanged?.Invoke();
     }
 
-    /// <summary>Auto-equip a spell into the first empty loadout slot. Returns the slot index, or -1 if full.</summary>
+    /// <summary>Auto-equip a spell into its tier slot if that slot is empty. Returns the slot index, or -1 if occupied.
+    /// Skill spells try slot 1 first, then slot 2 (the second skill slot).</summary>
     private int AutoEquip(SpellData spell)
     {
-        for (int i = 0; i < LoadoutSize; i++)
+        // Ultimate spells are handled by UltimateAbility — don't put in loadout
+        if (spell.tier == SpellTier.Ultimate) return -1;
+
+        int primarySlot = (int)spell.tier; // Basic=0, Skill=1
+        if (loadout[primarySlot] == null)
         {
-            if (loadout[i] == null)
-            {
-                loadout[i] = spell;
-                OnLoadoutChanged?.Invoke();
-                return i;
-            }
+            loadout[primarySlot] = spell;
+            OnLoadoutChanged?.Invoke();
+            return primarySlot;
         }
+
+        // Skill spells can overflow into slot 2
+        if (spell.tier == SpellTier.Skill && loadout[2] == null)
+        {
+            loadout[2] = spell;
+            OnLoadoutChanged?.Invoke();
+            return 2;
+        }
+
         return -1;
     }
 
@@ -158,12 +145,6 @@ public class Grimoire : MonoBehaviour
         for (int i = 0; i < LoadoutSize; i++)
             if (loadout[i] == spell) loadout[i] = null;
 
-        // Clamp active slot to a non-null slot if possible
-        if (loadout[activeSlot] == null)
-        {
-            for (int i = 0; i < LoadoutSize; i++)
-                if (loadout[i] != null) { activeSlot = i; break; }
-        }
         OnLoadoutChanged?.Invoke();
     }
 
@@ -181,6 +162,21 @@ public class Grimoire : MonoBehaviour
 
     /// <summary>Call at the start of each new floor to reset the usage record.</summary>
     public void ResetUsedSpells() => usedSpellNames.Clear();
+
+    // --- Reset (called on return to main menu) ---
+
+    /// <summary>Wipe all state for a fresh run. Call before loading a new game or tutorial.</summary>
+    public void ResetAll()
+    {
+        library.Clear();
+        for (int i = 0; i < LoadoutSize; i++)
+        {
+            loadout[i] = null;
+            lastCastTimes[i] = -999f;
+        }
+        usedSpellNames.Clear();
+        OnLoadoutChanged?.Invoke();
+    }
 
     // --- Merge Ritual ---
 
@@ -203,6 +199,7 @@ public class Grimoire : MonoBehaviour
         merged.isMerged = true;
         merged.mergedFrom = Array.ConvertAll(sources, s => s.spellName);
         merged.element = sources[0].element;
+        merged.tier = sources[0].tier; // inherited — merge restriction ensures all sources share a tier
 
         // Inherit visuals from first source, scale up slightly for merged power
         merged.projectileColor = sources[0].projectileColor;
@@ -216,7 +213,7 @@ public class Grimoire : MonoBehaviour
         // Union all tags (no duplicates)
         var tagSet = new HashSet<SpellTag>();
         float totalDamage = 0f;
-        float maxCooldown = 0f;
+        float totalCooldown = 0f;
         float totalSpeed = 0f;
 
         foreach (var src in sources)
@@ -226,16 +223,18 @@ public class Grimoire : MonoBehaviour
                     tagSet.Add(t);
 
             totalDamage += src.damage;
-            if (src.cooldown > maxCooldown) maxCooldown = src.cooldown;
+            totalCooldown += src.cooldown;
             totalSpeed += src.speed;
         }
 
         merged.tags = new SpellTag[tagSet.Count];
         tagSet.CopyTo(merged.tags);
 
-        merged.damage = totalDamage * 0.5f;                // halved — looks OP but toned down
-        merged.cooldown = maxCooldown * 2f;                // heavy cooldown penalty
-        merged.speed = totalSpeed / sources.Length;        // average
+        float avgDamage = totalDamage / sources.Length;
+        float damageMult = sources.Length >= 3 ? 1.6f : 1.3f;
+        merged.damage = avgDamage * damageMult;            // averaged then buffed (1.3× for 2, 1.6× for 3)
+        merged.cooldown = totalCooldown / sources.Length;   // averaged
+        merged.speed = totalSpeed / sources.Length;         // averaged
 
         // Keep copies of source spells so SpellExecutor can fire each projectile
         merged.mergedSourceSpells = new SpellData[sources.Length];

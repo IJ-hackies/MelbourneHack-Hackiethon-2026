@@ -29,6 +29,9 @@ public class SpellData : ScriptableObject
     public float  trailWidth;        // 0.05–0.5, trail start width
     public int    burstCount;        // 1–5, number of projectiles fired in a spread
 
+    [Header("Tier")]
+    public SpellTier tier;
+
     [Header("Merge")]
     public bool isMerged;
     public string[] mergedFrom;

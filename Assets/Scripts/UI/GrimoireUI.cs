@@ -24,7 +24,7 @@ public class GrimoireUI : MonoBehaviour
     [SerializeField] private TMP_FontAsset font;
 
     [Header("Layout (tweak in Inspector)")]
-    [SerializeField] private float bookW = 1200f;
+    [SerializeField] private float bookW = 1520f;
     [SerializeField] private float spellBoxSize = 80f;
     [SerializeField] private float spellBoxGap  = 10f;
     [SerializeField] private float titleFontSize = 26f;
@@ -37,8 +37,12 @@ public class GrimoireUI : MonoBehaviour
     private RectTransform _panelRoot;
     private bool isOpen;
 
+    /// <summary>The Grimoire canvas GO for sorting order manipulation.</summary>
+    public GameObject CanvasGO => canvasGO;
+
     // Left page: library list
     private RectTransform libraryContainer;
+    private float _libPageW;
     private readonly List<SpellRowUI> spellRows = new();
 
     // Right page: detail view
@@ -48,9 +52,24 @@ public class GrimoireUI : MonoBehaviour
     private TMP_Text detailCorruptionFlavor;
     private TMP_Text detailTags;
     private TMP_Text detailStats;
-    private GameObject equipSlotsGO;
+
+    // Right page: place + delete buttons
+    private Button   _placeBtn;
+    private TMP_Text _placeBtnLabel;
+    private Button   _deleteBtn;
+
+    // Placement mode
+    private SpellData  _placeSpell;
+    private GameObject _overlayCanvasGO;
 
     private SpellData selectedSpell;
+
+    /// <summary>Currently selected spell in the Grimoire UI (null if none).</summary>
+    public SpellData SelectedSpell => selectedSpell;
+    /// <summary>True when the player is in placement mode (choosing a hotbar slot).</summary>
+    public bool InPlacementMode => _placeSpell != null;
+    /// <summary>Set to true to disable the Delete button (e.g. during tutorial).</summary>
+    public bool DeleteDisabled { get; set; }
 
     private class SpellRowUI
     {
@@ -80,6 +99,19 @@ public class GrimoireUI : MonoBehaviour
             StartCoroutine(UIPanelAnimator.AnimateIn(_panelRoot));
     }
 
+    // Reopens without adding another Pause — used after placement mode
+    // (game is already paused from the original Open() call).
+    private void ReopenAfterPlacement()
+    {
+        if (canvasGO == null) Build();
+        isOpen = true;
+        canvasGO.SetActive(true);
+        // Do NOT call PauseManager.Pause() — still at count 1 from the original Open()
+        RefreshLibrary();
+        if (_panelRoot != null)
+            StartCoroutine(UIPanelAnimator.AnimateIn(_panelRoot));
+    }
+
     public void Close()
     {
         if (!isOpen) return;
@@ -98,6 +130,17 @@ public class GrimoireUI : MonoBehaviour
     private void OnDestroy()
     {
         if (canvasGO != null) Destroy(canvasGO);
+        DestroyPlacementOverlay();
+        SettingsData.OnBindingsChanged -= OnBindingsChangedStub;
+    }
+
+    // Stub — kept so the unsubscribe in OnDestroy is safe even if never subscribed
+    private void OnBindingsChangedStub() { }
+
+    private void Update()
+    {
+        if (_overlayCanvasGO != null && Input.GetKeyDown(KeyCode.Escape))
+            OnPlacementCancelled();
     }
 
     // ── Build ────────────────────────────────────────────────────────────────
@@ -184,9 +227,31 @@ public class GrimoireUI : MonoBehaviour
             new Vector2(leftPageX, -topOffset), new Vector2(pageW, 30f),
             "~ Spell Library ~", titleFontSize, new Color(0.12f, 0.12f, 0.12f), TextAlignmentOptions.Center);
 
-        libraryContainer = MakeRT("LibList", bookRT,
+        _libPageW = pageW;
+
+        // ScrollRect for overflow support
+        var scrollRT = MakeRT("LibScroll", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(leftPageX, -(topOffset + 40f)), new Vector2(pageW, pageH - 50f));
+
+        var viewportRT = MakeRT("Viewport", scrollRT,
+            Vector2.zero, Vector2.one, new Vector2(0f, 1f),
+            Vector2.zero, Vector2.zero);
+        viewportRT.offsetMin = Vector2.zero;
+        viewportRT.offsetMax = Vector2.zero;
+        viewportRT.gameObject.AddComponent<RectMask2D>();
+
+        libraryContainer = MakeRT("LibContent", viewportRT,
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+            Vector2.zero, new Vector2(0f, pageH - 50f));
+
+        var sr = scrollRT.gameObject.AddComponent<ScrollRect>();
+        sr.content          = libraryContainer;
+        sr.viewport         = viewportRT;
+        sr.horizontal       = false;
+        sr.vertical         = true;
+        sr.scrollSensitivity = 30f;
+        sr.movementType     = ScrollRect.MovementType.Clamped;
 
         // ── Right page: spell details ───────────────────────────────────
         MakeTMP("DetailTitle", bookRT,
@@ -198,22 +263,22 @@ public class GrimoireUI : MonoBehaviour
 
         detailName = MakeTMP("DName", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 30f),
-            "", 32f, Color.white, TextAlignmentOptions.Center);
-        dy -= 30f;
+            new Vector2(rightPageX, dy), new Vector2(pageW, 36f),
+            "", 38f, Color.white, TextAlignmentOptions.Center);
+        dy -= 38f;
 
         detailElement = MakeTMP("DElement", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 22f),
-            "", 17f, new Color(0.9f, 0.47f, 0f), TextAlignmentOptions.Center);
-        dy -= 24f;
+            new Vector2(rightPageX, dy), new Vector2(pageW, 24f),
+            "", 21f, new Color(0.9f, 0.47f, 0f), TextAlignmentOptions.Center);
+        dy -= 26f;
 
         detailFlavor = MakeTMP("DFlavor", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(pageW, 50f),
-            "", 17f, new Color(0.35f, 0.35f, 0.35f), TextAlignmentOptions.Center);
+            new Vector2(rightPageX, dy), new Vector2(pageW, 56f),
+            "", 19f, new Color(0.35f, 0.35f, 0.35f), TextAlignmentOptions.Center);
         detailFlavor.fontStyle = FontStyles.Italic;
-        dy -= 50f;
+        dy -= 58f;
 
         detailCorruptionFlavor = MakeTMP("DCFlavor", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
@@ -233,42 +298,46 @@ public class GrimoireUI : MonoBehaviour
         detailStats = MakeTMP("DStats", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(rightPageX, dy), new Vector2(pageW, 25f),
-            "", 19f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
-        dy -= 42f;
+            "", 20f, new Color(0.2f, 0.2f, 0.2f), TextAlignmentOptions.Center);
+        dy -= 36f;
 
-        // Equip slot buttons (1 / 2 / 3)
-        float slotBtnW   = Mathf.Min(88f, (pageW - 16f) / 3f);
-        float slotBtnGap = 8f;
-        float totalSlotW = 3f * slotBtnW + 2f * slotBtnGap;
-        float slotStartX = rightPageX - totalSlotW / 2f + slotBtnW / 2f;
+        // Place in Grimoire button (left ~60%) + Delete button (right ~36%), side by side
+        float rowGap  = 8f;
+        float placeW  = pageW * 0.58f;
+        float deleteW = pageW * 0.36f;
+        // Center each button within the row (row is centered at rightPageX)
+        float placeCx  = rightPageX - deleteW / 2f - rowGap / 2f;
+        float deleteCx = rightPageX + placeW  / 2f + rowGap / 2f;
 
-        var equipRT = MakeRT("EquipSlots", bookRT,
+        var placeBtnRT = MakeRT("PlaceBtn", bookRT,
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(rightPageX, dy), new Vector2(totalSlotW, 36f));
-        equipSlotsGO = equipRT.gameObject;
+            new Vector2(placeCx, dy), new Vector2(placeW, 36f));
+        var placeBg = placeBtnRT.gameObject.AddComponent<Image>();
+        placeBg.color  = new Color(0.15f, 0.52f, 0.18f, 0.88f);
+        _placeBtn      = placeBtnRT.gameObject.AddComponent<Button>();
+        _placeBtn.targetGraphic = placeBg;
+        _placeBtn.interactable  = false;
+        _placeBtn.onClick.AddListener(() => StartPlacementMode(selectedSpell));
+        placeBtnRT.gameObject.AddComponent<UIButtonHover>();
+        _placeBtnLabel = MakeTMP("PlaceBtnLabel", placeBtnRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero,
+            "Place in Grimoire", 14f, Color.white, TextAlignmentOptions.Center);
 
-        for (int i = 0; i < 3; i++)
-        {
-            int slot = i;
-            float bx = (i - 1) * (slotBtnW + slotBtnGap);
-            var bRT = MakeRT($"SlotBtn_{i}", equipRT,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(bx, 0f), new Vector2(slotBtnW, 36f));
-            var bImg = bRT.gameObject.AddComponent<Image>();
-            bImg.sprite = buttonSprite;
-            bImg.type = Image.Type.Sliced;
-            bImg.color = new Color(0.72f, 0.58f, 0.42f);
-            var btn = bRT.gameObject.AddComponent<Button>();
-            btn.targetGraphic = bImg;
-            btn.onClick.AddListener(() => OnEquipToSlot(slot));
-            bRT.gameObject.AddComponent<UIButtonHover>();
-            MakeTMP($"SlotLabel_{i}", bRT,
-                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
-                Vector2.zero, Vector2.zero,
-                $"Slot {i + 1}", statsFontSize, Color.white, TextAlignmentOptions.Center);
-        }
-
-        equipSlotsGO.SetActive(false);
+        var deleteBtnRT = MakeRT("DeleteBtn", bookRT,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(deleteCx, dy), new Vector2(deleteW, 36f));
+        var deleteBg = deleteBtnRT.gameObject.AddComponent<Image>();
+        deleteBg.color  = new Color(0.52f, 0.12f, 0.12f, 0.88f);
+        _deleteBtn      = deleteBtnRT.gameObject.AddComponent<Button>();
+        _deleteBtn.targetGraphic = deleteBg;
+        _deleteBtn.interactable  = false;
+        _deleteBtn.onClick.AddListener(DeleteSelectedSpell);
+        deleteBtnRT.gameObject.AddComponent<UIButtonHover>();
+        MakeTMP("DeleteBtnLabel", deleteBtnRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero,
+            "Delete (+HP)", 13f, Color.white, TextAlignmentOptions.Center);
 
         // X close button — top-right of book image
         float closeBtnSize = 48f;
@@ -290,6 +359,129 @@ public class GrimoireUI : MonoBehaviour
         canvasGO.SetActive(false);
     }
 
+    // ── Placement mode ────────────────────────────────────────────────────────
+
+    private void StartPlacementMode(SpellData spell)
+    {
+        if (spell == null) return;
+        _placeSpell = spell;
+        // Hide grimoire canvas without unpausing (game stays paused)
+        isOpen = false;
+        if (_panelRoot != null) StartCoroutine(HideForPlacementRoutine());
+        else { canvasGO.SetActive(false); ActivatePlacementOverlay(); }
+    }
+
+    private System.Collections.IEnumerator HideForPlacementRoutine()
+    {
+        if (_panelRoot != null)
+            yield return StartCoroutine(UIPanelAnimator.AnimateOut(_panelRoot));
+        canvasGO.SetActive(false);
+        ActivatePlacementOverlay();
+    }
+
+    private void ActivatePlacementOverlay()
+    {
+        ShowPlacementOverlay();
+        SpellHotbar.Instance?.EnterPlacementMode(_placeSpell, OnPlacementSlotSelected);
+    }
+
+    private void ShowPlacementOverlay()
+    {
+        _overlayCanvasGO = new GameObject("PlacementOverlay_Canvas");
+        var canvas          = _overlayCanvasGO.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 89; // below hotbar (90)
+
+        var scaler = _overlayCanvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.matchWidthOrHeight  = 0.5f;
+        _overlayCanvasGO.AddComponent<GraphicRaycaster>();
+
+        // Full-screen dark background — click anywhere to cancel
+        var bgRT = MakeRT("OverlayBg", _overlayCanvasGO.transform,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        bgRT.offsetMin = Vector2.zero; bgRT.offsetMax = Vector2.zero;
+        var bgImg  = bgRT.gameObject.AddComponent<Image>();
+        bgImg.color = new Color(0f, 0f, 0f, 0.58f);
+        var bgBtn  = bgRT.gameObject.AddComponent<Button>();
+        bgBtn.targetGraphic = bgImg;
+        bgBtn.onClick.AddListener(OnPlacementCancelled);
+
+        // Instruction label
+        MakeTMP("ChooseLabel", _overlayCanvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 120f), new Vector2(700f, 44f),
+            "~ Click a glowing slot to equip ~",
+            24f, new Color(1f, 0.95f, 0.8f, 0.92f), TextAlignmentOptions.Center);
+
+        // Cancel button — centered on screen
+        var cancelRT  = MakeRT("CancelBtn", _overlayCanvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            Vector2.zero, new Vector2(220f, 46f));
+        var cancelBg   = cancelRT.gameObject.AddComponent<Image>();
+        cancelBg.color = new Color(0.52f, 0.1f, 0.1f, 0.9f);
+        var cancelBtn  = cancelRT.gameObject.AddComponent<Button>();
+        cancelBtn.targetGraphic = cancelBg;
+        cancelBtn.onClick.AddListener(OnPlacementCancelled);
+        cancelRT.gameObject.AddComponent<UIButtonHover>();
+        MakeTMP("CancelLabel", cancelRT,
+            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero,
+            "✕  Cancel", 18f, Color.white, TextAlignmentOptions.Center);
+    }
+
+    private void DestroyPlacementOverlay()
+    {
+        if (_overlayCanvasGO != null) { Destroy(_overlayCanvasGO); _overlayCanvasGO = null; }
+    }
+
+    private void OnPlacementSlotSelected(int slot)
+    {
+        if (slot == -1) UltimateAbility.Instance?.SetSpell(_placeSpell);
+        else            Grimoire.Instance?.EquipToSlot(_placeSpell, slot);
+
+        SFXManager.Instance?.PlayEquipSpell();
+        SpellHotbar.Instance?.ExitPlacementMode();
+        DestroyPlacementOverlay();
+        _placeSpell = null;
+        ReopenAfterPlacement(); // game was already paused — don't double-count
+    }
+
+    private void OnPlacementCancelled()
+    {
+        SpellHotbar.Instance?.ExitPlacementMode();
+        DestroyPlacementOverlay();
+        _placeSpell = null;
+        ReopenAfterPlacement(); // game was already paused — don't double-count
+    }
+
+    private void DeleteSelectedSpell()
+    {
+        if (selectedSpell == null) return;
+        SpellData toDelete = selectedSpell;
+        float healAmount = toDelete.damage;
+
+        // Remove from grimoire library (also unequips from loadout if slotted)
+        Grimoire.Instance?.RemoveSpell(toDelete);
+
+        // If it was the ultimate, also clear UltimateAbility
+        if (toDelete.tier == SpellTier.Ultimate && UltimateAbility.Instance?.Spell == toDelete)
+            UltimateAbility.Instance?.SetSpell(null);
+
+        // Heal player by the spell's damage value
+        var playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            var hp = playerObj.GetComponent<Health>();
+            hp?.Heal(healAmount);
+        }
+
+        selectedSpell = null;
+        RefreshLibrary();
+    }
+
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     private void RefreshLibrary()
@@ -297,116 +489,167 @@ public class GrimoireUI : MonoBehaviour
         var grimoire = Grimoire.Instance;
         if (grimoire == null) return;
 
-        // Clear old rows
-        foreach (var row in spellRows)
-            if (row.rt != null) Destroy(row.rt.gameObject);
+        // Clear all children (spell cells + tier dividers)
+        foreach (Transform child in libraryContainer)
+            Destroy(child.gameObject);
         spellRows.Clear();
 
-        // Build icon grid
         var allSpells = grimoire.AllSpells;
 
-        float boxSize  = spellBoxSize;
-        float gap      = spellBoxGap;
-        float nameH    = 20f;
-        float cellH    = boxSize + 4f + nameH;
-        float contW    = libraryContainer.sizeDelta.x;
-        int   cols     = Mathf.Max(1, Mathf.FloorToInt((contW + gap) / (boxSize + gap)));
-        float gridW    = cols * boxSize + (cols - 1) * gap;
-        float startX   = -gridW / 2f + boxSize / 2f;
+        float boxSize = spellBoxSize;
+        float gap     = spellBoxGap;
+        float nameH   = 20f;
+        float cellH   = boxSize + 4f + nameH;
+        float contW   = _libPageW > 0f ? _libPageW : libraryContainer.sizeDelta.x;
+        int   cols    = Mathf.Max(1, Mathf.FloorToInt((contW + gap) / (boxSize + gap)));
+        float gridW   = cols * boxSize + (cols - 1) * gap;
+        float startX  = -gridW / 2f + boxSize / 2f;
 
-        for (int i = 0; i < allSpells.Count; i++)
+        SpellTier[] tiers     = { SpellTier.Basic, SpellTier.Skill, SpellTier.Ultimate };
+        Color[]     tierColors = {
+            new Color(0.15f, 0.75f, 0.25f),
+            new Color(0.25f, 0.55f, 1.0f),
+            new Color(0.95f, 0.68f, 0.1f),
+        };
+        string[] tierLabels = { "── BASIC ──", "── SKILL ──", "── ULTIMATE ──" };
+
+        float cursorY    = 0f;
+        const float divH    = 20f;
+        const float secGap  = 10f;
+        int   spellIndex = 0;
+
+        for (int ti = 0; ti < tiers.Length; ti++)
         {
-            SpellData spell = allSpells[i];
-            int c = i % cols;
-            int r = i / cols;
+            SpellTier tier = tiers[ti];
+            var tierSpells = new System.Collections.Generic.List<SpellData>();
+            foreach (var s in allSpells)
+                if (s.tier == tier) tierSpells.Add(s);
 
-            bool isCorrupted = spell.HasTag(SpellTag.SELF_DAMAGE)
-                            || spell.HasTag(SpellTag.ENEMY_HOMING)
-                            || spell.HasTag(SpellTag.REVERSED_CONTROLS);
+            if (tierSpells.Count == 0) continue;
 
-            var row = new SpellRowUI { spell = spell };
-
-            // Cell container (box + name)
-            row.rt = MakeRT($"Cell_{i}", libraryContainer,
+            // Section divider header
+            MakeTMP($"Div_{tier}", libraryContainer,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(startX + c * (boxSize + gap), -(r * (cellH + gap))),
-                new Vector2(boxSize, cellH));
+                new Vector2(0f, cursorY), new Vector2(contW, divH),
+                tierLabels[ti], 9f, tierColors[ti], TextAlignmentOptions.Center);
+            cursorY -= divH + 4f;
 
-            // Square icon box
-            var boxRT = MakeRT($"Box_{i}", row.rt,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                Vector2.zero, new Vector2(boxSize, boxSize));
-            row.bg = boxRT.gameObject.AddComponent<Image>();
-            row.bg.sprite = boxSprite;
-            row.bg.type = Image.Type.Sliced;
-            row.bg.color = isCorrupted
-                ? new Color(0.38f, 0.12f, 0.12f)
-                : new Color(1f, 0.99f, 0.92f);
-
-            // Spell icon inside the box (inset)
-            float iconInset = boxSize * 0.12f;
-            float iconDim = boxSize - iconInset * 2f;
-            var iconRT = MakeRT($"Icon_{i}", boxRT,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(iconDim, iconDim));
-            row.icon = iconRT.gameObject.AddComponent<Image>();
-            row.icon.preserveAspect = true;
-            row.icon.raycastTarget = false;
-            if (spell.icon != null)
+            // Spell icon grid for this tier
+            for (int i = 0; i < tierSpells.Count; i++)
             {
-                row.icon.sprite = spell.icon;
-                row.icon.enabled = true;
+                SpellData spell = tierSpells[i];
+                int c = i % cols;
+                int r = i / cols;
+
+                bool isCorrupted = spell.HasTag(SpellTag.SELF_DAMAGE)
+                                || spell.HasTag(SpellTag.ENEMY_HOMING)
+                                || spell.HasTag(SpellTag.REVERSED_CONTROLS);
+
+                var row = new SpellRowUI { spell = spell };
+
+                row.rt = MakeRT($"Cell_{spellIndex}", libraryContainer,
+                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(startX + c * (boxSize + gap), cursorY - r * (cellH + gap)),
+                    new Vector2(boxSize, cellH));
+
+                var boxRT = MakeRT($"Box_{spellIndex}", row.rt,
+                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    Vector2.zero, new Vector2(boxSize, boxSize));
+                row.bg = boxRT.gameObject.AddComponent<Image>();
+                row.bg.sprite = boxSprite;
+                row.bg.type   = Image.Type.Sliced;
+                row.bg.color  = isCorrupted
+                    ? new Color(0.38f, 0.12f, 0.12f)
+                    : new Color(1f, 0.99f, 0.92f);
+
+                float iconInset = boxSize * 0.12f;
+                float iconDim   = boxSize - iconInset * 2f;
+                var iconRT = MakeRT($"Icon_{spellIndex}", boxRT,
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    Vector2.zero, new Vector2(iconDim, iconDim));
+                row.icon = iconRT.gameObject.AddComponent<Image>();
+                row.icon.preserveAspect = true;
+                row.icon.raycastTarget  = false;
+                if (spell.icon != null)
+                {
+                    row.icon.sprite  = spell.icon;
+                    row.icon.enabled = true;
+                }
+                else
+                {
+                    row.icon.enabled = false;
+                }
+
+                bool isEquipped = IsSpellEquipped(spell);
+                row.bg.color = isEquipped
+                    ? new Color(0.12f, 0.52f, 0.18f, 0.85f)
+                    : isCorrupted ? new Color(0.38f, 0.12f, 0.12f) : new Color(1f, 0.99f, 0.92f);
+
+                var btn = boxRT.gameObject.AddComponent<Button>();
+                btn.targetGraphic = row.bg;
+                btn.transition    = Selectable.Transition.None;
+                SpellData captured = spell;
+                btn.onClick.AddListener(() => SelectSpell(captured));
+                boxRT.gameObject.AddComponent<UIButtonHover>();
+
+                // Small tier badge in top-left corner of box
+                MakeTMP($"TierBadge_{spellIndex}", boxRT,
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(3f, -3f), new Vector2(14f, 14f),
+                    spell.tier == SpellTier.Ultimate ? "U" : spell.tier.ToString()[0].ToString(),
+                    9f, tierColors[ti], TextAlignmentOptions.Center);
+
+                Color textColor = isCorrupted
+                    ? new Color(0.79f, 0.17f, 0.17f)
+                    : new Color(0.12f, 0.12f, 0.12f);
+
+                string label = spell.spellName;
+                if (spell.isMerged) label += " *";
+
+                row.nameText = MakeTMP($"Name_{spellIndex}", row.rt,
+                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(0f, -(boxSize + 4f)), new Vector2(boxSize + 10f, nameH),
+                    label, listFontSize * 0.8f, textColor, TextAlignmentOptions.Center);
+
+                spellRows.Add(row);
+                spellIndex++;
             }
-            else
-            {
-                row.icon.enabled = false;
-            }
 
-            var btn = boxRT.gameObject.AddComponent<Button>();
-            btn.targetGraphic = row.bg;
-            btn.transition = Selectable.Transition.None;
-            SpellData captured = spell;
-            btn.onClick.AddListener(() => SelectSpell(captured));
-            boxRT.gameObject.AddComponent<UIButtonHover>();
-
-            // Name label below the box
-            Color textColor = isCorrupted
-                ? new Color(0.79f, 0.17f, 0.17f)
-                : new Color(0.12f, 0.12f, 0.12f);
-
-            string label = spell.spellName;
-            if (spell.isMerged) label += " *";
-
-            row.nameText = MakeTMP($"Name_{i}", row.rt,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -(boxSize + 4f)), new Vector2(boxSize + 10f, nameH),
-                label, listFontSize * 0.8f, textColor, TextAlignmentOptions.Center);
-
-            spellRows.Add(row);
+            int numRows = Mathf.CeilToInt((float)tierSpells.Count / cols);
+            cursorY -= numRows * (cellH + gap) + secGap;
         }
 
-        // Select first spell if none selected
+        // Resize content height to fit all sections
+        libraryContainer.sizeDelta = new Vector2(0f, Mathf.Abs(cursorY) + 10f);
+
         if (selectedSpell == null && allSpells.Count > 0)
             SelectSpell(allSpells[0]);
         else if (selectedSpell != null)
-            SelectSpell(selectedSpell); // refresh highlight
+            SelectSpell(selectedSpell);
     }
 
     private void SelectSpell(SpellData spell)
     {
         selectedSpell = spell;
 
-        // Highlight selected box
+        // Highlight selected box; preserve equipped (green) tint on non-selected
         foreach (var row in spellRows)
         {
             bool sel = row.spell == spell;
             bool corrupted = row.spell.HasTag(SpellTag.SELF_DAMAGE)
                           || row.spell.HasTag(SpellTag.ENEMY_HOMING)
                           || row.spell.HasTag(SpellTag.REVERSED_CONTROLS);
+            bool equipped = IsSpellEquipped(row.spell);
             row.bg.color = sel
                 ? new Color(1f, 0.95f, 0.75f)
-                : corrupted ? new Color(0.38f, 0.12f, 0.12f) : new Color(1f, 0.99f, 0.92f);
+                : equipped  ? new Color(0.12f, 0.52f, 0.18f, 0.85f)
+                : corrupted ? new Color(0.38f, 0.12f, 0.12f)
+                : new Color(1f, 0.99f, 0.92f);
         }
+
+        // Enable/disable action buttons
+        if (_placeBtn   != null) _placeBtn.interactable   = spell != null;
+        if (_deleteBtn  != null) _deleteBtn.interactable  = spell != null && !DeleteDisabled;
 
         // Populate right page
         if (spell == null)
@@ -417,11 +660,8 @@ public class GrimoireUI : MonoBehaviour
             detailCorruptionFlavor.text = "";
             detailTags.text = "";
             detailStats.text = "";
-            if (equipSlotsGO != null) equipSlotsGO.SetActive(false);
             return;
         }
-
-        if (equipSlotsGO != null) equipSlotsGO.SetActive(true);
 
         detailName.text = spell.spellName;
 
@@ -432,8 +672,18 @@ public class GrimoireUI : MonoBehaviour
             ? new Color(0.79f, 0.17f, 0.17f)
             : Color.white;
 
-        detailElement.text = !string.IsNullOrEmpty(spell.element)
-            ? $"Element: {spell.element}" : "";
+        // Tier display with color
+        string tierName = spell.tier.ToString().ToUpper();
+        Color tierColor = spell.tier switch
+        {
+            SpellTier.Basic    => new Color(0.25f, 0.85f, 0.35f),
+            SpellTier.Skill    => new Color(0.35f, 0.65f, 1.0f),
+            SpellTier.Ultimate => new Color(1.0f,  0.72f, 0.15f),
+            _                  => Color.white,
+        };
+        string elementPart = !string.IsNullOrEmpty(spell.element) ? $"  |  {spell.element}" : "";
+        detailElement.text = $"[{tierName}]{elementPart}";
+        detailElement.color = tierColor;
 
         detailFlavor.text = !string.IsNullOrEmpty(spell.flavor)
             ? $"\"{spell.flavor}\"" : "";
@@ -456,13 +706,17 @@ public class GrimoireUI : MonoBehaviour
             : new Color(0.2f, 0.2f, 0.2f);
     }
 
-    private void OnEquipToSlot(int slot)
-    {
-        if (selectedSpell == null) return;
-        Grimoire.Instance?.EquipToSlot(selectedSpell, slot);
-    }
-
     // ── Tag Descriptions ────────────────────────────────────────────────────
+
+    private static bool IsSpellEquipped(SpellData spell)
+    {
+        if (spell == null) return false;
+        var g = Grimoire.Instance;
+        if (g != null)
+            foreach (var s in g.Loadout)
+                if (s == spell) return true;
+        return UltimateAbility.Instance?.Spell == spell;
+    }
 
     private static readonly Dictionary<SpellTag, string> tagDescriptions = new()
     {

@@ -176,6 +176,34 @@
   <hr>
 
   <div>
+    <h3>Border Tiles</h3>
+    <p style="font-size:10px;color:#666;margin-bottom:4px;">Outer ring = solid. Inner ring = half-wall shadows. Opening = 2-tile passage (9–10) with directional corner end-caps at 8 &amp; 11.</p>
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:3px 6px;align-items:center;font-size:10px;color:#aaa;">
+      <span style="color:#888;font-size:9px;text-transform:uppercase;letter-spacing:1px;grid-column:1/-1;margin-top:2px;">Outer Border</span>
+      <span>Solid</span>    <select id="bt_outerSolid"   style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('outerSolid',+this.value)"></select>
+      <span style="color:#888;font-size:9px;text-transform:uppercase;letter-spacing:1px;grid-column:1/-1;margin-top:2px;">Inner Ring</span>
+      <span>Top</span>      <select id="bt_innerTop"      style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerTop',+this.value)"></select>
+      <span>Bottom</span>   <select id="bt_innerBottom"   style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerBottom',+this.value)"></select>
+      <span>Left</span>     <select id="bt_innerLeft"     style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerLeft',+this.value)"></select>
+      <span>Right</span>    <select id="bt_innerRight"    style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerRight',+this.value)"></select>
+      <span style="color:#888;font-size:9px;text-transform:uppercase;letter-spacing:1px;grid-column:1/-1;margin-top:2px;">Opening Shoulders</span>
+      <span title="Inner ring tile above opening (left/right borders, row 8)">Vert Top</span>   <select id="bt_innerShoulderTop"    style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerShoulderTop',+this.value)"></select>
+      <span title="Inner ring tile below opening (left/right borders, row 11)">Vert Bot</span>  <select id="bt_innerShoulderBottom" style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerShoulderBottom',+this.value)"></select>
+      <span title="Inner ring tile left of opening (top/bottom borders, col 8)">Horiz L</span>  <select id="bt_innerShoulderLeft"   style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerShoulderLeft',+this.value)"></select>
+      <span title="Inner ring tile right of opening (top/bottom borders, col 11)">Horiz R</span><select id="bt_innerShoulderRight"  style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerShoulderRight',+this.value)"></select>
+      <span style="color:#888;font-size:9px;text-transform:uppercase;letter-spacing:1px;grid-column:1/-1;margin-top:2px;">Room Corners</span>
+      <span>Corner TL</span><select id="bt_innerCornerTL" style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerCornerTL',+this.value)"></select>
+      <span>Corner TR</span><select id="bt_innerCornerTR" style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerCornerTR',+this.value)"></select>
+      <span>Corner BL</span><select id="bt_innerCornerBL" style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerCornerBL',+this.value)"></select>
+      <span>Corner BR</span><select id="bt_innerCornerBR" style="background:#1a1a2e;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 4px;font-size:10px;" onchange="setBorderTile('innerCornerBR',+this.value)"></select>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px;" onclick="autofillAllBorders()">Auto-fill All Borders</button>
+    <p style="font-size:10px;color:#666;margin-top:2px;">Locks outer ring. Inner ring stays paintable for manual tweaks.</p>
+  </div>
+
+  <hr>
+
+  <div>
     <h3>Export / Import</h3>
     <div class="btn-group">
       <button class="btn btn-primary" onclick="exportAll()">Export All Tilesets</button>
@@ -194,7 +222,7 @@
   </div>
   <div class="instructions">
     Left-click: paint selected tile. Right-click: erase to floor base. Click+drag to paint continuously.<br>
-    Red dots = entry openings (locked). Borders locked to wall. Right-click palette tile to cycle Floor/Wall/Detail.<br>
+    Red dots = entry openings (locked). Borders locked — use Auto-fill All Borders to set outer edge tiles. Right-click palette tile to cycle Floor/Wall/Detail.<br>
     Keys 0-9/A-F = select tile, 1-8 = switch chamber, X = void.
   </div>
 </div>
@@ -235,10 +263,20 @@ let currentTile = 0;           // 0-15 or -1 for void
 let tileTypes = [];            // 16 entries: 'floor', 'wall', 'detail'
 let floorBase = 6;
 let isPainting = false;
+let borderTiles = {
+  outerSolid: 12,
+  innerTop: 3,      innerBottom: 9,  innerLeft: 1,   innerRight: 11,
+  innerCornerTL: 13, innerCornerTR: 0, innerCornerBL: 8, innerCornerBR: 15,
+  // Shoulder tiles: inner ring adjacent to opening (the "rounding" curve)
+  // Vertical openings (left/right borders): top of opening = shoulderTop, bottom = shoulderBottom
+  // Horizontal openings (top/bottom borders): left of opening = shoulderLeft, right = shoulderRight
+  innerShoulderTop: 5,   innerShoulderBottom: 10,
+  innerShoulderLeft: 5,  innerShoulderRight: 10,
+};
 
 // Entry & border positions
 const ENTRIES = new Set();
-[[0,8],[0,9],[0,10],[0,11],[19,8],[19,9],[19,10],[19,11],[8,0],[9,0],[10,0],[11,0],[8,19],[9,19],[10,19],[11,19]].forEach(([r,c]) => ENTRIES.add(r+','+c));
+[[0,9],[0,10],[19,9],[19,10],[9,0],[10,0],[9,19],[10,19]].forEach(([r,c]) => ENTRIES.add(r+','+c));
 const BORDERS = new Set();
 for (let c=0;c<20;c++) { BORDERS.add('0,'+c); BORDERS.add('19,'+c); }
 for (let r=0;r<20;r++) { BORDERS.add(r+',0'); BORDERS.add(r+',19'); }
@@ -252,8 +290,8 @@ function isBlocking(idx) { return idx < 0 || tileTypes[idx] === 'wall'; }
 // ---- Init ----
 function init() {
   // Default tile types
-  tileTypes = new Array(16).fill('floor');
-  [0,8,12,13,15].forEach(i => tileTypes[i] = 'wall');
+  tileTypes = new Array(16).fill('wall');
+  [6, 2, 5, 7, 10].forEach(i => tileTypes[i] = 'floor');
 
   // Empty chambers
   for (let i=0;i<8;i++) chambers.push(makeEmpty());
@@ -264,14 +302,19 @@ function init() {
     try {
       const s = JSON.parse(saved);
       if (s.chambers?.length === 8) chambers = s.chambers;
-      if (s.tileTypes?.length === 16) tileTypes = s.tileTypes;
       if (typeof s.floorBase === 'number') floorBase = s.floorBase;
       if (s.classifications) TILE_CLASSIFICATIONS = s.classifications;
+      if (s.borderTiles) borderTiles = { ...borderTiles, ...s.borderTiles };
       if (s.spriteDataUrl) { spriteDataUrl = s.spriteDataUrl; sliceSpritesheet(); }
     } catch(e) {}
   }
 
-  // Migrate: ensure all entry tiles are floor (handles old 2-tile → new 4-tile upgrade)
+  // Enforce fixed tile types (always, regardless of saved state)
+  tileTypes = new Array(16).fill('wall');
+  [floorBase, 2, 5, 7, 10].forEach(i => tileTypes[i] = 'floor');
+  updateClassificationsFromTypes();
+
+  // Ensure outer entry tiles are floor
   for (let i = 0; i < chambers.length; i++) {
     ENTRIES.forEach(key => {
       const [r,c] = key.split(',').map(Number);
@@ -284,22 +327,19 @@ function init() {
   buildGrid();
   buildLabels();
   buildFloorBaseSelect();
+  buildBorderTileSelects();
   renderGrid();
   validate();
 }
 
 function makeEmpty() {
   const g = [];
-  const wb = getFirstWall();
   for (let r=0;r<20;r++) {
     const row = [];
-    for (let c=0;c<20;c++) {
-      if (isEntry(r,c)) row.push(floorBase);
-      else if (isBorder(r,c)) row.push(wb);
-      else row.push(floorBase);
-    }
+    for (let c=0;c<20;c++) row.push(floorBase);
     g.push(row);
   }
+  applyBorderTilesToGrid(g);
   return g;
 }
 
@@ -406,13 +446,8 @@ function selectTile(idx) {
 }
 
 function cycleTileType(idx) {
-  const cycle = { floor:'wall', wall:'detail', detail:'floor' };
-  tileTypes[idx] = cycle[tileTypes[idx]];
-  // Update classifications for export
-  updateClassificationsFromTypes();
-  renderPalette();
-  validate();
-  saveState();
+  // Tile types are fixed: all tiles except floorBase are walls
+  showToast('Tile types are fixed: only tile ' + floorBase.toString(16).toUpperCase() + ' is floor');
 }
 
 function updateClassificationsFromTypes() {
@@ -527,6 +562,99 @@ function fillFloor() {
 }
 function clearInterior() { fillFloor(); }
 
+// ---- Border Tiles ----
+// Returns the outer end-cap tile for the cell flanking the opening on the outer border.
+// Left/right borders (vertical opening): top end-cap = innerTop, bottom = innerBottom
+// Top/bottom borders (horizontal opening): left end-cap = innerLeft, right = innerRight
+function getOuterEndCapTile(r, c) {
+  if ((c === 0 || c === 19) && r === 8)  return borderTiles.innerTop;
+  if ((c === 0 || c === 19) && r === 11) return borderTiles.innerBottom;
+  if ((r === 0 || r === 19) && c === 8)  return borderTiles.innerLeft;
+  if ((r === 0 || r === 19) && c === 11) return borderTiles.innerRight;
+  return null;
+}
+
+function getInnerRingTile(r, c) {
+  const top = r === 1, bot = r === 18, lft = c === 1, rgt = c === 18;
+  // Where inner ring meets outer border corners
+  if ((top || bot) && (c === 0 || c === 19)) return borderTiles.outerSolid;
+  if ((lft || rgt) && (r === 0 || r === 19)) return borderTiles.outerSolid;
+  // Room interior corners (TL/TR/BL/BR)
+  if (top && lft) return borderTiles.innerCornerTL;
+  if (top && rgt) return borderTiles.innerCornerTR;
+  if (bot && lft) return borderTiles.innerCornerBL;
+  if (bot && rgt) return borderTiles.innerCornerBR;
+  // Opening flanks (positions 8 & 11) — shoulder tiles for the rounded passage edge
+  // Horizontal openings (top/bottom borders): left shoulder = innerShoulderLeft, right = innerShoulderRight
+  if (top && c === 8)  return borderTiles.innerShoulderLeft;
+  if (top && c === 11) return borderTiles.innerShoulderRight;
+  if (bot && c === 8)  return borderTiles.innerShoulderLeft;
+  if (bot && c === 11) return borderTiles.innerShoulderRight;
+  // Vertical openings (left/right borders): top shoulder = innerShoulderTop, bottom = innerShoulderBottom
+  if (lft && r === 8)  return borderTiles.innerShoulderTop;
+  if (lft && r === 11) return borderTiles.innerShoulderBottom;
+  if (rgt && r === 8)  return borderTiles.innerShoulderTop;
+  if (rgt && r === 11) return borderTiles.innerShoulderBottom;
+  // 2-tile inner opening floor (positions 9–10 only)
+  if ((top || bot) && (c === 9 || c === 10)) return floorBase;
+  if ((lft || rgt) && (r === 9 || r === 10)) return floorBase;
+  // Straight half-wall sections
+  if (top) return borderTiles.innerTop;
+  if (bot) return borderTiles.innerBottom;
+  if (lft) return borderTiles.innerLeft;
+  if (rgt) return borderTiles.innerRight;
+  return floorBase;
+}
+
+function applyBorderTilesToGrid(g) {
+  for (let r = 0; r < 20; r++) {
+    for (let c = 0; c < 20; c++) {
+      const onOuter = r === 0 || r === 19 || c === 0 || c === 19;
+      const onInner = !onOuter && (r === 1 || r === 18 || c === 1 || c === 18);
+      if (!onOuter && !onInner) continue;
+
+      if (onOuter) {
+        if (isEntry(r, c)) { g[r][c] = floorBase; continue; }
+        const endCap = getOuterEndCapTile(r, c);
+        if (endCap !== null) { g[r][c] = endCap; continue; }
+        g[r][c] = borderTiles.outerSolid;
+      } else {
+        g[r][c] = getInnerRingTile(r, c);
+      }
+    }
+  }
+}
+
+function autofillAllBorders() {
+  for (let i = 0; i < 8; i++) applyBorderTilesToGrid(chambers[i]);
+  renderGrid(); validate(); saveState();
+  showToast('Borders auto-filled');
+}
+
+function buildBorderTileSelects() {
+  Object.keys(borderTiles).forEach(k => {
+    const sel = document.getElementById('bt_' + k);
+    if (!sel) return;
+    sel.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i.toString(16).toUpperCase();
+      if (i === borderTiles[k]) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function setBorderTile(key, val) {
+  borderTiles[key] = val;
+  saveState();
+}
+
+function isBorderAcceptable(idx) {
+  return isBlocking(idx) || Object.values(borderTiles).includes(idx);
+}
+
 // ---- Validation ----
 function validate() {
   const layout = chambers[currentChamber];
@@ -540,14 +668,14 @@ function validate() {
     if (!isWalkable(layout[r][c])) errors.push('Entry ('+r+','+c+') must be walkable');
   });
 
-  // Borders must be walls
+  // Borders must be walls or accepted border tiles
   for (let c=0;c<20;c++) {
-    if (!isEntry(0,c) && !isBlocking(layout[0][c])) errors.push('Border (0,'+c+') must be wall');
-    if (!isEntry(19,c) && !isBlocking(layout[19][c])) errors.push('Border (19,'+c+') must be wall');
+    if (!isEntry(0,c) && !isBorderAcceptable(layout[0][c])) errors.push('Border (0,'+c+') must be wall');
+    if (!isEntry(19,c) && !isBorderAcceptable(layout[19][c])) errors.push('Border (19,'+c+') must be wall');
   }
   for (let r=1;r<19;r++) {
-    if (!isEntry(r,0) && !isBlocking(layout[r][0])) errors.push('Border ('+r+',0) must be wall');
-    if (!isEntry(r,19) && !isBlocking(layout[r][19])) errors.push('Border ('+r+',19) must be wall');
+    if (!isEntry(r,0) && !isBorderAcceptable(layout[r][0])) errors.push('Border ('+r+',0) must be wall');
+    if (!isEntry(r,19) && !isBorderAcceptable(layout[r][19])) errors.push('Border ('+r+',19) must be wall');
   }
 
   // Void only in hazard_field
@@ -716,7 +844,7 @@ function showToast(msg) {
 function saveState() {
   localStorage.setItem('chamber-painter-v4', JSON.stringify({
     chambers, tileTypes, floorBase, classifications: TILE_CLASSIFICATIONS,
-    spriteDataUrl,
+    spriteDataUrl, borderTiles,
   }));
 }
 

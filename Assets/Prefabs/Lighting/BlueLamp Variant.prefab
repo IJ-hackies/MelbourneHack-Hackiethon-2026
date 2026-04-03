@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -4633370661727678084, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: m_SortingLayer
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: -4633370661727678084, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: m_SortingOrder
@@ -123,6 +123,14 @@ PrefabInstance:
     - target: {fileID: 6971645488902062570, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
       propertyPath: orbColor.r
       value: 0.105882354
+      objectReference: {fileID: 0}
+    - target: {fileID: 8611388261882881608, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: m_ApplyToSortingLayers.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8611388261882881608, guid: fdb32b07b2a244435a7b60b904453344, type: 3}
+      propertyPath: 'm_ApplyToSortingLayers.Array.data[4]'
+      value: 1482736590
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

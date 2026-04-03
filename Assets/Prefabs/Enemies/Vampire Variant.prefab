@@ -198,9 +198,9 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0017433566, y: -0.13219562}
-  m_Size: {x: 0.20881894, y: 0.0503285}
-  m_Direction: 1
+  m_Offset: {x: -0.00044877082, y: -0.049190283}
+  m_Size: {x: 0.01088039, y: 0.033891775}
+  m_Direction: 0
 --- !u!114 &9187211385060121449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -213,8 +213,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 807ab7a66297d4789b9fb548a9f8453a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VampireAI
-  moveSpeed: 2.5
-  attackRange: 20
+  moveSpeed: 2
+  attackRange: 10
   attackDamage: 10
   attackCooldown: 1.5
   detectionRange: 200
@@ -243,6 +243,8 @@ MonoBehaviour:
   iconHeightOffset: 1.8
   separationRadius: 1.2
   separationWeight: 0.8
+  shootSfxClip: {fileID: 0}
+  shootSfxVolume: 0.8
   attackAnimDuration: 1.2
   damageHitFrame: 0.01
   projectileSpeed: 7

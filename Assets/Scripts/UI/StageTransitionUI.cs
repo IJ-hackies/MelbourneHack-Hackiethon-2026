@@ -40,6 +40,12 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private float messageFadeInDuration = 1.2f;
     [SerializeField] private float messageFadeInDelay = 0.4f;
 
+    [Header("Scroll Music")]
+    [Tooltip("Looping audio track that plays during the scroll pages.")]
+    [SerializeField] private AudioClip scrollMusic;
+    [SerializeField, Range(0f, 1f)] private float scrollMusicVolume = 0.4f;
+    [SerializeField] private float musicFadeDuration = 1f;
+
     private GameObject canvasGO;
     private GameObject page1;
     private GameObject page2;
@@ -70,6 +76,13 @@ public class StageTransitionUI : MonoBehaviour
     private TMP_Text stageClearedText;
     private Coroutine fadeCoroutine;
 
+    // Skip (fade-to-black sequence only)
+    private bool skipping;
+
+    // Scroll music
+    private AudioSource scrollMusicSource;
+    private Coroutine scrollMusicFade;
+
     public bool IsOpen => canvasGO != null && canvasGO.activeSelf;
 
     /// <summary>
@@ -80,6 +93,8 @@ public class StageTransitionUI : MonoBehaviour
     {
         onComplete = onDone;
         if (canvasGO == null) Build();
+
+        skipping = false;
 
         // Ensure canvas is active but pages hidden during fade
         canvasGO.SetActive(true);
@@ -97,10 +112,12 @@ public class StageTransitionUI : MonoBehaviour
     {
         onComplete = onDone;
         if (canvasGO == null) Build();
+        skipping = false;
         canvasGO.SetActive(true);
         page1.SetActive(true);
         page2.SetActive(false);
         PauseManager.Pause();
+        StartScrollMusic();
         SFXManager.Instance?.PlayScrollOpen();
         Populate(manifest, prevHp, newHp);
         if (_page1ScrollRT != null)
@@ -114,6 +131,10 @@ public class StageTransitionUI : MonoBehaviour
         if (brewingCoroutine != null) { StopCoroutine(brewingCoroutine); brewingCoroutine = null; }
         pendingSpellData = null;
 
+        // Fade out scroll music, resume dungeon music
+        StopScrollMusic();
+        MusicManager.Instance?.Resume();
+
         if (canvasGO != null) canvasGO.SetActive(false);
         if (fadeOverlay != null) fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
         PauseManager.Unpause();
@@ -123,8 +144,8 @@ public class StageTransitionUI : MonoBehaviour
 
     private IEnumerator FadeToBlackSequence()
     {
-        // Fade music out alongside the screen
-        MusicManager.Instance?.FadeOut();
+        // Fade dungeon music out alongside the screen
+        MusicManager.Instance?.Pause();
 
         // Phase 1: Fade the screen to black (game still running)
         fadeOverlay.color = new Color(0f, 0f, 0f, 0f);
@@ -132,7 +153,7 @@ public class StageTransitionUI : MonoBehaviour
         SetTextAlpha(stageClearedText, 0f);
 
         float elapsed = 0f;
-        while (elapsed < fadeToBlackDuration)
+        while (elapsed < fadeToBlackDuration && !skipping)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / fadeToBlackDuration);
@@ -143,21 +164,34 @@ public class StageTransitionUI : MonoBehaviour
         fadeOverlay.color = Color.black;
         PauseManager.Pause();
 
+        if (skipping) { SkipToPage2(); yield break; }
+
         // Phase 2: "STAGE CLEARED" fade in, hold, fade out
         elapsed = 0f;
-        while (elapsed < stageClearedFadeIn)
+        while (elapsed < stageClearedFadeIn && !skipping)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / stageClearedFadeIn);
             SetTextAlpha(stageClearedText, t);
             yield return null;
         }
+
+        if (skipping) { SetTextAlpha(stageClearedText, 0f); SkipToPage2(); yield break; }
+
         SetTextAlpha(stageClearedText, 1f);
 
-        yield return new WaitForSecondsRealtime(stageClearedHold);
+        // Hold — check skipping each frame
+        elapsed = 0f;
+        while (elapsed < stageClearedHold && !skipping)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (skipping) { SetTextAlpha(stageClearedText, 0f); SkipToPage2(); yield break; }
 
         elapsed = 0f;
-        while (elapsed < stageClearedFadeOut)
+        while (elapsed < stageClearedFadeOut && !skipping)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / stageClearedFadeOut);
@@ -166,7 +200,10 @@ public class StageTransitionUI : MonoBehaviour
         }
         SetTextAlpha(stageClearedText, 0f);
 
-        // Phase 3: Show scroll, fade in chronicle text
+        if (skipping) { SkipToPage2(); yield break; }
+
+        // Phase 3: Show scroll, fade in chronicle text + scroll music
+        StartScrollMusic();
         page1.SetActive(true);
         SFXManager.Instance?.PlayScrollOpen();
         page2.SetActive(false);
@@ -177,10 +214,18 @@ public class StageTransitionUI : MonoBehaviour
         SetTextAlpha(messageText, 0f);
         SetTextAlpha(attributionText, 0f);
 
-        yield return new WaitForSecondsRealtime(messageFadeInDelay);
+        // Delay — check skipping each frame
+        elapsed = 0f;
+        while (elapsed < messageFadeInDelay && !skipping)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (skipping) { SkipToPage2(); yield break; }
 
         elapsed = 0f;
-        while (elapsed < messageFadeInDuration)
+        while (elapsed < messageFadeInDuration && !skipping)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / messageFadeInDuration);
@@ -195,6 +240,74 @@ public class StageTransitionUI : MonoBehaviour
         SetTextAlpha(attributionText, 0.7f);
 
         fadeCoroutine = null;
+    }
+
+    private void SkipToPage2()
+    {
+        fadeCoroutine = null;
+        SetTextAlpha(stageClearedText, 0f);
+        fadeOverlay.color = Color.black;
+        StartScrollMusic();
+        GoToPage2();
+    }
+
+    // ── Scroll Music ────────────────────────────────────────────────────────
+
+    private void StartScrollMusic()
+    {
+        if (scrollMusic == null) return;
+
+        if (scrollMusicSource == null)
+        {
+            scrollMusicSource = gameObject.AddComponent<AudioSource>();
+            scrollMusicSource.playOnAwake = false;
+            scrollMusicSource.spatialBlend = 0f;
+            scrollMusicSource.loop = true;
+        }
+
+        scrollMusicSource.clip = scrollMusic;
+        scrollMusicSource.volume = 0f;
+        scrollMusicSource.Play();
+
+        if (scrollMusicFade != null) StopCoroutine(scrollMusicFade);
+        scrollMusicFade = StartCoroutine(FadeAudio(scrollMusicSource, 0f,
+            scrollMusicVolume * SettingsData.MusicVolume, musicFadeDuration));
+    }
+
+    private void StopScrollMusic()
+    {
+        if (scrollMusicSource == null || !scrollMusicSource.isPlaying) return;
+
+        if (scrollMusicFade != null) StopCoroutine(scrollMusicFade);
+        scrollMusicFade = StartCoroutine(FadeAudioThenStop(scrollMusicSource,
+            scrollMusicSource.volume, 0f, musicFadeDuration));
+    }
+
+    private IEnumerator FadeAudio(AudioSource source, float from, float to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            source.volume = Mathf.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        source.volume = to;
+        scrollMusicFade = null;
+    }
+
+    private IEnumerator FadeAudioThenStop(AudioSource source, float from, float to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            source.volume = Mathf.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        source.volume = to;
+        source.Stop();
+        scrollMusicFade = null;
     }
 
     private static void SetTextAlpha(TMP_Text text, float alpha)
@@ -561,6 +674,7 @@ public class StageTransitionUI : MonoBehaviour
     {
         page1.SetActive(false);
         page2.SetActive(true);
+        SFXManager.Instance?.PlayScrollOpen();
         if (Grimoire.Instance != null)
             Grimoire.Instance.OnLoadoutChanged += RefreshSpellIcon;
         RefreshSpellIcon();

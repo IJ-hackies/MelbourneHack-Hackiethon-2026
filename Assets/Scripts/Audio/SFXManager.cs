@@ -37,9 +37,29 @@ public class SFXManager : MonoBehaviour
     [SerializeField] private AudioClip mergeSpellClip;
     [SerializeField, Range(0f, 1f)] private float mergeSpellVolume = 1f;
 
+    [Header("Equip Spell SFX")]
+    [SerializeField] private AudioClip equipSpellClip;
+    [SerializeField, Range(0f, 1f)] private float equipSpellVolume = 0.9f;
+
+    [Header("Skill Cast SFX")]
+    [SerializeField] private AudioClip skillCastClip;
+    [SerializeField, Range(0f, 1f)] private float skillCastVolume = 0.9f;
+
+    [Header("Ultimate Cast SFX")]
+    [SerializeField] private AudioClip ultimateCastClip;
+    [SerializeField, Range(0f, 1f)] private float ultimateCastVolume = 1f;
+
     [Header("Player Hit SFX")]
     [SerializeField] private AudioClip playerHitClip;
     [SerializeField, Range(0f, 1f)] private float playerHitVolume = 1f;
+
+    [Header("Player Death SFX")]
+    [SerializeField] private AudioClip playerDeathClip;
+    [SerializeField, Range(0f, 1f)] private float playerDeathVolume = 1f;
+
+    [Header("Crit Hit SFX")]
+    [SerializeField] private AudioClip critHitClip;
+    [SerializeField, Range(0f, 1f)] private float critHitVolume = 1f;
 
     [Header("Enemy Hit SFX")]
     [SerializeField] private AudioClip enemyHitClip;
@@ -58,6 +78,10 @@ public class SFXManager : MonoBehaviour
     [Header("Scroll Open SFX")]
     [SerializeField] private AudioClip scrollOpenClip;
     [SerializeField, Range(0f, 1f)] private float scrollOpenVolume = 1f;
+
+    [Header("Heal Scroll SFX")]
+    [SerializeField] private AudioClip healScrollClip;
+    [SerializeField, Range(0f, 1f)] private float healScrollVolume = 0.9f;
 
     // ── Typewriter SFX ────────────────────────────────────────────────────────
     [Header("Typewriter SFX")]
@@ -92,6 +116,11 @@ public class SFXManager : MonoBehaviour
     private float _sfxVolumeMultiplier  = 1f;
     private float _lastTypewriterTick   = -999f;
 
+    // ── Gameplay heartbeat (low-health) ───────────────────────────────────────
+    private AudioSource  _heartbeatSource;
+    private Coroutine    _heartbeatFadeCoroutine;
+    private bool         _heartbeatFading;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
@@ -114,6 +143,12 @@ public class SFXManager : MonoBehaviour
             _pool[i].playOnAwake  = false;
             _pool[i].spatialBlend = 0f; // always 2D — volume is managed manually
         }
+
+        // Dedicated looping source for gameplay heartbeat — lives outside the pool
+        _heartbeatSource             = gameObject.AddComponent<AudioSource>();
+        _heartbeatSource.playOnAwake = false;
+        _heartbeatSource.spatialBlend = 0f;
+        _heartbeatSource.loop        = true;
     }
 
     private void Start()
@@ -124,6 +159,82 @@ public class SFXManager : MonoBehaviour
     public void SetSfxVolume(float volume)
     {
         _sfxVolumeMultiplier = Mathf.Clamp01(volume);
+    }
+
+    // ── Gameplay heartbeat API ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Call every frame while the player is in the critical health zone.
+    /// Starts the looping heartbeat if not already playing and adjusts pitch to match
+    /// <paramref name="bpm"/>. Volume ducks very slightly at higher BPM.
+    /// </summary>
+    public void StartOrUpdateHeartbeat(float bpm)
+    {
+        if (heartbeatClip == null) return;
+
+        // Pitch the looping clip so one loop = one beat interval
+        float pitch = Mathf.Clamp(heartbeatClip.length * bpm / 60f, 0.1f, 3f);
+
+        // Subtle duck: 1.0x at 45 BPM, 0.88x at 65 BPM
+        float duckT       = Mathf.Clamp01((bpm - 45f) / 20f);
+        float targetVolume = heartbeatVolume * _sfxVolumeMultiplier * Mathf.Lerp(1f, 0.88f, duckT);
+
+        _heartbeatSource.pitch = pitch;
+
+        if (!_heartbeatSource.isPlaying || _heartbeatFading)
+        {
+            // Cancel any fade-out in progress and fade in
+            _heartbeatFading = false;
+            if (_heartbeatFadeCoroutine != null) StopCoroutine(_heartbeatFadeCoroutine);
+
+            if (!_heartbeatSource.isPlaying)
+            {
+                _heartbeatSource.clip   = heartbeatClip;
+                _heartbeatSource.volume = 0f;
+                _heartbeatSource.Play();
+            }
+
+            _heartbeatFadeCoroutine = StartCoroutine(FadeHeartbeatVolume(targetVolume, 0.5f));
+        }
+        else
+        {
+            _heartbeatSource.volume = targetVolume;
+        }
+    }
+
+    /// <summary>Fades out and stops the gameplay heartbeat loop over 1 second.</summary>
+    public void StopHeartbeat()
+    {
+        if (!_heartbeatSource.isPlaying || _heartbeatFading) return;
+        if (_heartbeatFadeCoroutine != null) StopCoroutine(_heartbeatFadeCoroutine);
+        _heartbeatFading        = true;
+        _heartbeatFadeCoroutine = StartCoroutine(FadeHeartbeatVolume(0f, 1f, stopOnComplete: true));
+    }
+
+    /// <summary>Stops the gameplay heartbeat immediately with no fade (use on player death).</summary>
+    public void StopHeartbeatImmediate()
+    {
+        if (_heartbeatFadeCoroutine != null) StopCoroutine(_heartbeatFadeCoroutine);
+        _heartbeatFading = false;
+        _heartbeatSource.Stop();
+    }
+
+    private IEnumerator FadeHeartbeatVolume(float target, float duration, bool stopOnComplete = false)
+    {
+        float start = _heartbeatSource.volume;
+        float t     = 0f;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            _heartbeatSource.volume = Mathf.Lerp(start, target, t / duration);
+            yield return null;
+        }
+        _heartbeatSource.volume = target;
+        if (stopOnComplete)
+        {
+            _heartbeatSource.Stop();
+            _heartbeatFading = false;
+        }
     }
 
     // ── Public play API ───────────────────────────────────────────────────────
@@ -195,10 +306,16 @@ public class SFXManager : MonoBehaviour
         if (vol < MinAudibleVolume) return;
         PlayOnVoice(enemyHitClip, vol, enemyHitPitch, pos);
     }
+    public void PlayCritHit(Vector2 pos)    => PlayUI(critHitClip, critHitVolume);
     public void PlayEnemyDeath(Vector2 pos) => PlayAtPosition(enemyDeathClip, enemyDeathVolume, pos);
     public void PlayMergeSpell()      => PlayUI(mergeSpellClip,      mergeSpellVolume);
+    public void PlayEquipSpell()      => PlayUI(equipSpellClip,      equipSpellVolume);
+    public void PlaySkillCast()       => PlayUI(skillCastClip,       skillCastVolume);
+    public void PlayUltimateCast()    => PlayUI(ultimateCastClip,    ultimateCastVolume);
     public void PlayPlayerHit()       => PlayUI(playerHitClip,       playerHitVolume);
+    public void PlayPlayerDeath()     => PlayUI(playerDeathClip,     playerDeathVolume);
     public void PlayScrollOpen()      => PlayUI(scrollOpenClip,       scrollOpenVolume);
+    public void PlayHealScroll()      => PlayUI(healScrollClip,        healScrollVolume);
     /// <summary>Plays the heartbeat clip pitched so it lasts exactly <paramref name="targetDuration"/> seconds.</summary>
     public void PlayHeartbeat(float targetDuration)
     {

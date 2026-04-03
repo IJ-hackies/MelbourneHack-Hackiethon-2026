@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tile Physics Shape Painter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+
+  .sidebar { width: 260px; background: #16213e; padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; border-right: 2px solid #0f3460; }
+  .sidebar h2 { font-size: 18px; color: #e94560; }
+  .sidebar h3 { font-size: 12px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .load-area { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .load-area label { font-size: 11px; color: #aaa; }
+
+  .palette { display: grid; grid-template-columns: repeat(4, 52px); gap: 4px; }
+  .palette-btn {
+    width: 52px; height: 52px; border: 3px solid #333; border-radius: 4px; cursor: pointer;
+    position: relative; image-rendering: pixelated; background-color: #222;
+    background-size: cover; transition: border-color 0.1s;
+  }
+  .palette-btn:hover { border-color: #888; }
+  .palette-btn.active { border-color: #e94560; box-shadow: 0 0 6px #e94560; }
+  .palette-btn .idx { position: absolute; bottom: 1px; right: 2px; font-size: 9px; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+  .palette-btn.has-shape { border-color: #4caf50; }
+  .palette-btn.has-shape.active { border-color: #e94560; }
+
+  .btn { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .btn-primary { background: #e94560; color: #fff; }
+  .btn-primary:hover { background: #c73652; }
+  .btn-secondary { background: #0f3460; color: #ddd; }
+  .btn-secondary:hover { background: #1a4a80; }
+  .btn-danger { background: #6b1b1b; color: #ddd; }
+  .btn-danger:hover { background: #8b2b2b; }
+  .btn-group { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .info { font-size: 11px; color: #888; line-height: 1.6; }
+  .info kbd { background: #333; padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+
+  .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; }
+
+  canvas { border: 2px solid #0f3460; border-radius: 4px; cursor: crosshair; image-rendering: pixelated; }
+
+  .status { margin-top: 8px; font-size: 12px; color: #aaa; }
+
+  textarea { width: 100%; height: 120px; background: #0a0a1a; color: #4caf50; border: 1px solid #333; border-radius: 4px; font-family: monospace; font-size: 10px; padding: 6px; resize: vertical; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Physics Shape Painter</h2>
+
+  <h3>Load Spritesheet</h3>
+  <div class="load-area">
+    <input type="file" id="fileInput" accept="image/png">
+  </div>
+
+  <h3>Tile Palette</h3>
+  <div class="palette" id="palette"></div>
+
+  <div class="info">
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4caf50;vertical-align:middle;margin-right:2px;"></span> = has custom shape
+  </div>
+
+  <hr style="border:none;border-top:1px solid #333;">
+
+  <h3>Controls</h3>
+  <div class="info">
+    <kbd>Click</kbd> Add vertex<br>
+    <kbd>Right-click</kbd> Remove last vertex<br>
+    <kbd>Drag</kbd> Move existing vertex<br>
+    <kbd>Enter</kbd> Close polygon<br>
+    Shapes are per-tile (index 0-15).<br>
+    Green border = has shape defined.
+  </div>
+
+  <hr style="border:none;border-top:1px solid #333;">
+
+  <h3>Actions</h3>
+  <div class="btn-group">
+    <button class="btn btn-danger" onclick="clearCurrentShape()">Clear This Tile</button>
+    <button class="btn btn-secondary" onclick="clearAllShapes()">Clear All</button>
+    <button class="btn btn-secondary" onclick="resetToFullRect()">Full Rect</button>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #333;">
+
+  <h3>Presets</h3>
+  <div class="btn-group">
+    <button class="btn btn-secondary" onclick="presetTop()">Wall Top</button>
+    <button class="btn btn-secondary" onclick="presetBottom()">Wall Bottom</button>
+    <button class="btn btn-secondary" onclick="presetLeft()">Wall Left</button>
+    <button class="btn btn-secondary" onclick="presetRight()">Wall Right</button>
+  </div>
+  <div class="btn-group" style="margin-top:4px;">
+    <button class="btn btn-secondary" onclick="presetTopHalf()">Top Half</button>
+    <button class="btn btn-secondary" onclick="presetBottomHalf()">Bottom Half</button>
+    <button class="btn btn-secondary" onclick="presetEmpty()">No Collider</button>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #333;">
+
+  <h3>Export / Import</h3>
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="downloadJSON()">Download JSON</button>
+    <button class="btn btn-secondary" onclick="exportJSON()">Preview JSON</button>
+    <button class="btn btn-secondary" onclick="importJSON()">Import JSON</button>
+    <button class="btn btn-secondary" onclick="copyJSON()">Copy to Clipboard</button>
+  </div>
+  <textarea id="jsonOutput" placeholder="JSON will appear here..."></textarea>
+</div>
+
+<div class="main">
+  <canvas id="canvas" width="512" height="512"></canvas>
+  <div class="status" id="status">Load a spritesheet to begin (128x128, 4x4 grid of 32x32 tiles)</div>
+</div>
+
+<script>
+const TILE_SIZE = 32;
+const GRID = 4;
+const CANVAS_SIZE = 512;
+const SCALE = CANVAS_SIZE / TILE_SIZE; // 16x zoom
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const palette = document.getElementById('palette');
+const status = document.getElementById('status');
+const jsonOutput = document.getElementById('jsonOutput');
+
+let spritesheet = null;
+let selectedTile = 0;
+let shapes = {}; // { tileIndex: [ [x,y], [x,y], ... ] } in pixel coords (0-32)
+let currentPoints = []; // points being drawn for current tile
+let draggingIdx = -1;
+let isClosedMap = {}; // { tileIndex: bool }
+
+// Init palette buttons
+for (let i = 0; i < 16; i++) {
+  const btn = document.createElement('div');
+  btn.className = 'palette-btn' + (i === 0 ? ' active' : '');
+  btn.innerHTML = `<span class="idx">${i}</span>`;
+  btn.dataset.idx = i;
+  btn.onclick = () => selectTile(i);
+  palette.appendChild(btn);
+}
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    spritesheet = img;
+    updatePaletteImages();
+    render();
+    status.textContent = `Loaded: ${file.name} (${img.width}x${img.height})`;
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+function updatePaletteImages() {
+  if (!spritesheet) return;
+  const btns = palette.querySelectorAll('.palette-btn');
+  btns.forEach((btn, i) => {
+    const col = i % GRID;
+    const row = Math.floor(i / GRID);
+    // Spritesheet rows: row 0 in Unity = bottom of image, but in image coords row 0 = top
+    // Unity: tile 0 is at y=96 (top of 128px image) = image row 0
+    // So image row = floor(i/4), matching standard left-to-right top-to-bottom
+    const offscreen = document.createElement('canvas');
+    offscreen.width = TILE_SIZE;
+    offscreen.height = TILE_SIZE;
+    const octx = offscreen.getContext('2d');
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(spritesheet, col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE);
+    btn.style.backgroundImage = `url(${offscreen.toDataURL()})`;
+  });
+}
+
+function selectTile(idx) {
+  // Save current work
+  saveCurrentPoints();
+  selectedTile = idx;
+  // Load saved shape
+  currentPoints = shapes[idx] ? shapes[idx].map(p => [...p]) : [];
+  // Update palette selection
+  palette.querySelectorAll('.palette-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  render();
+  updateStatus();
+}
+
+function saveCurrentPoints() {
+  if (currentPoints.length >= 3) {
+    shapes[selectedTile] = currentPoints.map(p => [...p]);
+    isClosedMap[selectedTile] = true;
+  } else if (currentPoints.length === 0) {
+    delete shapes[selectedTile];
+    delete isClosedMap[selectedTile];
+  }
+  updatePaletteBorders();
+}
+
+function updatePaletteBorders() {
+  palette.querySelectorAll('.palette-btn').forEach((btn, i) => {
+    btn.classList.toggle('has-shape', !!shapes[i]);
+  });
+}
+
+function render() {
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  // Draw tile background
+  if (spritesheet) {
+    const col = selectedTile % GRID;
+    const row = Math.floor(selectedTile / GRID);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(spritesheet, col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  } else {
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  }
+
+  // Draw grid lines (pixel grid)
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= TILE_SIZE; i++) {
+    const p = i * SCALE;
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, CANVAS_SIZE); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(CANVAS_SIZE, p); ctx.stroke();
+  }
+
+  // Draw half-lines more visible
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  const half = CANVAS_SIZE / 2;
+  ctx.beginPath(); ctx.moveTo(half, 0); ctx.lineTo(half, CANVAS_SIZE); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, half); ctx.lineTo(CANVAS_SIZE, half); ctx.stroke();
+
+  // Draw tile boundary
+  ctx.strokeStyle = '#0f3460';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, CANVAS_SIZE - 2, CANVAS_SIZE - 2);
+
+  // Draw current polygon
+  if (currentPoints.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(currentPoints[0][0] * SCALE, currentPoints[0][1] * SCALE);
+    for (let i = 1; i < currentPoints.length; i++) {
+      ctx.lineTo(currentPoints[i][0] * SCALE, currentPoints[i][1] * SCALE);
+    }
+
+    // Close if we have 3+ points and shape is "closed"
+    const isClosed = isClosedMap[selectedTile];
+    if (isClosed && currentPoints.length >= 3) {
+      ctx.closePath();
+    }
+
+    // Fill
+    ctx.fillStyle = 'rgba(233, 69, 96, 0.25)';
+    ctx.fill();
+
+    // Stroke
+    ctx.strokeStyle = '#e94560';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw vertices
+    currentPoints.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.arc(p[0] * SCALE, p[1] * SCALE, 5, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#4caf50' : '#e94560';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  }
+}
+
+function updateStatus() {
+  const pts = currentPoints.length;
+  const closed = isClosedMap[selectedTile] ? ' (closed)' : '';
+  status.textContent = `Tile ${selectedTile} | ${pts} vertices${closed} | Click to add, right-click to remove last, Enter to close`;
+}
+
+// Canvas interaction
+canvas.addEventListener('mousedown', (e) => {
+  if (!spritesheet) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) / SCALE;
+  const py = (e.clientY - rect.top) / SCALE;
+
+  if (e.button === 2) {
+    // Right click — remove last
+    e.preventDefault();
+    if (currentPoints.length > 0) {
+      currentPoints.pop();
+      if (currentPoints.length < 3) isClosedMap[selectedTile] = false;
+      saveCurrentPoints();
+      render();
+      updateStatus();
+    }
+    return;
+  }
+
+  if (e.button !== 0) return;
+
+  // Check if clicking near existing vertex (drag)
+  for (let i = 0; i < currentPoints.length; i++) {
+    const dx = currentPoints[i][0] - px;
+    const dy = currentPoints[i][1] - py;
+    if (Math.sqrt(dx * dx + dy * dy) < 1.5) {
+      draggingIdx = i;
+      return;
+    }
+  }
+
+  // Snap to pixel grid
+  const snappedX = Math.round(px);
+  const snappedY = Math.round(py);
+
+  // Clamp to tile bounds
+  const cx = Math.max(0, Math.min(TILE_SIZE, snappedX));
+  const cy = Math.max(0, Math.min(TILE_SIZE, snappedY));
+
+  currentPoints.push([cx, cy]);
+  if (currentPoints.length >= 3) {
+    isClosedMap[selectedTile] = true;
+  }
+  saveCurrentPoints();
+  render();
+  updateStatus();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (draggingIdx < 0) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) / SCALE;
+  const py = (e.clientY - rect.top) / SCALE;
+  const cx = Math.max(0, Math.min(TILE_SIZE, Math.round(px)));
+  const cy = Math.max(0, Math.min(TILE_SIZE, Math.round(py)));
+  currentPoints[draggingIdx] = [cx, cy];
+  saveCurrentPoints();
+  render();
+});
+
+canvas.addEventListener('mouseup', () => { draggingIdx = -1; });
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && currentPoints.length >= 3) {
+    isClosedMap[selectedTile] = true;
+    saveCurrentPoints();
+    render();
+    updateStatus();
+  }
+});
+
+// Preset shapes (in tile pixel coords 0-32)
+function setShape(points) {
+  currentPoints = points;
+  isClosedMap[selectedTile] = true;
+  saveCurrentPoints();
+  render();
+  updateStatus();
+}
+
+function presetTop()        { setShape([[0,0],[32,0],[32,16],[0,16]]); }
+function presetBottom()     { setShape([[0,16],[32,16],[32,32],[0,32]]); }
+function presetLeft()       { setShape([[0,0],[16,0],[16,32],[0,32]]); }
+function presetRight()      { setShape([[16,0],[32,0],[32,32],[16,32]]); }
+function presetTopHalf()    { setShape([[0,0],[32,0],[32,16],[0,16]]); }
+function presetBottomHalf() { setShape([[0,16],[32,16],[32,32],[0,32]]); }
+function resetToFullRect()  { setShape([[0,0],[32,0],[32,32],[0,32]]); }
+function presetEmpty()      { currentPoints = []; delete isClosedMap[selectedTile]; saveCurrentPoints(); render(); updateStatus(); }
+
+function clearCurrentShape() {
+  currentPoints = [];
+  delete shapes[selectedTile];
+  delete isClosedMap[selectedTile];
+  updatePaletteBorders();
+  render();
+  updateStatus();
+}
+
+function clearAllShapes() {
+  shapes = {};
+  isClosedMap = {};
+  currentPoints = [];
+  updatePaletteBorders();
+  render();
+  updateStatus();
+}
+
+// Export: convert from tile pixel coords (0-32) to Unity sprite-local coords (-16 to 16)
+// Also flip Y axis: in canvas, Y increases downward; in Unity, Y increases upward
+function exportJSON() {
+  saveCurrentPoints();
+  const output = {};
+  for (let i = 0; i < 16; i++) {
+    if (shapes[i] && shapes[i].length >= 3) {
+      output[i] = shapes[i].map(([x, y]) => ({
+        x: x - 16,
+        y: 16 - y  // flip Y
+      }));
+    }
+    // Tiles without shapes will use full rect (default)
+  }
+  const json = JSON.stringify(output, null, 2);
+  jsonOutput.value = json;
+  return json;
+}
+
+function importJSON() {
+  try {
+    const data = JSON.parse(jsonOutput.value);
+    shapes = {};
+    isClosedMap = {};
+    for (const [idx, points] of Object.entries(data)) {
+      const i = parseInt(idx);
+      // Convert back from Unity coords to canvas coords
+      shapes[i] = points.map(({x, y}) => [x + 16, 16 - y]);
+      isClosedMap[i] = true;
+    }
+    currentPoints = shapes[selectedTile] ? shapes[selectedTile].map(p => [...p]) : [];
+    updatePaletteBorders();
+    render();
+    updateStatus();
+    status.textContent += ' | Imported!';
+  } catch (e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+}
+
+function copyJSON() {
+  const json = exportJSON();
+  // file:// URLs can't use navigator.clipboard — use fallback
+  jsonOutput.select();
+  document.execCommand('copy');
+  status.textContent += ' | Copied to clipboard!';
+}
+
+function downloadJSON() {
+  const json = exportJSON();
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'physics_shapes.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  status.textContent += ' | Downloaded physics_shapes.json!';
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
